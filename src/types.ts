@@ -20,8 +20,8 @@ export type Payment = {
   id: string
   clientId: string
   clientName: string
-  date: string
   amount: number
+  date: string
   salesSnapshot?: Sale[]
 }
 
