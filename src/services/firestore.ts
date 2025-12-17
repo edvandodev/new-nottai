@@ -18,7 +18,7 @@ export const firestoreService = {
           console.error('listenToClients falhou', error);
           return;
         }
-        const clients = event.documents.map(doc => ({ ...doc.data, id: doc.id }));
+        const clients = event.documents.map(doc => ({ ...doc.data(), id: doc.id }));
         callback(clients);
       }
     );
@@ -49,7 +49,7 @@ export const firestoreService = {
           console.error('listenToSales falhou', error);
           return;
         }
-        const sales = event.documents.map(doc => ({ ...doc.data, id: doc.id }));
+        const sales = event.documents.map(doc => ({ ...doc.data(), id: doc.id }));
         callback(sales);
       }
     );
@@ -80,7 +80,7 @@ export const firestoreService = {
           console.error('listenToPayments falhou', error);
           return;
         }
-        const payments = event.documents.map(doc => ({ ...doc.data, id: doc.id }));
+        const payments = event.documents.map(doc => ({ ...doc.data(), id: doc.id }));
         callback(payments);
       }
     );
@@ -123,7 +123,7 @@ export const firestoreService = {
         }
         const priceDoc = event.documents.find(doc => doc.id === 'price');
         if (priceDoc) {
-          callback(priceDoc.data);
+          callback(priceDoc.data());
         }
       }
     );
