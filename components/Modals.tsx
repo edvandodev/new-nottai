@@ -149,7 +149,8 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
     }
 
     onSave(cleanName, phone, priceType, avatar);
-    onClose();
+    // A linha abaixo foi removida pois o App.tsx já gerencia o fechamento do modal
+    // onClose(); 
   };
 
   const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
