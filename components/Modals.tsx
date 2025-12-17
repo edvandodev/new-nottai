@@ -131,13 +131,10 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
     }
   };
 
-  const handleSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
-    console.log("AddClientModal: handleSubmit foi chamado VIA ONCLICK!");
-    e.preventDefault();
+  const handleSubmit = () => {
     const cleanName = name.trim();
     
     if (!cleanName) {
-      console.log("AddClientModal: Nome vazio, parando a submissão.");
       setError('O campo Nome é obrigatório.');
       return;
     }
@@ -148,11 +145,9 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
 
     if (isDuplicate) {
       setError('Já existe um cliente com este nome.');
-      console.log("AddClientModal: Nome duplicado, parando a submissão.");
       return;
     }
 
-    console.log("AddClientModal: Chamando onSave...");
     onSave(cleanName, phone, priceType, avatar);
   };
 
@@ -262,7 +257,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
           </button>
           <button
             type="button"
-            onClick={onClose} // <<<<<<< AQUI ESTÁ A MUDANÇA
+            onClick={handleSubmit}
             className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-500 transition-colors shadow-lg shadow-blue-900/50"
           >
             Salvar
@@ -471,7 +466,7 @@ export const SuccessReceiptModal: React.FC<SuccessReceiptModalProps> = ({ isOpen
           <p className="text-slate-500 text-sm mt-2">Deseja gerar o comprovante PDF agora?</p>
         </div>
 
-        <div className="flex flex-col gap-3 mt-6">
+        <div className="flex flex-col gap-3">
           <button
             type="button"
             onClick={onGenerate}

@@ -5,7 +5,6 @@ import { firestoreService } from './services/firestore';
 import { AddClientModal, AddSaleModal, PayDebtModal, ConfirmModal, SuccessReceiptModal } from './components/Modals';
 import { generateReceipt } from './services/pdfGenerator';
 
-// Custom Payment Icon
 const CustomPaymentIcon = ({ size = 20, className = "", strokeWidth = 2 }: { size?: number, className?: string, strokeWidth?: number }) => (
   <svg
     width={size}
@@ -21,41 +20,32 @@ const CustomPaymentIcon = ({ size = 20, className = "", strokeWidth = 2 }: { siz
 );
 
 function App() {
-  // Navigation State
   const [activeTab, setActiveTab] = useState<TabState>('CLIENTS');
   const [clientView, setClientView] = useState<ViewState>('LIST');
 
-  // Data State
   const [clients, setClients] = useState<Client[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [priceSettings, setPriceSettings] = useState<PriceSettings>(DEFAULT_SETTINGS);
 
-  // Search State
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Report State
   const [reportYear, setReportYear] = useState(new Date().getFullYear());
   const [reportMonth, setReportMonth] = useState(new Date().getMonth());
 
-  // Selection State
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [expandedPaymentId, setExpandedPaymentId] = useState<string | null>(null);
 
-  // Edit State
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [standardPriceInput, setStandardPriceInput] = useState('');
   const [customPriceInput, setCustomPriceInput] = useState('');
 
-  // Receipt State
   const [lastPaymentInfo, setLastPaymentInfo] = useState<{ clientName: string, amount: number, sales: Sale[], date: string } | null>(null);
 
-  // Delete State
   const [clientToDeleteId, setClientToDeleteId] = useState<string | null>(null);
   const [saleToDeleteId, setSaleToDeleteId] = useState<string | null>(null);
   const [paymentToDeleteId, setPaymentToDeleteId] = useState<string | null>(null);
 
-  // Modals
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
@@ -221,21 +211,15 @@ function App() {
   };
 
   const handleSaveClient = async (name: string, phone: string, priceType: PriceType, avatar?: string) => {
-    console.log("handleSaveClient: Função iniciada.");
     try {
       const clientToSave: Client = editingClient
         ? { ...editingClient, name, phone, priceType, avatar: avatar || editingClient.avatar }
         : { id: crypto.randomUUID(), name, phone, priceType, avatar };
 
-      console.log("handleSaveClient: Objeto cliente preparado:", clientToSave);
-      console.log("handleSaveClient: Chamando firestoreService.saveClient...");
-
       await firestoreService.saveClient(clientToSave);
 
-      console.log("handleSaveClient: Chamada ao firestoreService.saveClient concluída.");
       setEditingClient(null);
       setIsClientModalOpen(false);
-      console.log("handleSaveClient: Modal fechado e estado atualizado.");
 
     } catch (error) {
       console.error("handleSaveClient: ERRO DETECTADO:", error);
