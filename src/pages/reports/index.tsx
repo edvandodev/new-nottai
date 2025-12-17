@@ -26,6 +26,17 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
   const [reportYear, setReportYear] = useState(new Date().getFullYear())
   const [reportMonth, setReportMonth] = useState(new Date().getMonth())
 
+  const mergedSales = useMemo(() => {
+    const byId = new Map<string, Sale>()
+    sales.forEach((s) => byId.set(s.id, s))
+    payments.forEach((p) =>
+      p.salesSnapshot?.forEach((s: Sale) => {
+        if (!byId.has(s.id)) byId.set(s.id, s)
+      })
+    )
+    return Array.from(byId.values())
+  }, [sales, payments])
+
   const formatCurrency = (val: number) =>
     val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -33,27 +44,15 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
     const years = new Set<number>()
     years.add(new Date().getFullYear())
 
-    sales.forEach((s) => years.add(new Date(s.date).getFullYear()))
-    payments.forEach((p) => {
-      if (p.salesSnapshot) {
-        p.salesSnapshot.forEach((s: Sale) =>
-          years.add(new Date(s.date).getFullYear())
-        )
-      }
-    })
+    mergedSales.forEach((s) =>
+      years.add(new Date(`${s.date}T12:00:00`).getFullYear())
+    )
 
     return Array.from(years).sort((a, b) => b - a)
-  }, [sales, payments])
+  }, [mergedSales])
 
   const reportData = useMemo(() => {
-    const allSales: Sale[] = [
-      ...sales,
-      ...payments.flatMap((p) =>
-        p.salesSnapshot ? (p.salesSnapshot as Sale[]) : []
-      )
-    ]
-
-    const filtered = allSales.filter((s) => {
+    const filtered = mergedSales.filter((s) => {
       const d = new Date(`${s.date}T12:00:00`)
       return d.getFullYear() === reportYear && d.getMonth() === reportMonth
     })
@@ -79,7 +78,7 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
       totalValue,
       weeks: Object.values(weeks).sort((a, b) => a.label.localeCompare(b.label))
     }
-  }, [sales, payments, reportYear, reportMonth])
+  }, [mergedSales, reportYear, reportMonth])
 
   return (
     <div className='space-y-6 animate-fade-in'>

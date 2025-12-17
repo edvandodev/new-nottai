@@ -105,14 +105,16 @@ function App() {
   const clientBalances = useMemo(() => {
     const balances = new Map<string, number>()
     clients.forEach((c) => balances.set(c.id, 0))
-    sales.forEach((s) =>
-      balances.set(s.clientId, (balances.get(s.clientId) || 0) + s.totalValue)
-    )
-    payments.forEach((p) =>
-      balances.set(p.clientId, (balances.get(p.clientId) || 0) - p.amount)
-    )
+    sales.forEach((s) => {
+      if (!s.isPaid) {
+        balances.set(
+          s.clientId,
+          (balances.get(s.clientId) || 0) + s.totalValue
+        )
+      }
+    })
     return balances
-  }, [clients, sales, payments])
+  }, [clients, sales])
 
   const currentClientPrice = useMemo(() => {
     const client = clients.find((c) => c.id === selectedClientId)
@@ -164,7 +166,8 @@ function App() {
       clientId: selectedClientId,
       date,
       liters,
-      totalValue: liters * currentClientPrice
+      totalValue: liters * currentClientPrice,
+      isPaid: false
     }
     await firestoreService.saveSale(newSale)
     setIsSaleModalOpen(false)
@@ -194,10 +197,7 @@ function App() {
       date: currentDate,
       salesSnapshot: salesToBePaid
     }
-    await firestoreService.savePayment(
-      newPayment,
-      salesToBePaid.map((s) => s.id)
-    )
+    await firestoreService.savePayment(newPayment, salesToBePaid)
 
     setLastPaymentInfo({
       clientName: client.name,

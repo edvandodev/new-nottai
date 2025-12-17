@@ -131,7 +131,7 @@ export const firestoreService = {
     }
   },
 
-  savePayment: async (payment: Payment, saleIdsToDelete: string[]) => {
+  savePayment: async (payment: Payment, salesToMarkAsPaid: Sale[]) => {
     const { id: paymentId, ...paymentData } = payment
 
     const operations = [
@@ -140,9 +140,10 @@ export const firestoreService = {
         reference: `${PAYMENTS}/${paymentId}`,
         data: paymentData
       },
-      ...saleIdsToDelete.map((id) => ({
-        type: 'delete' as const,
-        reference: `${SALES}/${id}`
+      ...salesToMarkAsPaid.map((sale) => ({
+        type: 'update' as const,
+        reference: `${SALES}/${sale.id}`,
+        data: { isPaid: true }
       }))
     ]
 

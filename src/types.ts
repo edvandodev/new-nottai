@@ -14,6 +14,7 @@ export type Sale = {
   date: string
   liters: number
   totalValue: number
+  isPaid?: boolean
 }
 
 export type Payment = {
