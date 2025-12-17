@@ -1,0 +1,5 @@
+{
+  "name": "Nottai",
+  "description": "Aplicativo simples em modo escuro para gerenciar vendas de leite fiado, com cadastro de clientes, histórico de vendas e cálculo automático de saldos.",
+  "requestFramePermissions": []
+}
