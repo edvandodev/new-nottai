@@ -133,10 +133,14 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
   };
 
   const handleSubmit = (e: React.FormEvent) => {
+    console.log("AddClientModal: handleSubmit foi chamado!");
     e.preventDefault();
     const cleanName = name.trim();
     
-    if (!cleanName) return;
+    if (!cleanName) {
+      console.log("AddClientModal: Nome vazio, parando a submissão.");
+      return;
+    }
 
     // Validation: Check for duplicates
     const isDuplicate = existingNames.some(
@@ -145,12 +149,12 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
 
     if (isDuplicate) {
       setError('Já existe um cliente com este nome.');
+      console.log("AddClientModal: Nome duplicado, parando a submissão.");
       return;
     }
 
+    console.log("AddClientModal: Chamando onSave...");
     onSave(cleanName, phone, priceType, avatar);
-    // A linha abaixo foi removida pois o App.tsx já gerencia o fechamento do modal
-    // onClose(); 
   };
 
   const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
