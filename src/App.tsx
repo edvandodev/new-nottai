@@ -20,6 +20,8 @@ import {
 import { generateReceipt } from '@/services/pdfGenerator'
 
 function App() {
+  console.log('[DEBUG] App.tsx: Componente App renderizado.');
+
   const [activeTab, setActiveTab] = useState<TabState>('CLIENTS')
   const [clientView, setClientView] = useState<ViewState>('LIST')
 
@@ -54,6 +56,7 @@ function App() {
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false)
 
   useEffect(() => {
+    console.log('[DEBUG] App.tsx: useEffect principal executado.');
     const unsubscribeClients = firestoreService.listenToClients(setClients)
     const unsubscribeSales = firestoreService.listenToSales(setSales)
     const unsubscribePayments = firestoreService.listenToPayments(setPayments)
@@ -69,6 +72,7 @@ function App() {
     )
 
     return () => {
+      console.log('[DEBUG] App.tsx: Cleanup do useEffect principal.');
       unsubscribeClients()
       unsubscribeSales()
       unsubscribePayments()
@@ -106,7 +110,9 @@ function App() {
     priceType: PriceType,
     avatar?: string
   ) => {
+    console.log('[DEBUG] App.tsx: handleSaveClient INICIADA.');
     try {
+      console.log('[DEBUG] App.tsx: Criando objeto clientToSave...');
       const clientToSave: Client = editingClient
         ? {
             ...editingClient,
@@ -115,18 +121,24 @@ function App() {
             priceType,
             avatar: avatar || editingClient.avatar
           }
-        : { id: crypto.randomUUID(), name, phone, priceType, avatar }
+        : { id: crypto.randomUUID(), name, phone, priceType, avatar };
+      
+      console.log('[DEBUG] App.tsx: Objeto clientToSave criado:', JSON.stringify(clientToSave, null, 2));
+      console.log('[DEBUG] App.tsx: Chamando firestoreService.saveClient...');
+      
+      await firestoreService.saveClient(clientToSave);
 
-      await firestoreService.saveClient(clientToSave)
+      console.log('[DEBUG] App.tsx: firestoreService.saveClient completado com SUCESSO.');
 
       setEditingClient(null)
       setIsClientModalOpen(false)
     } catch (error) {
-      console.error('handleSaveClient: ERRO DETECTADO:', error)
+      console.error('[DEBUG] App.tsx: ERRO DETECTADO em handleSaveClient:', error)
       alert(`Ocorreu um erro ao salvar o cliente: ${error}`)
     }
   }
 
+  // ... (restante do código permanece o mesmo)
   const confirmDeleteClient = async () => {
     if (clientToDeleteId) {
       try {
