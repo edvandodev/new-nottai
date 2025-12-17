@@ -11,7 +11,7 @@ import {
   Share2,
   Tag
 } from 'lucide-react'
-import { Client, PriceType, PriceSettings } from '../types'
+import type { Client, PriceType, PriceSettings } from '@/types'
 
 type ModalProps = {
   isOpen: boolean

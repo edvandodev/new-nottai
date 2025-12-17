@@ -13,11 +13,13 @@
     "@capacitor/android": "^8.0.0",
     "@capacitor/cli": "^7.4.4",
     "@capacitor/core": "^8.0.0",
+    "@tailwindcss/vite": "^4.1.18",
     "firebase": "^12.7.0",
     "jspdf": "2.5.1",
     "lucide-react": "^0.408.0",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
