@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1018973546184",
+    "project_id": "new-nottai",
+    "storage_bucket": "new-nottai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1018973546184:android:7e6f2ef44b7bef6e14a7fd",
+        "android_client_info": {
+          "package_name": "com.nottai.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDkJKTOwN0Vmhl6ajSQAA4dSnPr-ZCfCuw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
