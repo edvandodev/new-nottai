@@ -1,6 +1,6 @@
 export type PriceType = 'STANDARD' | 'CUSTOM'
 
-export interface Client {
+export type Client = {
   id: string
   name: string
   phone: string
@@ -8,7 +8,7 @@ export interface Client {
   avatar?: string
 }
 
-export interface Sale {
+export type Sale = {
   id: string
   clientId: string
   date: string
@@ -16,7 +16,7 @@ export interface Sale {
   totalValue: number
 }
 
-export interface Payment {
+export type Payment = {
   id: string
   clientId: string
   clientName: string
@@ -25,7 +25,7 @@ export interface Payment {
   salesSnapshot?: Sale[]
 }
 
-export interface PriceSettings {
+export type PriceSettings = {
   standard: number
   custom: number
 }
@@ -38,6 +38,6 @@ export const DEFAULT_SETTINGS: PriceSettings = {
 export type ViewState = 'LIST' | 'DETAILS'
 export type TabState = 'CLIENTS' | 'PAYMENTS' | 'REPORTS' | 'SETTINGS'
 
-export interface FormErrors {
+export type FormErrors = {
   [key: string]: string
 }

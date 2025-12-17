@@ -1,15 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { firestoreService } from '@/services/firestore'
-import {
-  Client,
-  Sale,
-  Payment,
-  ViewState,
-  TabState,
-  DEFAULT_SETTINGS,
-  PriceSettings,
-  PriceType
-} from '@/types'
+import { DEFAULT_SETTINGS } from '@/types'
 import {
   AddClientModal,
   AddSaleModal,
@@ -18,9 +9,18 @@ import {
   SuccessReceiptModal
 } from '@/components/Modals'
 import { generateReceipt } from '@/services/pdfGenerator'
+import type {
+  Client,
+  Sale,
+  Payment,
+  ViewState,
+  TabState,
+  PriceSettings,
+  PriceType
+} from '@/types'
 
 function App() {
-  console.log('[DEBUG] App.tsx: Componente App renderizado.');
+  console.log('[DEBUG] App.tsx: Componente App renderizado.')
 
   const [activeTab, setActiveTab] = useState<TabState>('CLIENTS')
   const [clientView, setClientView] = useState<ViewState>('LIST')
@@ -56,23 +56,22 @@ function App() {
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false)
 
   useEffect(() => {
-    console.log('[DEBUG] App.tsx: useEffect principal executado.');
+    console.log('[DEBUG] App.tsx: useEffect principal executado.')
     const unsubscribeClients = firestoreService.listenToClients(setClients)
     const unsubscribeSales = firestoreService.listenToSales(setSales)
     const unsubscribePayments = firestoreService.listenToPayments(setPayments)
 
     const unsubscribeSettings = firestoreService.listenToPriceSettings(
       (settings) => {
-        if (settings) {
-          setPriceSettings(settings)
-          setStandardPriceInput(settings.standard.toString())
-          setCustomPriceInput(settings.custom.toString())
-        }
+        if (!settings) return
+        setPriceSettings(settings)
+        setStandardPriceInput(settings.standard.toString())
+        setCustomPriceInput(settings.custom.toString())
       }
     )
 
     return () => {
-      console.log('[DEBUG] App.tsx: Cleanup do useEffect principal.');
+      console.log('[DEBUG] App.tsx: Cleanup do useEffect principal.')
       unsubscribeClients()
       unsubscribeSales()
       unsubscribePayments()
@@ -110,9 +109,9 @@ function App() {
     priceType: PriceType,
     avatar?: string
   ) => {
-    console.log('[DEBUG] App.tsx: handleSaveClient INICIADA.');
+    console.log('[DEBUG] App.tsx: handleSaveClient INICIADA.')
     try {
-      console.log('[DEBUG] App.tsx: Criando objeto clientToSave...');
+      console.log('[DEBUG] App.tsx: Criando objeto clientToSave...')
       const clientToSave: Client = editingClient
         ? {
             ...editingClient,
@@ -121,37 +120,43 @@ function App() {
             priceType,
             avatar: avatar || editingClient.avatar
           }
-        : { id: crypto.randomUUID(), name, phone, priceType, avatar };
-      
-      console.log('[DEBUG] App.tsx: Objeto clientToSave criado:', JSON.stringify(clientToSave, null, 2));
-      console.log('[DEBUG] App.tsx: Chamando firestoreService.saveClient...');
-      
-      await firestoreService.saveClient(clientToSave);
+        : { id: crypto.randomUUID(), name, phone, priceType, avatar }
 
-      console.log('[DEBUG] App.tsx: firestoreService.saveClient completado com SUCESSO.');
+      console.log(
+        '[DEBUG] App.tsx: Objeto clientToSave criado:',
+        JSON.stringify(clientToSave, null, 2)
+      )
+      console.log('[DEBUG] App.tsx: Chamando firestoreService.saveClient...')
+
+      await firestoreService.saveClient(clientToSave)
+
+      console.log(
+        '[DEBUG] App.tsx: firestoreService.saveClient completado com SUCESSO.'
+      )
 
       setEditingClient(null)
       setIsClientModalOpen(false)
     } catch (error) {
-      console.error('[DEBUG] App.tsx: ERRO DETECTADO em handleSaveClient:', error)
+      console.error(
+        '[DEBUG] App.tsx: ERRO DETECTADO em handleSaveClient:',
+        error
+      )
       alert(`Ocorreu um erro ao salvar o cliente: ${error}`)
     }
   }
 
-  // ... (restante do código permanece o mesmo)
   const confirmDeleteClient = async () => {
-    if (clientToDeleteId) {
-      try {
-        await firestoreService.deleteClient(clientToDeleteId)
-        if (selectedClientId === clientToDeleteId) {
-          setClientView('LIST')
-          setSelectedClientId(null)
-        }
-        setClientToDeleteId(null)
-      } catch (error) {
-        console.error('Erro ao deletar cliente:', error)
-        alert(`Ocorreu um erro ao deletar o cliente: ${error}`)
+    if (!clientToDeleteId) return
+    try {
+      await firestoreService.deleteClient(clientToDeleteId)
+      if (selectedClientId === clientToDeleteId) {
+        setClientView('LIST')
+        setSelectedClientId(null)
       }
+      setClientToDeleteId(null)
+    } catch (error) {
+      console.error('Erro ao deletar cliente:', error)
+      alert(`Ocorreu um erro ao deletar o cliente: ${error}`)
     }
   }
 
@@ -167,7 +172,7 @@ function App() {
         totalValue: liters * priceToUse
       }
       await firestoreService.saveSale(newSale)
-      setIsSaleModalOpen(false) // Fechar modal no sucesso
+      setIsSaleModalOpen(false)
     } catch (error) {
       console.error('Erro ao adicionar venda:', error)
       alert(`Ocorreu um erro ao adicionar a venda: ${error}`)
@@ -175,14 +180,13 @@ function App() {
   }
 
   const confirmDeleteSale = async () => {
-    if (saleToDeleteId) {
-      try {
-        await firestoreService.deleteSale(saleToDeleteId)
-        setSaleToDeleteId(null)
-      } catch (error) {
-        console.error('Erro ao deletar venda:', error)
-        alert(`Ocorreu um erro ao deletar a venda: ${error}`)
-      }
+    if (!saleToDeleteId) return
+    try {
+      await firestoreService.deleteSale(saleToDeleteId)
+      setSaleToDeleteId(null)
+    } catch (error) {
+      console.error('Erro ao deletar venda:', error)
+      alert(`Ocorreu um erro ao deletar a venda: ${error}`)
     }
   }
 
@@ -250,40 +254,30 @@ function App() {
   }
 
   const confirmDeletePayment = async () => {
-    if (paymentToDeleteId) {
-      try {
-        await firestoreService.deletePayment(paymentToDeleteId)
-        setPaymentToDeleteId(null)
-      } catch (error) {
-        console.error('Erro ao deletar pagamento:', error)
-        alert(`Ocorreu um erro ao deletar o pagamento: ${error}`)
-      }
+    if (!paymentToDeleteId) return
+    try {
+      await firestoreService.deletePayment(paymentToDeleteId)
+      setPaymentToDeleteId(null)
+    } catch (error) {
+      console.error('Erro ao deletar pagamento:', error)
+      alert(`Ocorreu um erro ao deletar o pagamento: ${error}`)
     }
   }
 
   return (
     <div className='min-h-screen bg-slate-950 text-slate-100 font-sans pb-32'>
-      {/* Header */}
       {!(activeTab === 'CLIENTS' && clientView === 'DETAILS') && (
-        <header className='sticky top-0 z-40 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 shadow-md'>
-          {/* ... */}
-        </header>
+        <header className='sticky top-0 z-40 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 shadow-md'></header>
       )}
 
       <main
         className={`max-w-2xl mx-auto ${
           activeTab === 'CLIENTS' && clientView === 'DETAILS' ? 'p-0' : 'p-4'
         }`}
-      >
-        {/* ... */}
-      </main>
+      ></main>
 
-      {/* Bottom Navigation Bar */}
-      <div className='fixed bottom-0 left-0 right-0 z-40 bg-slate-900 border-t border-slate-800 rounded-t-[2.5rem] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.5)] px-2 pb-6 pt-2'>
-        {/* ... */}
-      </div>
+      <div className='fixed bottom-0 left-0 right-0 z-40 bg-slate-900 border-t border-slate-800 rounded-t-[2.5rem] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.5)] px-2 pb-6 pt-2'></div>
 
-      {/* Modals */}
       <AddClientModal
         isOpen={isClientModalOpen}
         onClose={() => setIsClientModalOpen(false)}
@@ -344,6 +338,5 @@ function App() {
     </div>
   )
 }
-
 
 export default App

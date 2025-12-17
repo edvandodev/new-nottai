@@ -1,5 +1,5 @@
 import { FirebaseFirestore } from '@capacitor-firebase/firestore'
-import { Client, Sale, Payment, PriceSettings } from '../types'
+import type { Client, Sale, Payment, PriceSettings } from '@/types'
 
 const CLIENTS = 'clients'
 const SALES = 'sales'

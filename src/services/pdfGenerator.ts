@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf'
-import { Sale } from '../types'
+import type { Sale } from '@/types'
 
 export const generateReceipt = (
   clientName: string,

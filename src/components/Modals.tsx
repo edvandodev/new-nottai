@@ -13,14 +13,14 @@ import {
 } from 'lucide-react'
 import { Client, PriceType, PriceSettings } from '../types'
 
-interface ModalProps {
+type ModalProps = {
   isOpen: boolean
   onClose: () => void
   title: string
   children: React.ReactNode
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
   if (!isOpen) return null
 
   return (
@@ -41,9 +41,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   )
 }
 
-// --- Confirm Action Modal ---
-
-interface ConfirmModalProps {
+type ConfirmModalProps = {
   isOpen: boolean
   onClose: () => void
   onConfirm: () => void
@@ -54,7 +52,7 @@ interface ConfirmModalProps {
   isDanger?: boolean
 }
 
-export const ConfirmModal: React.FC<ConfirmModalProps> = ({
+export const ConfirmModal = ({
   isOpen,
   onClose,
   onConfirm,
@@ -63,7 +61,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   confirmText = 'Confirmar',
   cancelText = 'Cancelar',
   isDanger = false
-}) => {
+}: ConfirmModalProps) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <div className='space-y-6'>
@@ -105,9 +103,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   )
 }
 
-// --- Add/Edit Client Modal ---
-
-interface AddClientModalProps {
+type AddClientModalProps = {
   isOpen: boolean
   onClose: () => void
   onSave: (
@@ -121,14 +117,14 @@ interface AddClientModalProps {
   priceSettings: PriceSettings
 }
 
-export const AddClientModal: React.FC<AddClientModalProps> = ({
+export const AddClientModal = ({
   isOpen,
   onClose,
   onSave,
   initialData,
   existingNames,
   priceSettings
-}) => {
+}: AddClientModalProps) => {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [priceType, setPriceType] = useState<PriceType>('STANDARD')
@@ -327,21 +323,19 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
   )
 }
 
-// --- Add Sale Modal ---
-
-interface AddSaleModalProps {
+type AddSaleModalProps = {
   isOpen: boolean
   onClose: () => void
   onSave: (liters: number, date: string) => void
   currentPrice: number
 }
 
-export const AddSaleModal: React.FC<AddSaleModalProps> = ({
+export const AddSaleModal = ({
   isOpen,
   onClose,
   onSave,
   currentPrice
-}) => {
+}: AddSaleModalProps) => {
   const [liters, setLiters] = useState('1')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
 
@@ -468,9 +462,7 @@ export const AddSaleModal: React.FC<AddSaleModalProps> = ({
   )
 }
 
-// --- Pay Debt Modal ---
-
-interface PayDebtModalProps {
+type PayDebtModalProps = {
   isOpen: boolean
   onClose: () => void
   onConfirm: () => void
@@ -478,13 +470,13 @@ interface PayDebtModalProps {
   totalValue: number
 }
 
-export const PayDebtModal: React.FC<PayDebtModalProps> = ({
+export const PayDebtModal = ({
   isOpen,
   onClose,
   onConfirm,
   clientName,
   totalValue
-}) => {
+}: PayDebtModalProps) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title='Confirmar Pagamento'>
       <div className='text-center space-y-6'>
@@ -536,21 +528,19 @@ export const PayDebtModal: React.FC<PayDebtModalProps> = ({
   )
 }
 
-// --- Success Receipt Modal ---
-
-interface SuccessReceiptModalProps {
+type SuccessReceiptModalProps = {
   isOpen: boolean
   onClose: () => void
   onGenerate: () => void
   clientName: string
 }
 
-export const SuccessReceiptModal: React.FC<SuccessReceiptModalProps> = ({
+export const SuccessReceiptModal = ({
   isOpen,
   onClose,
   onGenerate,
   clientName
-}) => {
+}: SuccessReceiptModalProps) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title='Pagamento Registrado!'>
       <div className='text-center space-y-6'>
