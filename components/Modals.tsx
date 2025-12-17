@@ -262,7 +262,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
           </button>
           <button
             type="button"
-            onClick={handleSubmit}
+            onClick={onClose} // <<<<<<< AQUI ESTÁ A MUDANÇA
             className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-500 transition-colors shadow-lg shadow-blue-900/50"
           >
             Salvar
