@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, ChevronLeft, Trash2, Milk, User, Phone, Droplets, DollarSign, Wallet, MessageCircle, Pencil, Settings as SettingsIcon, Users, CheckCircle, Search, X, ChevronDown, ChevronUp, FileText, Download, Tag, BarChart3, Calendar, TrendingUp } from 'lucide-react';
 import { Client, Sale, Payment, ViewState, TabState, DEFAULT_SETTINGS, PriceSettings, PriceType } from './types';
-import { firestoreService } from './services/firestore'; // <<< MUDANÇA
+import { firestoreService } from './services/firestore';
 import { AddClientModal, AddSaleModal, PayDebtModal, ConfirmModal, SuccessReceiptModal } from './components/Modals';
 import { generateReceipt } from './services/pdfGenerator';
 
@@ -62,9 +62,7 @@ function App() {
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
-  // --- MUDANÇA: Carregamento de dados com Firebase ---
   useEffect(() => {
-    // Escuta por atualizações em tempo real e atualiza o estado
     const unsubscribeClients = firestoreService.listenToClients(setClients);
     const unsubscribeSales = firestoreService.listenToSales(setSales);
     const unsubscribePayments = firestoreService.listenToPayments(setPayments);
@@ -77,18 +75,14 @@ function App() {
       }
     });
 
-    // Função de limpeza para parar de escutar quando o componente for desmontado
     return () => {
       unsubscribeClients();
       unsubscribeSales();
       unsubscribePayments();
       unsubscribeSettings();
     };
-  }, []); // Array vazio garante que isso rode apenas uma vez
+  }, []);
 
-  // --- REMOVIDO: useEffects de persistência com localStorage ---
-
-  // Derived State (lógica permanece a mesma)
   const clientBalances = useMemo(() => {
     const balances: { [key: string]: number } = {};
     clients.forEach(c => balances[c.id] = 0);
@@ -193,7 +187,7 @@ function App() {
     return Array.from(years).sort((a, b) => b - a);
   }, [sales, payments]);
 
-  // --- Handlers (AINDA USAM LÓGICA ANTIGA - SERÃO MUDADOS NA PARTE 2) ---
+  // --- Handlers ---
 
   const handleTabChange = (tab: TabState) => {
     setActiveTab(tab);
@@ -229,84 +223,99 @@ function App() {
     setIsClientModalOpen(true);
   };
 
-  const handleSaveClient = (name: string, phone: string, priceType: PriceType, avatar?: string) => {
-    if (editingClient) {
-      setClients(prev => prev.map(c => 
-        c.id === editingClient.id ? { ...c, name, phone, priceType, avatar: avatar || c.avatar } : c
-      ));
-    } else {
-      const newClient: Client = {
-        id: crypto.randomUUID(),
-        name,
-        phone,
-        priceType,
-        avatar
-      };
-      setClients(prev => [...prev, newClient]);
+  const handleSaveClient = async (name: string, phone: string, priceType: PriceType, avatar?: string) => {
+    try {
+      const clientToSave: Client = editingClient 
+        ? { ...editingClient, name, phone, priceType, avatar: avatar || editingClient.avatar }
+        : { id: crypto.randomUUID(), name, phone, priceType, avatar };
+      
+      await firestoreService.saveClient(clientToSave);
+      setEditingClient(null);
+    } catch (error) {
+      console.error("Erro ao salvar cliente:", error);
+      alert(`Ocorreu um erro ao salvar o cliente: ${error}`);
     }
-    setEditingClient(null);
   };
 
   const handleDeleteClient = (id: string) => setClientToDeleteId(id);
 
-  const confirmDeleteClient = () => {
+  const confirmDeleteClient = async () => {
     if (clientToDeleteId) {
-      setClients(prev => prev.filter(c => c.id !== clientToDeleteId));
-      setSales(prev => prev.filter(s => s.clientId !== clientToDeleteId));
-      if (selectedClientId === clientToDeleteId) {
-        setClientView('LIST');
-        setSelectedClientId(null);
+      try {
+        await firestoreService.deleteClient(clientToDeleteId);
+        if (selectedClientId === clientToDeleteId) {
+          setClientView('LIST');
+          setSelectedClientId(null);
+        }
+        setClientToDeleteId(null);
+      } catch (error) {
+        console.error("Erro ao deletar cliente:", error);
+        alert(`Ocorreu um erro ao deletar o cliente: ${error}`);
       }
-      setClientToDeleteId(null);
     }
   };
 
-  const handleAddSale = (liters: number, date: string) => {
+  const handleAddSale = async (liters: number, date: string) => {
     if (!selectedClientId) return;
-    const priceToUse = currentClientPrice;
-    const newSale: Sale = {
-      id: crypto.randomUUID(),
-      clientId: selectedClientId,
-      date,
-      liters,
-      totalValue: liters * priceToUse
-    };
-    setSales(prev => [...prev, newSale]);
+    try {
+      const priceToUse = currentClientPrice;
+      const newSale: Sale = {
+        id: crypto.randomUUID(),
+        clientId: selectedClientId,
+        date,
+        liters,
+        totalValue: liters * priceToUse
+      };
+      await firestoreService.saveSale(newSale);
+    } catch (error) {
+      console.error("Erro ao adicionar venda:", error);
+      alert(`Ocorreu um erro ao adicionar a venda: ${error}`);
+    }
   };
 
   const handleDeleteSale = (id: string) => setSaleToDeleteId(id);
 
-  const confirmDeleteSale = () => {
+  const confirmDeleteSale = async () => {
     if (saleToDeleteId) {
-      setSales(prev => prev.filter(s => s.id !== saleToDeleteId));
-      setSaleToDeleteId(null);
+      try {
+        await firestoreService.deleteSale(saleToDeleteId);
+        setSaleToDeleteId(null);
+      } catch (error) {
+        console.error("Erro ao deletar venda:", error);
+        alert(`Ocorreu um erro ao deletar a venda: ${error}`);
+      }
     }
   };
 
-  const handlePayDebt = () => {
+  const handlePayDebt = async () => {
     if (!selectedClientId) return;
     const amount = clientBalances[selectedClientId];
     const client = clients.find(c => c.id === selectedClientId);
     if (amount > 0 && client) {
-      const currentDate = new Date().toISOString();
-      const salesToBePaid = sales.filter(s => s.clientId === selectedClientId);
-      const newPayment: Payment = {
-        id: crypto.randomUUID(),
-        clientId: selectedClientId,
-        clientName: client.name,
-        amount: amount,
-        date: currentDate,
-        salesSnapshot: salesToBePaid
-      };
-      setPayments(prev => [newPayment, ...prev]);
-      setSales(prev => prev.filter(s => s.clientId !== selectedClientId));
-      setLastPaymentInfo({
-        clientName: client.name,
-        amount: amount,
-        sales: salesToBePaid,
-        date: currentDate
-      });
-      setIsReceiptModalOpen(true);
+      try {
+        const currentDate = new Date().toISOString();
+        const salesToBePaid = sales.filter(s => s.clientId === selectedClientId);
+        const newPayment: Payment = {
+          id: crypto.randomUUID(),
+          clientId: selectedClientId,
+          clientName: client.name,
+          amount: amount,
+          date: currentDate,
+          salesSnapshot: salesToBePaid
+        };
+        await firestoreService.savePayment(newPayment, salesToBePaid.map(s => s.id));
+        
+        setLastPaymentInfo({
+          clientName: client.name,
+          amount: amount,
+          sales: salesToBePaid,
+          date: currentDate
+        });
+        setIsReceiptModalOpen(true);
+      } catch (error) {
+        console.error("Erro ao registrar pagamento:", error);
+        alert(`Ocorreu um erro ao registrar o pagamento: ${error}`);
+      }
     }
     setIsPayModalOpen(false);
   };
@@ -331,19 +340,30 @@ function App() {
     setPaymentToDeleteId(id);
   };
   
-  const confirmDeletePayment = () => {
+  const confirmDeletePayment = async () => {
     if (paymentToDeleteId) {
-      setPayments(prev => prev.filter(p => p.id !== paymentToDeleteId));
-      setPaymentToDeleteId(null);
+      try {
+        await firestoreService.deletePayment(paymentToDeleteId);
+        setPaymentToDeleteId(null);
+      } catch (error) {
+        console.error("Erro ao deletar pagamento:", error);
+        alert(`Ocorreu um erro ao deletar o pagamento: ${error}`);
+      }
     }
   };
 
-  const handleSavePrices = () => {
+  const handleSavePrices = async () => {
     const std = parseFloat(standardPriceInput.replace(',', '.'));
     const cst = parseFloat(customPriceInput.replace(',', '.'));
     if (!isNaN(std) && std >= 0 && !isNaN(cst) && cst >= 0) {
-      setPriceSettings({ standard: std, custom: cst });
-      alert('Preços atualizados com sucesso!');
+      try {
+        const newSettings = { standard: std, custom: cst };
+        await firestoreService.savePriceSettings(newSettings);
+        alert('Preços atualizados com sucesso!');
+      } catch (error) {
+        console.error("Erro ao salvar preços:", error);
+        alert(`Ocorreu um erro ao salvar os preços: ${error}`);
+      }
     } else {
       setStandardPriceInput(priceSettings.standard.toString());
       setCustomPriceInput(priceSettings.custom.toString());
@@ -411,7 +431,7 @@ function App() {
       />
 
       <SuccessReceiptModal 
-        isOpen={isReceiptModalOpen} 
+        isOpen={isReceiptModalOpen} igh
         onClose={() => setIsReceiptModalOpen(false)} 
         onGenerate={() => handleGenerateReceipt()}
         clientName={lastPaymentInfo?.clientName || ''}
@@ -422,7 +442,7 @@ function App() {
         onClose={() => setClientToDeleteId(null)}
         onConfirm={confirmDeleteClient}
         title="Excluir Cliente"
-        message="Tem certeza que deseja excluir este cliente? Todo o histórico de vendas será perdido."
+        message="Tem certeza que deseja excluir este cliente? Todo o histórico de vendas e pagamentos associados serão perdidos permanentemente."
         isDanger
       />
 
@@ -440,7 +460,7 @@ function App() {
         onClose={() => setPaymentToDeleteId(null)}
         onConfirm={confirmDeletePayment}
         title="Excluir Pagamento"
-        message="Deseja remover este registro de pagamento do histórico?"
+        message="Deseja remover este registro de pagamento do histórico? A dívida associada NÃO será restaurada automaticamente."
         isDanger
       />
     </div>
@@ -448,3 +468,4 @@ function App() {
 }
 
 export default App;
+ok,
