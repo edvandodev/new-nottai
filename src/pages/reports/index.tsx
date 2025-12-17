@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react'
-import type { Payment, Sale } from '@/types'
 import { BarChart3, Calendar, DollarSign, Droplets } from 'lucide-react'
+import type { Payment, Sale } from '@/types'
 
-interface ReportsPageProps {
+type ReportsPageProps = {
   sales: Sale[]
   payments: Payment[]
 }

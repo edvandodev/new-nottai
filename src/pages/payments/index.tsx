@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react'
-import type { Payment, Sale } from '@/types'
 import {
   CheckCircle,
   ChevronDown,
@@ -8,8 +7,9 @@ import {
   Trash2,
   Wallet
 } from 'lucide-react'
+import type { Payment, Sale } from '@/types'
 
-interface PaymentsPageProps {
+type PaymentsPageProps = {
   payments: Payment[]
   onGenerateReceipt: (payment: Payment) => void
   onDeletePayment: (paymentId: string) => void

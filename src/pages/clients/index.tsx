@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import type { Client, Payment, PriceSettings, Sale } from '@/types'
 import {
   CheckCircle,
   ChevronLeft,
@@ -15,8 +14,9 @@ import {
   Wallet,
   X
 } from 'lucide-react'
+import type { Client, Payment, PriceSettings, Sale } from '@/types'
 
-interface ClientsPageProps {
+type ClientsPageProps = {
   clients: Client[]
   sales: Sale[]
   payments: Payment[]

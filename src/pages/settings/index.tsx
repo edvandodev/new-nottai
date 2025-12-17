@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import type { PriceSettings } from '@/types'
 import { DollarSign, Tag } from 'lucide-react'
+import type { PriceSettings } from '@/types'
 
-interface SettingsPageProps {
+type SettingsPageProps = {
   priceSettings: PriceSettings
   onSavePriceSettings: (next: PriceSettings) => void | Promise<void>
   versionLabel?: string
