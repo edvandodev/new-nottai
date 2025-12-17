@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, ChevronLeft, Trash2, Milk, User, Phone, Droplets, DollarSign, Wallet, MessageCircle, Pencil, Settings as SettingsIcon, Users, CheckCircle, Search, X, ChevronDown, ChevronUp, FileText, Download, Tag, BarChart3, Calendar, TrendingUp } from 'lucide-react';
 import { Client, Sale, Payment, ViewState, TabState, DEFAULT_SETTINGS, PriceSettings, PriceType } from './types';
@@ -8,10 +7,10 @@ import { generateReceipt } from './services/pdfGenerator';
 
 // Custom Payment Icon
 const CustomPaymentIcon = ({ size = 20, className = "", strokeWidth = 2 }: { size?: number, className?: string, strokeWidth?: number }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 512 512" 
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 512 512"
     xmlns="http://www.w3.org/2000/svg"
     className={className}
     fill="currentColor"
@@ -25,7 +24,7 @@ function App() {
   // Navigation State
   const [activeTab, setActiveTab] = useState<TabState>('CLIENTS');
   const [clientView, setClientView] = useState<ViewState>('LIST');
-  
+
   // Data State
   const [clients, setClients] = useState<Client[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -42,20 +41,20 @@ function App() {
   // Selection State
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [expandedPaymentId, setExpandedPaymentId] = useState<string | null>(null);
-  
+
   // Edit State
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [standardPriceInput, setStandardPriceInput] = useState('');
   const [customPriceInput, setCustomPriceInput] = useState('');
-  
+
   // Receipt State
   const [lastPaymentInfo, setLastPaymentInfo] = useState<{ clientName: string, amount: number, sales: Sale[], date: string } | null>(null);
-  
+
   // Delete State
   const [clientToDeleteId, setClientToDeleteId] = useState<string | null>(null);
   const [saleToDeleteId, setSaleToDeleteId] = useState<string | null>(null);
   const [paymentToDeleteId, setPaymentToDeleteId] = useState<string | null>(null);
-  
+
   // Modals
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
@@ -66,7 +65,7 @@ function App() {
     const unsubscribeClients = firestoreService.listenToClients(setClients);
     const unsubscribeSales = firestoreService.listenToSales(setSales);
     const unsubscribePayments = firestoreService.listenToPayments(setPayments);
-    
+
     const unsubscribeSettings = firestoreService.listenToPriceSettings((settings) => {
       if (settings) {
         setPriceSettings(settings);
@@ -86,7 +85,7 @@ function App() {
   const clientBalances = useMemo(() => {
     const balances: { [key: string]: number } = {};
     clients.forEach(c => balances[c.id] = 0);
-    
+
     sales.forEach(sale => {
       if (balances[sale.clientId] !== undefined) {
         balances[sale.clientId] += sale.totalValue;
@@ -119,8 +118,8 @@ function App() {
     let result = [...clients];
     if (searchQuery.trim()) {
       const lowerQuery = searchQuery.toLowerCase();
-      result = result.filter(client => 
-        client.name.toLowerCase().includes(lowerQuery) || 
+      result = result.filter(client =>
+        client.name.toLowerCase().includes(lowerQuery) ||
         client.phone.includes(lowerQuery)
       );
     }
@@ -134,8 +133,8 @@ function App() {
     });
   }, [clients, searchQuery, lastInteractions]);
 
-  const selectedClient = useMemo(() => 
-    clients.find(c => c.id === selectedClientId), 
+  const selectedClient = useMemo(() =>
+    clients.find(c => c.id === selectedClientId),
   [clients, selectedClientId]);
 
   const currentClientPrice = useMemo(() => {
@@ -143,11 +142,11 @@ function App() {
     return selectedClient.priceType === 'CUSTOM' ? priceSettings.custom : priceSettings.standard;
   }, [selectedClient, priceSettings]);
 
-  const selectedClientSales = useMemo(() => 
+  const selectedClientSales = useMemo(() =>
     sales.filter(s => s.clientId === selectedClientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
   [sales, selectedClientId]);
 
-  const sortedPayments = useMemo(() => 
+  const sortedPayments = useMemo(() =>
     [...payments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
   [payments]);
 
@@ -194,7 +193,7 @@ function App() {
     if (tab !== 'CLIENTS') {
         setSelectedClientId(null);
         setClientView('LIST');
-        setSearchQuery(''); 
+        setSearchQuery('');
     }
   };
 
@@ -225,12 +224,13 @@ function App() {
 
   const handleSaveClient = async (name: string, phone: string, priceType: PriceType, avatar?: string) => {
     try {
-      const clientToSave: Client = editingClient 
+      const clientToSave: Client = editingClient
         ? { ...editingClient, name, phone, priceType, avatar: avatar || editingClient.avatar }
         : { id: crypto.randomUUID(), name, phone, priceType, avatar };
-      
+
       await firestoreService.saveClient(clientToSave);
       setEditingClient(null);
+      setIsClientModalOpen(false); // Fechar modal no sucesso
     } catch (error) {
       console.error("Erro ao salvar cliente:", error);
       alert(`Ocorreu um erro ao salvar o cliente: ${error}`);
@@ -267,6 +267,7 @@ function App() {
         totalValue: liters * priceToUse
       };
       await firestoreService.saveSale(newSale);
+      setIsSaleModalOpen(false); // Fechar modal no sucesso
     } catch (error) {
       console.error("Erro ao adicionar venda:", error);
       alert(`Ocorreu um erro ao adicionar a venda: ${error}`);
@@ -304,7 +305,7 @@ function App() {
           salesSnapshot: salesToBePaid
         };
         await firestoreService.savePayment(newPayment, salesToBePaid.map(s => s.id));
-        
+
         setLastPaymentInfo({
           clientName: client.name,
           amount: amount,
@@ -339,7 +340,7 @@ function App() {
     e.stopPropagation();
     setPaymentToDeleteId(id);
   };
-  
+
   const confirmDeletePayment = async () => {
     if (paymentToDeleteId) {
       try {
@@ -386,11 +387,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-32">
-      
-      {/* ... (Todo o JSX a partir daqui permanece o mesmo) ... */}
 
-      {/* Header */}
-      {!(activeTab === 'CLIENTS' && clientView === 'DETAILS') && (
+      {/* ... (Todo o JSX a partir daqui permanece o mesmo, você pode colar o seu JSX aqui) ... */}
+       {/* Header */}
+       {!(activeTab === 'CLIENTS' && clientView === 'DETAILS') && (
         <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 shadow-md">
           {/* ... */}
         </header>
@@ -406,33 +406,33 @@ function App() {
       </div>
 
       {/* Modals */}
-      <AddClientModal 
-        isOpen={isClientModalOpen} 
-        onClose={() => setIsClientModalOpen(false)} 
+      <AddClientModal
+        isOpen={isClientModalOpen}
+        onClose={() => setIsClientModalOpen(false)}
         onSave={handleSaveClient}
         initialData={editingClient}
         existingNames={clients.map(c => c.name)}
         priceSettings={priceSettings}
       />
-      
-      <AddSaleModal 
-        isOpen={isSaleModalOpen} 
-        onClose={() => setIsSaleModalOpen(false)} 
+
+      <AddSaleModal
+        isOpen={isSaleModalOpen}
+        onClose={() => setIsSaleModalOpen(false)}
         onSave={handleAddSale}
         currentPrice={currentClientPrice}
       />
 
-      <PayDebtModal 
-        isOpen={isPayModalOpen} 
-        onClose={() => setIsPayModalOpen(false)} 
+      <PayDebtModal
+        isOpen={isPayModalOpen}
+        onClose={() => setIsPayModalOpen(false)}
         onConfirm={handlePayDebt}
         clientName={selectedClient?.name || ''}
         totalValue={selectedClient ? clientBalances[selectedClient.id] : 0}
       />
 
-      <SuccessReceiptModal 
-        isOpen={isReceiptModalOpen} igh
-        onClose={() => setIsReceiptModalOpen(false)} 
+      <SuccessReceiptModal
+        isOpen={isReceiptModalOpen}
+        onClose={() => setIsReceiptModalOpen(false)}
         onGenerate={() => handleGenerateReceipt()}
         clientName={lastPaymentInfo?.clientName || ''}
       />
@@ -442,7 +442,7 @@ function App() {
         onClose={() => setClientToDeleteId(null)}
         onConfirm={confirmDeleteClient}
         title="Excluir Cliente"
-        message="Tem certeza que deseja excluir este cliente? Todo o histórico de vendas e pagamentos associados serão perdidos permanentemente."
+        message="Tem certeza que deseja excluir este cliente? Todo o histórico de vendas será perdido."
         isDanger
       />
 
@@ -460,12 +460,12 @@ function App() {
         onClose={() => setPaymentToDeleteId(null)}
         onConfirm={confirmDeletePayment}
         title="Excluir Pagamento"
-        message="Deseja remover este registro de pagamento do histórico? A dívida associada NÃO será restaurada automaticamente."
+        message="Deseja remover este registro de pagamento do histórico?"
         isDanger
       />
+
     </div>
   );
 }
 
 export default App;
-ok,
