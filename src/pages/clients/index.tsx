@@ -108,6 +108,13 @@ export function ClientsPage({
     [clients, selectedClientId]
   )
 
+  useEffect(() => {
+    if (selectedClientId && !selectedClient) {
+      setSelectedClientId(null)
+      setView('LIST')
+    }
+  }, [selectedClientId, selectedClient])
+
   const selectedClientHistory = useMemo(() => {
     if (!selectedClientId)
       return [] as Array<
