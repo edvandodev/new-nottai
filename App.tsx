@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, ChevronLeft, Trash2, Milk, User, Phone, Droplets, DollarSign, Wallet, MessageCircle, Pencil, Settings as SettingsIcon, Users, CheckCircle, Search, X, ChevronDown, ChevronUp, FileText, Download, Tag, BarChart3, Calendar, TrendingUp } from 'lucide-react';
 import { Client, Sale, Payment, ViewState, TabState, DEFAULT_SETTINGS, PriceSettings, PriceType } from './types';
@@ -223,6 +224,7 @@ function App() {
   };
 
   const handleSaveClient = async (name: string, phone: string, priceType: PriceType, avatar?: string) => {
+    alert('Função handleSaveClient foi chamada!'); // <<< TESTE DE DEPURACAO
     try {
       const clientToSave: Client = editingClient
         ? { ...editingClient, name, phone, priceType, avatar: avatar || editingClient.avatar }
