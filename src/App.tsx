@@ -9,15 +9,15 @@ import {
   DEFAULT_SETTINGS,
   PriceSettings,
   PriceType
-} from './types'
+} from '@/types'
 import {
   AddClientModal,
   AddSaleModal,
   PayDebtModal,
   ConfirmModal,
   SuccessReceiptModal
-} from './components/Modals'
-import { generateReceipt } from './services/pdfGenerator'
+} from '@/components/Modals'
+import { generateReceipt } from '@/services/pdfGenerator'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabState>('CLIENTS')

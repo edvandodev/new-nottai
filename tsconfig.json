@@ -18,7 +18,6 @@
     "moduleDetection": "force",
     "allowJs": true,
     "jsx": "react-jsx",
-    // CORREÇÃO: Adicionando baseUrl e ajustando o alias.
     "baseUrl": ".",
     "paths": {
       "@/*": [
