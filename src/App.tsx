@@ -20,8 +20,6 @@ import {
 import { generateReceipt } from '@/services/pdfGenerator'
 
 function App() {
-  console.log('[DEBUG] App.tsx: Componente App renderizado.');
-
   const [activeTab, setActiveTab] = useState<TabState>('CLIENTS')
   const [clientView, setClientView] = useState<ViewState>('LIST')
 
@@ -56,7 +54,6 @@ function App() {
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false)
 
   useEffect(() => {
-    console.log('[DEBUG] App.tsx: useEffect principal executado.');
     const unsubscribeClients = firestoreService.listenToClients(setClients)
     const unsubscribeSales = firestoreService.listenToSales(setSales)
     const unsubscribePayments = firestoreService.listenToPayments(setPayments)
@@ -72,7 +69,6 @@ function App() {
     )
 
     return () => {
-      console.log('[DEBUG] App.tsx: Cleanup do useEffect principal.');
       unsubscribeClients()
       unsubscribeSales()
       unsubscribePayments()
@@ -110,9 +106,7 @@ function App() {
     priceType: PriceType,
     avatar?: string
   ) => {
-    console.log('[DEBUG] App.tsx: handleSaveClient INICIADA.');
     try {
-      console.log('[DEBUG] App.tsx: Criando objeto clientToSave...');
       const clientToSave: Client = editingClient
         ? {
             ...editingClient,
@@ -123,22 +117,16 @@ function App() {
           }
         : { id: crypto.randomUUID(), name, phone, priceType, avatar };
       
-      console.log('[DEBUG] App.tsx: Objeto clientToSave criado:', JSON.stringify(clientToSave, null, 2));
-      console.log('[DEBUG] App.tsx: Chamando firestoreService.saveClient...');
-      
       await firestoreService.saveClient(clientToSave);
-
-      console.log('[DEBUG] App.tsx: firestoreService.saveClient completado com SUCESSO.');
 
       setEditingClient(null)
       setIsClientModalOpen(false)
     } catch (error) {
-      console.error('[DEBUG] App.tsx: ERRO DETECTADO em handleSaveClient:', error)
-      alert(`Ocorreu um erro ao salvar o cliente: ${error}`)
+      console.error('Erro ao salvar o cliente:', error)
+      alert('Ocorreu um erro inesperado ao salvar o cliente. Por favor, tente novamente.')
     }
   }
 
-  // ... (restante do código permanece o mesmo)
   const confirmDeleteClient = async () => {
     if (clientToDeleteId) {
       try {
@@ -150,7 +138,7 @@ function App() {
         setClientToDeleteId(null)
       } catch (error) {
         console.error('Erro ao deletar cliente:', error)
-        alert(`Ocorreu um erro ao deletar o cliente: ${error}`)
+        alert('Ocorreu um erro inesperado ao deletar o cliente. Por favor, tente novamente.')
       }
     }
   }
@@ -167,10 +155,10 @@ function App() {
         totalValue: liters * priceToUse
       }
       await firestoreService.saveSale(newSale)
-      setIsSaleModalOpen(false) // Fechar modal no sucesso
+      setIsSaleModalOpen(false)
     } catch (error) {
       console.error('Erro ao adicionar venda:', error)
-      alert(`Ocorreu um erro ao adicionar a venda: ${error}`)
+      alert('Ocorreu um erro inesperado ao adicionar a venda. Por favor, tente novamente.')
     }
   }
 
@@ -181,7 +169,7 @@ function App() {
         setSaleToDeleteId(null)
       } catch (error) {
         console.error('Erro ao deletar venda:', error)
-        alert(`Ocorreu um erro ao deletar a venda: ${error}`)
+        alert('Ocorreu um erro inesperado ao deletar a venda. Por favor, tente novamente.')
       }
     }
   }
@@ -218,7 +206,7 @@ function App() {
         setIsReceiptModalOpen(true)
       } catch (error) {
         console.error('Erro ao registrar pagamento:', error)
-        alert(`Ocorreu um erro ao registrar o pagamento: ${error}`)
+        alert('Ocorreu um erro inesperado ao registrar o pagamento. Por favor, tente novamente.')
       }
     }
     setIsPayModalOpen(false)
@@ -256,7 +244,7 @@ function App() {
         setPaymentToDeleteId(null)
       } catch (error) {
         console.error('Erro ao deletar pagamento:', error)
-        alert(`Ocorreu um erro ao deletar o pagamento: ${error}`)
+        alert('Ocorreu um erro inesperado ao deletar o pagamento. Por favor, tente novamente.')
       }
     }
   }
