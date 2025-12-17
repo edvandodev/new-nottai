@@ -1,5 +1,15 @@
 import { jsPDF } from 'jspdf'
+import { Filesystem, Directory } from '@capacitor/filesystem'
+import { Share } from '@capacitor/share'
 import type { Sale } from '@/types'
+
+const toBase64 = async (blob: Blob) => {
+  const buffer = await blob.arrayBuffer()
+  let binary = ''
+  const bytes = new Uint8Array(buffer)
+  bytes.forEach((b) => (binary += String.fromCharCode(b)))
+  return btoa(binary)
+}
 
 export const generateReceipt = (
   clientName: string,
@@ -99,5 +109,45 @@ export const generateReceipt = (
     '_'
   )}_${new Date().getTime()}.pdf`
 
-  doc.save(fileName)
+  const tryShareNative = async () => {
+    const pdfBlob = doc.output('blob')
+    const base64 = await toBase64(pdfBlob)
+
+    // Solicita permissões de arquivo; em Android 13+ o diretório interno não precisa de STORAGE.
+    try {
+      await Filesystem.requestPermissions()
+    } catch (err) {
+      console.warn('Permissão do Filesystem não concedida', err)
+    }
+
+    const saveResult = await Filesystem.writeFile({
+      path: `receipts/${fileName}`,
+      data: base64,
+      directory: Directory.Cache,
+      recursive: true
+    })
+
+    const uri = await Filesystem.getUri({
+      path: saveResult.uri || `receipts/${fileName}`,
+      directory: Directory.Cache
+    })
+
+    await Share.share({
+      title: 'Comprovante de Pagamento',
+      text: 'PDF gerado pela Nottai',
+      url: uri.uri,
+      dialogTitle: 'Compartilhar comprovante'
+    })
+  }
+
+  // Tenta salvar/compartilhar nativo; se falhar, usa download web como fallback.
+  try {
+    tryShareNative().catch((err) => {
+      console.warn('Falha ao usar Filesystem/Share, fallback para download', err)
+      doc.save(fileName)
+    })
+  } catch (err) {
+    console.warn('Falha ao usar Filesystem/Share, fallback para download', err)
+    doc.save(fileName)
+  }
 }

@@ -249,9 +249,7 @@ export function ClientsPage({
                         <p className='text-slate-500 text-xs truncate'>
                           {client.phone}
                         </p>
-                      ) : (
-                        <p className='text-slate-600 text-xs'>Sem telefone</p>
-                      )}
+                      ) : null}
                     </div>
                   </div>
 
