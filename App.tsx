@@ -96,7 +96,7 @@ function App() {
   }, [clients, sales]);
 
   const totalReceivable = useMemo(() => {
-    return Object.values(clientBalances).reduce((acc: number, curr: number) => acc + curr, 0);
+    return Object.values(clientBalances).reduce((acc, curr) => acc + curr, 0);
   }, [clientBalances]);
 
   const lastInteractions = useMemo(() => {
