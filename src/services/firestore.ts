@@ -1,4 +1,3 @@
-import './firebase'
 import { FirebaseFirestore } from '@capacitor-firebase/firestore'
 import { Client, Sale, Payment, PriceSettings } from '../types'
 
@@ -38,12 +37,23 @@ export const firestoreService = {
   },
 
   saveClient: async (client: Client) => {
-    const { id, ...clientData } = client
-    await FirebaseFirestore.setDocument({
-      reference: `${CLIENTS}/${id}`,
-      data: clientData,
-      merge: true
-    })
+    console.log('[DEBUG] firestore.ts: saveClient iniciada.');
+    try {
+      const { id, ...clientData } = client;
+      console.log(`[DEBUG] firestore.ts: Tentando salvar documento em ${CLIENTS}/${id}`);
+      console.log('[DEBUG] firestore.ts: Dados do cliente:', JSON.stringify(clientData, null, 2));
+      
+      await FirebaseFirestore.setDocument({
+        reference: `${CLIENTS}/${id}`,
+        data: clientData,
+        merge: true
+      });
+
+      console.log('[DEBUG] firestore.ts: setDocument completado com sucesso!');
+    } catch (error) {
+      console.error('[DEBUG] firestore.ts: ERRO em saveClient:', error);
+      throw error;
+    }
   },
 
   deleteClient: async (clientId: string) => {
