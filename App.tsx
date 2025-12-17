@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, ChevronLeft, Trash2, Milk, User, Phone, Droplets, DollarSign, Wallet, MessageCircle, Pencil, Settings as SettingsIcon, Users, CheckCircle, Search, X, ChevronDown, ChevronUp, FileText, Download, Tag, BarChart3, Calendar, TrendingUp } from 'lucide-react';
 import { Client, Sale, Payment, ViewState, TabState, DEFAULT_SETTINGS, PriceSettings, PriceType } from './types';
@@ -94,7 +93,6 @@ function App() {
     });
     return balances;
   }, [clients, sales]);
-
   const totalReceivable = useMemo(() => {
     return Object.values(clientBalances).reduce((acc, curr) => acc + curr, 0);
   }, [clientBalances]);
@@ -174,7 +172,6 @@ function App() {
     });
     return { totalLiters, totalValue, weeks: Object.values(weeks).sort((a, b) => a.label.localeCompare(b.label)) };
   }, [sales, payments, reportYear, reportMonth]);
-
   const availableYears = useMemo(() => {
     const years = new Set<number>();
     years.add(new Date().getFullYear());
@@ -224,17 +221,24 @@ function App() {
   };
 
   const handleSaveClient = async (name: string, phone: string, priceType: PriceType, avatar?: string) => {
-    alert('Função handleSaveClient foi chamada!'); // <<< TESTE DE DEPURACAO
+    console.log("handleSaveClient: Função iniciada.");
     try {
       const clientToSave: Client = editingClient
         ? { ...editingClient, name, phone, priceType, avatar: avatar || editingClient.avatar }
         : { id: crypto.randomUUID(), name, phone, priceType, avatar };
 
+      console.log("handleSaveClient: Objeto cliente preparado:", clientToSave);
+      console.log("handleSaveClient: Chamando firestoreService.saveClient...");
+
       await firestoreService.saveClient(clientToSave);
+
+      console.log("handleSaveClient: Chamada ao firestoreService.saveClient concluída.");
       setEditingClient(null);
-      setIsClientModalOpen(false); // Fechar modal no sucesso
+      setIsClientModalOpen(false);
+      console.log("handleSaveClient: Modal fechado e estado atualizado.");
+
     } catch (error) {
-      console.error("Erro ao salvar cliente:", error);
+      console.error("handleSaveClient: ERRO DETECTADO:", error);
       alert(`Ocorreu um erro ao salvar o cliente: ${error}`);
     }
   };
@@ -256,7 +260,6 @@ function App() {
       }
     }
   };
-
   const handleAddSale = async (liters: number, date: string) => {
     if (!selectedClientId) return;
     try {
@@ -354,7 +357,6 @@ function App() {
       }
     }
   };
-
   const handleSavePrices = async () => {
     const std = parseFloat(standardPriceInput.replace(',', '.'));
     const cst = parseFloat(customPriceInput.replace(',', '.'));
