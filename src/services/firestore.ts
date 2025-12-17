@@ -1,9 +1,9 @@
 
 import { collection, onSnapshot, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
-// CORREÇÃO 1: O caminho para a configuração do Firebase foi corrigido.
-// Estava importando de './firebase', mas o arquivo correto está em '../src/services/firebase'.
-import { db } from '../src/services/firebase'; 
-import { Client, Sale, Payment, PriceSettings } from '../types';
+// CORREÇÃO: O caminho para a configuração do Firebase foi ajustado para o novo local.
+import { db } from './firebase'; 
+// CORREÇÃO: O caminho para as definições de tipo foi ajustado.
+import { Client, Sale, Payment, PriceSettings } from '../../types';
 
 // Coleções
 const CLIENTS = 'clients';
@@ -17,8 +17,6 @@ export const firestoreService = {
   listenToClients: (callback: (clients: Client[]) => void) => {
     const clientsCollection = collection(db, CLIENTS);
     return onSnapshot(clientsCollection, snapshot => {
-      // CORREÇÃO 2: Incluindo o ID do documento nos dados do cliente.
-      // O ID é crucial para saber qual documento atualizar ou deletar depois.
       const clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Client);
       callback(clients);
     });
@@ -39,7 +37,6 @@ export const firestoreService = {
   listenToSales: (callback: (sales: Sale[]) => void) => {
     const salesCollection = collection(db, SALES);
     return onSnapshot(salesCollection, snapshot => {
-      // CORREÇÃO 2: Incluindo o ID do documento nos dados da venda.
       const sales = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Sale);
       callback(sales);
     });
@@ -70,30 +67,22 @@ export const firestoreService = {
   listenToPayments: (callback: (payments: Payment[]) => void) => {
     const paymentsCollection = collection(db, PAYMENTS);
     return onSnapshot(paymentsCollection, snapshot => {
-      // CORREÇÃO 2: Incluindo o ID do documento nos dados do pagamento.
       const payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Payment);
       callback(payments);
     });
   },
 
-  // CORREÇÃO 3: Lógica de pagamento corrigida e completada.
-  // A função agora aceita os IDs das vendas a serem quitadas.
-  // Ela usa uma 'batch' para garantir que o pagamento seja salvo e as vendas
-  // sejam excluídas em uma única operação atômica. Isso evita inconsistências.
   savePayment: async (payment: Payment, saleIdsToDelete: string[]) => {
     const batch = writeBatch(db);
     
-    // 1. Adiciona o novo documento de pagamento
     const paymentRef = doc(db, PAYMENTS, payment.id);
     batch.set(paymentRef, payment);
 
-    // 2. Apaga as vendas que foram pagas
     saleIdsToDelete.forEach(id => {
         const saleRef = doc(db, SALES, id);
         batch.delete(saleRef);
     });
 
-    // 3. Executa a operação atômica
     await batch.commit();
   },
 
