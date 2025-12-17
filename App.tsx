@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, ChevronLeft, Trash2, Milk, User, Phone, Droplets, DollarSign, Wallet, MessageCircle, Pencil, Settings as SettingsIcon, Users, CheckCircle, Search, X, ChevronDown, ChevronUp, FileText, Download, Tag, BarChart3, Calendar, TrendingUp } from 'lucide-react';
 import { Client, Sale, Payment, ViewState, TabState, DEFAULT_SETTINGS, PriceSettings, PriceType } from './types';
-import { firestoreService } from './services/firestore';
+// CORREÇÃO FINAL: O caminho para o firestoreService foi atualizado para o local correto.
+import { firestoreService } from './src/services/firestore'; 
 import { AddClientModal, AddSaleModal, PayDebtModal, ConfirmModal, SuccessReceiptModal } from './components/Modals';
 import { generateReceipt } from './services/pdfGenerator';
 
