@@ -103,7 +103,6 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset or Populate form when opening
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
@@ -132,17 +131,17 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    console.log("AddClientModal: handleSubmit foi chamado!");
+  const handleSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
+    console.log("AddClientModal: handleSubmit foi chamado VIA ONCLICK!");
     e.preventDefault();
     const cleanName = name.trim();
     
     if (!cleanName) {
       console.log("AddClientModal: Nome vazio, parando a submissão.");
+      setError('O campo Nome é obrigatório.');
       return;
     }
 
-    // Validation: Check for duplicates
     const isDuplicate = existingNames.some(
       n => n.toLowerCase() === cleanName.toLowerCase() && n.toLowerCase() !== initialData?.name.toLowerCase()
     );
@@ -161,8 +160,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={initialData ? "Editar Cliente" : "Novo Cliente"}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Avatar Upload Section */}
+      <div className="space-y-4">
         <div className="flex flex-col items-center mb-6">
           <div 
             onClick={() => fileInputRef.current?.click()}
@@ -220,7 +218,6 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
           />
         </div>
 
-        {/* Price Type Selection */}
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-2">Tabela de Preço</label>
           <div className="grid grid-cols-2 gap-3">
@@ -264,13 +261,14 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
             Cancelar
           </button>
           <button
-            type="submit"
+            type="button"
+            onClick={handleSubmit}
             className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-500 transition-colors shadow-lg shadow-blue-900/50"
           >
             Salvar
           </button>
         </div>
-      </form>
+      </div>
     </Modal>
   );
 };
@@ -294,7 +292,6 @@ export const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose, onS
     if (!isNaN(litersNum) && litersNum > 0) {
       onSave(litersNum, date);
       setLiters('1');
-      // Reset date to today for next entry
       setDate(new Date().toISOString().split('T')[0]); 
       onClose();
     }
