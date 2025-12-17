@@ -1,3 +1,4 @@
+import '@/services/firebase'
 import React, { useState, useEffect, useMemo } from 'react'
 import {
   Plus,
