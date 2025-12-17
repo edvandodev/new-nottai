@@ -1,162 +1,87 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { firestoreService } from '@/services/firestore'
-import { DEFAULT_SETTINGS } from '@/types'
-import {
-  AddClientModal,
-  AddSaleModal,
-  PayDebtModal,
-  ConfirmModal,
-  SuccessReceiptModal
-} from '@/components/Modals'
-import { generateReceipt } from '@/services/pdfGenerator'
-import type {
-  Client,
-  Sale,
-  Payment,
-  ViewState,
-  TabState,
-  PriceSettings,
-  PriceType
-} from '@/types'
+
+import { useState, useEffect, useMemo } from 'react'
+import { Plus, Search, User, Trash2, X, FileText } from 'lucide-react'
+import { firestoreService } from './services/firestore'
+import { Client, Sale, Payment } from './types'
+import { ClientModal, SaleModal, PaymentModal, ConfirmModal } from './components/Modals'
+import { generateAndSharePDF } from './services/pdfGenerator'
 
 function App() {
-  console.log('[DEBUG] App.tsx: Componente App renderizado.')
-
-  const [activeTab, setActiveTab] = useState<TabState>('CLIENTS')
-  const [clientView, setClientView] = useState<ViewState>('LIST')
-
   const [clients, setClients] = useState<Client[]>([])
   const [sales, setSales] = useState<Sale[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
-  const [priceSettings, setPriceSettings] =
-    useState<PriceSettings>(DEFAULT_SETTINGS)
-
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
 
-  const [editingClient, setEditingClient] = useState<Client | null>(null)
-  const [standardPriceInput, setStandardPriceInput] = useState('')
-  const [customPriceInput, setCustomPriceInput] = useState('')
-
-  const [lastPaymentInfo, setLastPaymentInfo] = useState<{
-    clientName: string
-    amount: number
-    sales: Sale[]
-    date: string
-  } | null>(null)
-
-  const [clientToDeleteId, setClientToDeleteId] = useState<string | null>(null)
-  const [saleToDeleteId, setSaleToDeleteId] = useState<string | null>(null)
-  const [paymentToDeleteId, setPaymentToDeleteId] = useState<string | null>(
-    null
-  )
-
+  // Estados para controlar os modais
   const [isClientModalOpen, setIsClientModalOpen] = useState(false)
   const [isSaleModalOpen, setIsSaleModalOpen] = useState(false)
-  const [isPayModalOpen, setIsPayModalOpen] = useState(false)
-  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [clientToEdit, setClientToEdit] = useState<Client | null>(null)
+  const [clientToDeleteId, setClientToDeleteId] = useState<string | null>(null)
+  const [saleToDeleteId, setSaleToDeleteId] = useState<string | null>(null)
+  const [paymentToDeleteId, setPaymentToDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
-    console.log('[DEBUG] App.tsx: useEffect principal executado.')
-    const unsubscribeClients = firestoreService.listenToClients(setClients)
-    const unsubscribeSales = firestoreService.listenToSales(setSales)
-    const unsubscribePayments = firestoreService.listenToPayments(setPayments)
-
-    const unsubscribeSettings = firestoreService.listenToPriceSettings(
-      (settings) => {
-        if (!settings) return
-        setPriceSettings(settings)
-        setStandardPriceInput(settings.standard.toString())
-        setCustomPriceInput(settings.custom.toString())
-      }
-    )
-
-    return () => {
-      console.log('[DEBUG] App.tsx: Cleanup do useEffect principal.')
-      unsubscribeClients()
-      unsubscribeSales()
-      unsubscribePayments()
-      unsubscribeSettings()
-    }
+    const unsubscribe = firestoreService.watchClients(setClients)
+    return () => unsubscribe()
   }, [])
 
-  const clientBalances = useMemo(() => {
-    const balances: { [key: string]: number } = {}
-    clients.forEach((c) => (balances[c.id] = 0))
-
-    sales.forEach((sale) => {
-      if (balances[sale.clientId] !== undefined) {
-        balances[sale.clientId] += sale.totalValue
+  useEffect(() => {
+    if (selectedClientId) {
+      const unsubscribeSales = firestoreService.watchSales(selectedClientId, setSales)
+      const unsubscribePayments = firestoreService.watchPayments(selectedClientId, setPayments)
+      return () => {
+        unsubscribeSales()
+        unsubscribePayments()
       }
-    })
-    return balances
-  }, [clients, sales])
-
-  const selectedClient = useMemo(
-    () => clients.find((c) => c.id === selectedClientId),
-    [clients, selectedClientId]
-  )
-
-  const currentClientPrice = useMemo(() => {
-    if (!selectedClient) return priceSettings.standard
-    return selectedClient.priceType === 'CUSTOM'
-      ? priceSettings.custom
-      : priceSettings.standard
-  }, [selectedClient, priceSettings])
-
-  const handleSaveClient = async (
-    name: string,
-    phone: string,
-    priceType: PriceType,
-    avatar?: string
-  ) => {
-    console.log('[DEBUG] App.tsx: handleSaveClient INICIADA.')
-    try {
-      console.log('[DEBUG] App.tsx: Criando objeto clientToSave...')
-      const clientToSave: Client = editingClient
-        ? {
-            ...editingClient,
-            name,
-            phone,
-            priceType,
-            avatar: avatar || editingClient.avatar
-          }
-        : { id: crypto.randomUUID(), name, phone, priceType, avatar }
-
-      console.log(
-        '[DEBUG] App.tsx: Objeto clientToSave criado:',
-        JSON.stringify(clientToSave, null, 2)
-      )
-      console.log('[DEBUG] App.tsx: Chamando firestoreService.saveClient...')
-
-      await firestoreService.saveClient(clientToSave)
-
-      console.log(
-        '[DEBUG] App.tsx: firestoreService.saveClient completado com SUCESSO.'
-      )
-
-      setEditingClient(null)
-      setIsClientModalOpen(false)
-    } catch (error) {
-      console.error(
-        '[DEBUG] App.tsx: ERRO DETECTADO em handleSaveClient:',
-        error
-      )
-      alert(`Ocorreu um erro ao salvar o cliente: ${error}`)
+    } else {
+      setSales([])
+      setPayments([])
     }
+  }, [selectedClientId])
+
+  const handleSelectClient = (clientId: string) => {
+    setSelectedClientId(clientId)
+  }
+
+  const handleBackToClients = () => {
+    setSelectedClientId(null)
+    setSearchTerm('')
+  }
+
+  const handleSaveClient = async (name: string, price: number) => {
+    try {
+      if (clientToEdit) {
+        await firestoreService.saveClient({ ...clientToEdit, name, price })
+      } else {
+        const newClient: Client = { id: crypto.randomUUID(), name, price }
+        await firestoreService.saveClient(newClient)
+      }
+      setIsClientModalOpen(false)
+      setClientToEdit(null)
+    } catch (error) {
+      console.error('Erro ao salvar cliente:', error)
+      alert(\`Ocorreu um erro ao salvar o cliente: ${error}\`)
+    }
+  }
+
+  const openEditClientModal = (client: Client) => {
+    setClientToEdit(client)
+    setIsClientModalOpen(true)
   }
 
   const confirmDeleteClient = async () => {
     if (!clientToDeleteId) return
     try {
       await firestoreService.deleteClient(clientToDeleteId)
+      setClientToDeleteId(null)
       if (selectedClientId === clientToDeleteId) {
-        setClientView('LIST')
         setSelectedClientId(null)
       }
-      setClientToDeleteId(null)
     } catch (error) {
       console.error('Erro ao deletar cliente:', error)
-      alert(`Ocorreu um erro ao deletar o cliente: ${error}`)
+      alert(\`Ocorreu um erro ao deletar o cliente: ${error}\`)
     }
   }
 
@@ -175,7 +100,7 @@ function App() {
       setIsSaleModalOpen(false)
     } catch (error) {
       console.error('Erro ao adicionar venda:', error)
-      alert(`Ocorreu um erro ao adicionar a venda: ${error}`)
+      alert(\`Ocorreu um erro ao adicionar a venda: ${error}\`)
     }
   }
 
@@ -186,70 +111,24 @@ function App() {
       setSaleToDeleteId(null)
     } catch (error) {
       console.error('Erro ao deletar venda:', error)
-      alert(`Ocorreu um erro ao deletar a venda: ${error}`)
+      alert(\`Ocorreu um erro ao deletar a venda: ${error}\`)
     }
   }
 
-  const handlePayDebt = async () => {
+  const handleAddPayment = async (value: number, date: string) => {
     if (!selectedClientId) return
-    const amount = clientBalances[selectedClientId]
-    const client = clients.find((c) => c.id === selectedClientId)
-    if (amount > 0 && client) {
-      try {
-        const currentDate = new Date().toISOString()
-        const salesToBePaid = sales.filter(
-          (s) => s.clientId === selectedClientId
-        )
-        const newPayment: Payment = {
-          id: crypto.randomUUID(),
-          clientId: selectedClientId,
-          clientName: client.name,
-          amount: amount,
-          date: currentDate,
-          salesSnapshot: salesToBePaid
-        }
-        await firestoreService.savePayment(
-          newPayment,
-          salesToBePaid.map((s) => s.id)
-        )
-
-        setLastPaymentInfo({
-          clientName: client.name,
-          amount: amount,
-          sales: salesToBePaid,
-          date: currentDate
-        })
-        setIsReceiptModalOpen(true)
-      } catch (error) {
-        console.error('Erro ao registrar pagamento:', error)
-        alert(`Ocorreu um erro ao registrar o pagamento: ${error}`)
+    try {
+      const newPayment: Payment = {
+        id: crypto.randomUUID(),
+        clientId: selectedClientId,
+        date,
+        value
       }
-    }
-    setIsPayModalOpen(false)
-  }
-
-  const handleGenerateReceipt = (payment?: Payment) => {
-    if (payment) {
-      if (payment.salesSnapshot) {
-        generateReceipt(
-          payment.clientName,
-          payment.amount,
-          payment.salesSnapshot,
-          payment.date
-        )
-      } else {
-        alert('Detalhes indisponíveis para este registro antigo.')
-      }
-      return
-    }
-    if (lastPaymentInfo) {
-      generateReceipt(
-        lastPaymentInfo.clientName,
-        lastPaymentInfo.amount,
-        lastPaymentInfo.sales,
-        lastPaymentInfo.date
-      )
-      setIsReceiptModalOpen(false)
+      await firestoreService.savePayment(newPayment)
+      setIsPaymentModalOpen(false)
+    } catch (error) {
+      console.error('Erro ao adicionar pagamento:', error)
+      alert(\`Ocorreu um erro ao adicionar o pagamento: ${error}\`)
     }
   }
 
@@ -260,53 +139,207 @@ function App() {
       setPaymentToDeleteId(null)
     } catch (error) {
       console.error('Erro ao deletar pagamento:', error)
-      alert(`Ocorreu um erro ao deletar o pagamento: ${error}`)
+      alert(\`Ocorreu um erro ao deletar o pagamento: ${error}\`)
     }
   }
 
+  const filteredClients = useMemo(() =>
+    clients.filter(client =>
+      client.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ), [clients, searchTerm])
+
+  const selectedClient = useMemo(() =>
+    clients.find(c => c.id === selectedClientId), [clients, selectedClientId])
+
+  const currentClientPrice = useMemo(() => {
+    const client = clients.find(c => c.id === selectedClientId)
+    return client ? client.price : 0
+  }, [clients, selectedClientId])
+
+  const combinedHistory = useMemo(() => {
+    const history = [
+      ...sales.map(s => ({ ...s, type: 'sale' as const })),
+      ...payments.map(p => ({ ...p, type: 'payment' as const }))
+    ]
+    return history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }, [sales, payments])
+
+  const totalSales = useMemo(() =>
+    sales.reduce((sum, sale) => sum + sale.totalValue, 0), [sales])
+
+  const totalPayments = useMemo(() =>
+    payments.reduce((sum, payment) => sum + payment.value, 0), [payments])
+
+  const balance = useMemo(() => totalSales - totalPayments, [totalSales, totalPayments])
+
+
+  const handleGeneratePDF = () => {
+    if (selectedClient && combinedHistory.length > 0) {
+      generateAndSharePDF(selectedClient, combinedHistory, totalSales, totalPayments, balance);
+    } else {
+      alert("Não há dados suficientes para gerar o relatório.");
+    }
+  };
+
+
+  // Renderização da lista de clientes
+  const renderClientList = () => (
+    <div className='p-4'>
+      <div className='flex justify-between items-center mb-4'>
+        <h1 className='text-2xl font-bold text-slate-200'>Clientes</h1>
+        <button
+          onClick={() => { setClientToEdit(null); setIsClientModalOpen(true); }}
+          className='bg-indigo-600 hover:bg-indigo-500 text-white font-bold p-2 rounded-full shadow-lg transition-colors'
+        >
+          <Plus size={24} />
+        </button>
+      </div>
+      <div className='relative mb-4'>
+        <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400' size={20} />
+        <input
+          type='text'
+          placeholder='Buscar cliente...'
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className='w-full bg-slate-800 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500'
+        />
+      </div>
+      <div className='space-y-3'>
+        {filteredClients.map(client => (
+          <div
+            key={client.id}
+            className='bg-slate-800 rounded-lg p-4 flex justify-between items-center shadow-md transition-all hover:bg-slate-700/50'
+          >
+            <button onClick={() => handleSelectClient(client.id)} className='flex-grow text-left'>
+              <div className='flex items-center'>
+                <div className='p-3 bg-slate-700 rounded-full mr-4'>
+                  <User className='text-slate-300' />
+                </div>
+                <div>
+                  <p className='font-semibold text-lg text-slate-200'>{client.name}</p>
+                  <p className='text-sm text-slate-400'>Preço do Litro: R$ {client.price.toFixed(2)}</p>
+                </div>
+              </div>
+            </button>
+            <div className='flex items-center'>
+              <button onClick={(e) => { e.stopPropagation(); openEditClientModal(client); }} className='p-2 text-slate-400 hover:text-indigo-400'>
+                <FileText size={20} />
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); setClientToDeleteId(client.id); }} className='p-2 text-slate-400 hover:text-red-500'>
+                <Trash2 size={20} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  // Renderização do histórico do cliente
+  const renderClientHistory = () => {
+    if (!selectedClient) return null
+    return (
+      <div className='p-4'>
+        <div className='flex justify-between items-center mb-4'>
+          <button onClick={handleBackToClients} className='text-indigo-400 hover:text-indigo-300 font-semibold'>
+            &larr; Voltar
+          </button>
+          <h1 className='text-2xl font-bold text-slate-200'>{selectedClient.name}</h1>
+          <button onClick={handleGeneratePDF} className='p-2 text-slate-400 hover:text-green-500'>
+            <FileText size={24} />
+          </button>
+        </div>
+
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center'>
+          <div className='bg-slate-800 p-4 rounded-lg'>
+            <p className='text-sm text-slate-400'>Total em Vendas</p>
+            <p className='text-2xl font-bold text-amber-400'>R$ {totalSales.toFixed(2)}</p>
+          </div>
+          <div className='bg-slate-800 p-4 rounded-lg'>
+            <p className='text-sm text-slate-400'>Total Pago</p>
+            <p className='text-2xl font-bold text-green-400'>R$ {totalPayments.toFixed(2)}</p>
+          </div>
+          <div className='bg-slate-800 p-4 rounded-lg'>
+            <p className='text-sm text-slate-400'>Saldo Devedor</p>
+            <p className='text-2xl font-bold text-red-500'>R$ {balance.toFixed(2)}</p>
+          </div>
+        </div>
+
+        <div className='flex justify-center gap-4 mb-6'>
+          <button
+            onClick={() => setIsSaleModalOpen(true)}
+            className='bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg transition-colors'
+          >
+            Adicionar Venda
+          </button>
+          <button
+            onClick={() => setIsPaymentModalOpen(true)}
+            className='bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg transition-colors'
+          >
+            Registrar Pagamento
+          </button>
+        </div>
+
+        <div className='space-y-3'>
+          {combinedHistory.length > 0 ? (
+            combinedHistory.map(item => (
+              <div
+                key={`${item.type}-${item.id}`}
+                className={`bg-slate-800 rounded-lg p-4 flex justify-between items-center shadow-md border-l-4 ${item.type === 'sale' ? 'border-blue-500' : 'border-green-500'}`}
+              >
+                <div>
+                  <p className='font-semibold text-slate-300'>
+                    {item.type === 'sale' ? `${item.liters} Litros` : 'Pagamento'}
+                  </p>
+                  <p className='text-sm text-slate-400'>
+                    {new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                  </p>
+                </div>
+                <div className='flex items-center'>
+                  <p className={`font-bold text-lg ${item.type === 'sale' ? 'text-red-500' : 'text-green-400'}`}>
+                    {item.type === 'sale' ? `- R$ ${item.totalValue.toFixed(2)}` : `+ R$ ${item.value.toFixed(2)}`}
+                  </p>
+                  <button
+                    onClick={() => item.type === 'sale' ? setSaleToDeleteId(item.id) : setPaymentToDeleteId(item.id)}
+                    className='ml-4 p-2 text-slate-500 hover:text-red-500'
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className='text-center text-slate-400 mt-8'>Nenhum registro encontrado.</p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className='min-h-screen bg-slate-950 text-slate-100 font-sans pb-32'>
-      {!(activeTab === 'CLIENTS' && clientView === 'DETAILS') && (
-        <header className='sticky top-0 z-40 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 shadow-md'></header>
-      )}
+    <div className='bg-slate-900 min-h-screen text-white'>
+      <div className='container mx-auto max-w-2xl'>
+        {selectedClientId ? renderClientHistory() : renderClientList()}
+      </div>
 
-      <main
-        className={`max-w-2xl mx-auto ${
-          activeTab === 'CLIENTS' && clientView === 'DETAILS' ? 'p-0' : 'p-4'
-        }`}
-      ></main>
-
-      <div className='fixed bottom-0 left-0 right-0 z-40 bg-slate-900 border-t border-slate-800 rounded-t-[2.5rem] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.5)] px-2 pb-6 pt-2'></div>
-
-      <AddClientModal
+      {/* Modais */}
+      <ClientModal
         isOpen={isClientModalOpen}
-        onClose={() => setIsClientModalOpen(false)}
+        onClose={() => { setIsClientModalOpen(false); setClientToEdit(null); }}
         onSave={handleSaveClient}
-        initialData={editingClient}
-        existingNames={clients.map((c) => c.name)}
-        priceSettings={priceSettings}
+        client={clientToEdit}
       />
 
-      <AddSaleModal
+      <SaleModal
         isOpen={isSaleModalOpen}
         onClose={() => setIsSaleModalOpen(false)}
-        onSave={handleAddSale}
-        currentPrice={currentClientPrice}
+        onAdd={handleAddSale}
       />
 
-      <PayDebtModal
-        isOpen={isPayModalOpen}
-        onClose={() => setIsPayModalOpen(false)}
-        onConfirm={handlePayDebt}
-        clientName={selectedClient?.name || ''}
-        totalValue={selectedClient ? clientBalances[selectedClient.id] : 0}
-      />
-
-      <SuccessReceiptModal
-        isOpen={isReceiptModalOpen}
-        onClose={() => setIsReceiptModalOpen(false)}
-        onGenerate={() => handleGenerateReceipt()}
-        clientName={lastPaymentInfo?.clientName || ''}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onAdd={handleAddPayment}
       />
 
       <ConfirmModal
