@@ -106,15 +106,15 @@ function App() {
     avatar?: string
   ) => {
     try {
-      const clientToSave: Client = editingClient
-        ? {
-            ...editingClient,
-            name,
-            phone,
-            priceType,
-            avatar: avatar || editingClient.avatar
-          }
-        : { id: crypto.randomUUID(), name, phone, priceType, avatar }
+      const resolvedAvatar = avatar ?? editingClient?.avatar
+
+      const baseClient = editingClient
+        ? { ...editingClient, name, phone, priceType }
+        : { id: crypto.randomUUID(), name, phone, priceType }
+
+      const clientToSave = resolvedAvatar
+        ? { ...baseClient, avatar: resolvedAvatar }
+        : baseClient
 
       await firestoreService.saveClient(clientToSave)
 

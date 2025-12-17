@@ -6,49 +6,52 @@ const SALES = 'sales'
 const PAYMENTS = 'payments'
 const SETTINGS = 'settings'
 
+const stripUndefined = <T extends Record<string, any>>(obj: T): Partial<T> =>
+  Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined)
+  ) as Partial<T>
+
 export const firestoreService = {
-  listenToClients: (callback: (clients: Client[]) => void) => {
-    let callbackId: string | null = null
+  listenToClients: (callback) => {
     let cancelled = false
 
-    ;(async () => {
-      callbackId = await FirebaseFirestore.addCollectionSnapshotListener<
-        Omit<Client, 'id'>
-      >({ reference: CLIENTS }, (event, error) => {
+    const callbackIdPromise = FirebaseFirestore.addCollectionSnapshotListener(
+      { reference: CLIENTS },
+      (event, error) => {
         if (cancelled) return
         if (error || !event) {
           console.error('listenToClients falhou', error)
           return
         }
-
-        const clients = event.snapshots.map(
-          (s) => ({ ...(s.data ?? {}), id: s.id } as Client)
-        )
-        callback(clients)
-      })
-    })()
+        const clients = event.snapshots.map((s) => ({
+          ...(s.data ?? {}),
+          id: s.id
+        }))
+        callback(clients as Client[])
+      }
+    )
 
     return async () => {
       cancelled = true
-      if (callbackId) {
+      try {
+        const callbackId = await callbackIdPromise
         await FirebaseFirestore.removeSnapshotListener({ callbackId })
+      } catch (e) {
+        console.error('Falha ao remover listener', e)
       }
     }
   },
 
   saveClient: async (client: Client) => {
-    try {
-      const { id, ...clientData } = client;
-      
-      await FirebaseFirestore.setDocument({
-        reference: `${CLIENTS}/${id}`,
-        data: clientData,
-        merge: true
-      });
-    } catch (error) {
-      console.error('[DEBUG] firestore.ts: ERRO em saveClient:', error);
-      throw error;
-    }
+    const { id, ...clientDataRaw } = client
+
+    const clientData = stripUndefined(clientDataRaw)
+
+    await FirebaseFirestore.setDocument({
+      reference: `${CLIENTS}/${id}`,
+      data: clientData,
+      merge: true
+    })
   },
 
   deleteClient: async (clientId: string) => {
