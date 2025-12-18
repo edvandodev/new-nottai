@@ -1,5 +1,12 @@
 import React, { useMemo, useState } from 'react'
-import { BarChart3, Calendar, DollarSign, Droplets } from 'lucide-react'
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  BarChart3,
+  Calendar,
+  DollarSign,
+  Droplets
+} from 'lucide-react'
 import type { Payment, Sale } from '@/types'
 
 type ReportsPageProps = {
@@ -47,6 +54,119 @@ const parseDate = (
   return null
 }
 
+const computeMonthTotals = (
+  data: Sale[],
+  year: number,
+  month: number
+): { liters: number; value: number } => {
+  return data.reduce(
+    (acc, cur) => {
+      const d = parseDate(cur.date as any)
+      if (d && d.getFullYear() === year && d.getMonth() === month) {
+        acc.liters += cur.liters
+        acc.value += cur.totalValue
+      }
+      return acc
+    },
+    { liters: 0, value: 0 }
+  )
+}
+
+type ChangeDirection = 'up' | 'down' | 'flat'
+
+const computeChange = (
+  current: number,
+  previous: number
+): { direction: ChangeDirection; percent: number } => {
+  if (previous === 0 && current > 0) return { direction: 'up', percent: 100 }
+  if (current === 0 && previous > 0) return { direction: 'down', percent: 100 }
+  if (current === 0 && previous === 0) return { direction: 'flat', percent: 0 }
+
+  const diff = current - previous
+  const direction: ChangeDirection = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat'
+  const percent = Math.round((Math.abs(diff) / previous) * 100)
+  return { direction, percent }
+}
+
+type StatsSummaryCardProps = {
+  title: string
+  icon: React.ReactNode
+  accent: 'blue' | 'green'
+  mainValue: string
+  previousValue: string
+  change: { direction: ChangeDirection; percent: number }
+}
+
+const StatsSummaryCard = ({
+  title,
+  icon,
+  accent,
+  mainValue,
+  previousValue,
+  change
+}: StatsSummaryCardProps) => {
+  const accentText =
+    accent === 'blue' ? 'text-blue-100' : 'text-green-100'
+  const accentIconBg =
+    accent === 'blue' ? 'bg-blue-500/20 text-blue-300' : 'bg-green-500/20 text-green-300'
+  const accentBorder =
+    accent === 'blue' ? 'border-blue-500/30 bg-blue-900/15' : 'border-green-500/30 bg-green-900/15'
+
+  const changeColor =
+    change.direction === 'up'
+      ? 'text-emerald-400'
+      : change.direction === 'down'
+      ? 'text-red-400'
+      : 'text-slate-400'
+
+  const renderChangeIcon = () => {
+    if (change.direction === 'up') return <ArrowUpRight size={16} />
+    if (change.direction === 'down') return <ArrowDownRight size={16} />
+    return null
+  }
+
+  const sign =
+    change.direction === 'down' ? '-' : change.direction === 'up' ? '+' : ''
+  const percentLabel = `${sign}${change.percent}%`
+
+  return (
+    <div
+      className={`rounded-2xl p-4 border ${accentBorder} flex flex-col gap-3 shadow-sm`}
+    >
+      <div className='flex items-start justify-between'>
+        <div className='space-y-1'>
+          <p className='text-xs uppercase tracking-wide text-slate-400 font-semibold'>
+            {title}
+          </p>
+          <p className={`text-3xl font-extrabold ${accentText}`}>{mainValue}</p>
+        </div>
+        <div
+          className={`h-10 w-10 rounded-full flex items-center justify-center ${accentIconBg}`}
+        >
+          {icon}
+        </div>
+      </div>
+
+      <div className='h-px w-full bg-slate-700/70' />
+
+      <div className='space-y-1'>
+        <p className='text-slate-400 text-xs font-medium'>
+          Em relacao ao mes anterior{' '}
+          <span className={accent === 'blue' ? 'text-blue-200' : 'text-green-200'}>
+            {previousValue}
+          </span>
+        </p>
+        <div className='flex items-center gap-2 text-sm font-semibold'>
+          <span className={changeColor} aria-label='Variacao percentual'>
+            {renderChangeIcon()}
+          </span>
+          <span className={changeColor}>{percentLabel}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function ReportsPage({ sales, payments }: ReportsPageProps) {
   const [reportYear, setReportYear] = useState(new Date().getFullYear())
   const [reportMonth, setReportMonth] = useState(new Date().getMonth())
@@ -77,7 +197,7 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
     return Array.from(years).sort((a, b) => b - a)
   }, [mergedSales])
 
-  const reportData = useMemo(() => {
+  const { reportData, previousTotals } = useMemo(() => {
     const filtered = mergedSales.filter((s) => {
       const d = parseDate(s.date as any)
       if (!d) return false
@@ -101,12 +221,22 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
       weeks[weekNum].value += s.totalValue
     })
 
+    const prevMonth = reportMonth === 0 ? 11 : reportMonth - 1
+    const prevYear = reportMonth === 0 ? reportYear - 1 : reportYear
+    const previous = computeMonthTotals(mergedSales, prevYear, prevMonth)
+
     return {
-      totalLiters,
-      totalValue,
-      weeks: Object.values(weeks).sort((a, b) => a.label.localeCompare(b.label))
+      reportData: {
+        totalLiters,
+        totalValue,
+        weeks: Object.values(weeks).sort((a, b) => a.label.localeCompare(b.label))
+      },
+      previousTotals: previous
     }
-  }, [mergedSales, reportYear, reportMonth])
+  }, [mergedSales, reportMonth, reportYear])
+
+  const litersChange = computeChange(reportData.totalLiters, previousTotals.liters)
+  const valueChange = computeChange(reportData.totalValue, previousTotals.value)
 
   return (
     <div className='space-y-6 animate-fade-in'>
@@ -145,30 +275,23 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
         </div>
       </div>
 
-      <div className='grid grid-cols-2 gap-4'>
-        <div className='bg-blue-900/20 border border-blue-500/30 rounded-2xl p-4 flex flex-col justify-between h-32'>
-          <div className='flex justify-between items-start'>
-            <span className='text-blue-300 font-medium text-sm'>
-              Total Litros
-            </span>
-            <Droplets size={18} className='text-blue-400' />
-          </div>
-          <span className='text-3xl font-bold text-blue-100'>
-            {reportData.totalLiters} L
-          </span>
-        </div>
-
-        <div className='bg-green-900/20 border border-green-500/30 rounded-2xl p-4 flex flex-col justify-between h-32'>
-          <div className='flex justify-between items-start'>
-            <span className='text-green-300 font-medium text-sm'>
-              Valor Total
-            </span>
-            <DollarSign size={18} className='text-green-400' />
-          </div>
-          <span className='text-3xl font-bold text-green-100'>
-            {formatCurrency(reportData.totalValue)}
-          </span>
-        </div>
+      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+        <StatsSummaryCard
+          title='Total Litros'
+          icon={<Droplets size={18} />}
+          accent='blue'
+          mainValue={`${reportData.totalLiters} L`}
+          previousValue={`${previousTotals.liters} L`}
+          change={litersChange}
+        />
+        <StatsSummaryCard
+          title='Valor Total'
+          icon={<DollarSign size={18} />}
+          accent='green'
+          mainValue={formatCurrency(reportData.totalValue)}
+          previousValue={formatCurrency(previousTotals.value)}
+          change={valueChange}
+        />
       </div>
 
       <div>
