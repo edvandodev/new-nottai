@@ -253,6 +253,11 @@ export function ClientsPage({
     return `${day} ${month} ${year}`
   }
 
+  const formatDateShort = (ts: number | null) => {
+    if (!ts) return ''
+    return new Date(ts).toLocaleDateString('pt-BR')
+  }
+
   const totalReceivable = useMemo(() => {
     return clients.reduce((acc, c) => {
       const bal = clientBalances.get(c.id) || 0
@@ -643,43 +648,58 @@ export function ClientsPage({
 
             {selectedClientHistory.bannerBalance > 0 ? (
               <div className='mb-3'>
-                <div className='w-full rounded-lg border border-amber-600/60 bg-amber-900/20 text-amber-100 px-3 py-2'>
-                  <button
-                    type='button'
-                    onClick={() => setIsDebtOpen((prev) => !prev)}
-                    className='w-full flex items-center gap-3 text-left focus:outline-none'
-                    aria-expanded={isDebtOpen}
-                  >
-                    <AlertTriangle size={16} className='shrink-0 text-amber-300' />
-                    <div className='flex-1 flex items-center justify-between gap-2 min-w-0'>
-                      <span className='text-sm font-semibold truncate'>
-                        Pendência - {formatCurrency(selectedClientHistory.bannerBalance)}
-                      </span>
-                      <span className='text-xs font-semibold text-amber-200 flex items-center gap-1'>
-                        {isDebtOpen ? 'Ocultar' : 'Ver'}
-                        {isDebtOpen ? (
-                          <ChevronUp size={14} className='text-amber-200' />
-                        ) : (
-                          <ChevronDown size={14} className='text-amber-200' />
-                        )}
-                      </span>
-                    </div>
-                  </button>
+                <button
+                  type='button'
+                  onClick={() => setIsDebtOpen((prev) => !prev)}
+                  className={`w-full rounded-xl border border-slate-700 bg-slate-900/70 text-slate-100 shadow-sm text-left transition-all focus:outline-none ${
+                    isDebtOpen ? 'ring-1 ring-amber-400/40' : ''
+                  } hover:border-slate-600 active:scale-[0.99]`}
+                  aria-expanded={isDebtOpen}
+                >
+                  <div className='flex items-center gap-3 px-3 py-3'>
+                    <span className='inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold uppercase rounded-full bg-amber-500/20 text-amber-50 border border-amber-500/40'>
+                      Pendente
+                    </span>
+                    <p className='text-sm font-semibold text-slate-100 flex-1 min-w-0 truncate'>
+                      Saldo pendente:
+                    </p>
+                    <span className='text-xs font-semibold text-amber-100 flex items-center gap-1 shrink-0'>
+                      {isDebtOpen ? 'Ocultar' : 'Ver'}
+                      {isDebtOpen ? (
+                        <ChevronUp size={14} className='text-amber-100' />
+                      ) : (
+                        <ChevronDown size={14} className='text-amber-100' />
+                      )}
+                    </span>
+                  </div>
                   <div
                     className={`overflow-hidden transition-all duration-200 ${
-                      isDebtOpen ? 'max-h-32 opacity-100 mt-2 pt-2 border-t border-amber-700/50' : 'max-h-0 opacity-0'
+                      isDebtOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'
                     }`}
                   >
-                    <p className='text-xs leading-snug text-amber-100'>
-                      Saldo pendente: {formatCurrency(selectedClientHistory.bannerBalance)}{' '}
-                      {selectedClientHistory.lastPaymentTs
-                        ? `após o último pagamento (${formatBannerDate(
-                            selectedClientHistory.lastPaymentTs
-                          )})`
-                        : '(sem pagamento registrado)'}
-                    </p>
+                    <div className='px-3 pb-3 pt-2 border-t border-slate-700/70 space-y-2'>
+                      {selectedClient?.name ? (
+                        <p className='text-xs leading-snug text-slate-300'>
+                          Cliente: <span className='font-semibold text-white'>{selectedClient.name}</span>
+                        </p>
+                      ) : null}
+                      <p className='text-xs leading-snug text-slate-300'>
+                        Último pagamento:{' '}
+                        <span className='font-semibold text-white'>
+                          {selectedClientHistory.lastPaymentTs
+                            ? formatDateShort(selectedClientHistory.lastPaymentTs)
+                            : 'Sem pagamento'}
+                        </span>
+                      </p>
+                      <p className='text-sm leading-snug text-amber-100'>
+                        Saldo pendente:{' '}
+                        <span className='font-bold text-amber-200'>
+                          {formatCurrency(selectedClientHistory.bannerBalance)}
+                        </span>
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </button>
               </div>
             ) : null}
 
