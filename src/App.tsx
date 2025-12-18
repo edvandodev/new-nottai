@@ -70,6 +70,7 @@ function App() {
   // UI State
   const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null) // For modals
+  const [resetClientsSignal, setResetClientsSignal] = useState(0)
 
   // Modal State
   const [isClientModalOpen, setIsClientModalOpen] = useState(false)
@@ -137,19 +138,19 @@ function App() {
           setIsPayModalOpen(false)
           return
         }
-      if (isReceiptModalOpen) {
-        setIsReceiptModalOpen(false)
-        return
-      }
-      if (isPdfViewerOpen) {
-        setIsPdfViewerOpen(false)
-        setPdfFile(null)
-        return
-      }
-      if (clientToDeleteId) {
-        setClientToDeleteId(null)
-        return
-      }
+        if (isReceiptModalOpen) {
+          setIsReceiptModalOpen(false)
+          return
+        }
+        if (isPdfViewerOpen) {
+          setIsPdfViewerOpen(false)
+          setPdfFile(null)
+          return
+        }
+        if (clientToDeleteId) {
+          setClientToDeleteId(null)
+          return
+        }
         if (saleToDeleteId) {
           setSaleToDeleteId(null)
           return
@@ -162,12 +163,14 @@ function App() {
         if (activeTab === 'CLIENTS' && isClientDetailsView) {
           setIsClientDetailsView(false)
           setSelectedClientId(null)
+          setResetClientsSignal((n) => n + 1)
           return
         }
 
         if (activeTab !== 'CLIENTS') {
           setActiveTab('CLIENTS')
           setIsClientDetailsView(false)
+          setResetClientsSignal((n) => n + 1)
           return
         }
 
@@ -191,7 +194,19 @@ function App() {
     return () => {
       backHandler?.remove?.()
     }
-  }, [activeTab, clientToDeleteId, isClientDetailsView, isClientModalOpen, isPayModalOpen, isReceiptModalOpen, isSaleModalOpen, lastBackTime, paymentToDeleteId, saleToDeleteId])
+  }, [
+    activeTab,
+    clientToDeleteId,
+    isClientDetailsView,
+    isClientModalOpen,
+    isPayModalOpen,
+    isReceiptModalOpen,
+    isSaleModalOpen,
+    isPdfViewerOpen,
+    lastBackTime,
+    paymentToDeleteId,
+    saleToDeleteId
+  ])
 
   // Memoized Calculations
   const clientBalances = useMemo(() => {
@@ -383,6 +398,7 @@ function App() {
             payments={payments}
             clientBalances={clientBalances}
             priceSettings={priceSettings}
+            resetToListSignal={resetClientsSignal}
             onAddClient={handleAddClient}
             onEditClient={handleEditClient}
             onAddSale={handleAddSale}
@@ -489,6 +505,7 @@ function App() {
             setActiveTab('CLIENTS')
             setIsClientDetailsView(false)
             setSelectedClientId(null)
+            setResetClientsSignal((n) => n + 1)
           }}
           className={`${navItemBase} ${
             activeTab === 'CLIENTS' ? navActive : navInactive
