@@ -6,7 +6,8 @@ import {
   ChevronRight,
   DollarSign,
   Droplets,
-  Users
+  Users,
+  X
 } from 'lucide-react'
 import type { Client, Payment, Sale } from '@/types'
 import { MonthYearFilterButtons } from '@/components/MonthYearFilterButtons'
@@ -308,9 +309,25 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
     [clients, mergedSales, reportMonth, reportYear]
   )
   const monthlyRanking = useMemo(
-    () => getTopClientsByMonth(mergedSales, clients, reportYear, reportMonth, clients.length || 50),
+    () =>
+      getTopClientsByMonth(mergedSales, clients, reportYear, reportMonth, clients.length || 50).sort(
+        (a, b) => b.totalValue - a.totalValue
+      ),
     [clients, mergedSales, reportMonth, reportYear]
   )
+
+  const getAvatarColors = (input: string) => {
+    let hash = 0
+    for (let i = 0; i < input.length; i++) {
+      hash = (hash << 5) - hash + input.charCodeAt(i)
+      hash |= 0
+    }
+    const hue = Math.abs(hash) % 360
+    return {
+      bg: `hsl(${hue}, 40%, 25%)`,
+      text: `hsl(${hue}, 60%, 82%)`
+    }
+  }
 
   return (
     <div className='space-y-6 animate-fade-in'>
@@ -560,21 +577,27 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
       </div>
 
       {isRankingOpen && (
-        <div className='fixed inset-0 z-40 bg-black/60 backdrop-blur-md flex items-center justify-center px-4'>
+        <div className='fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center px-4'>
           <div className='w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden'>
             <div className='flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/80'>
-              <div className='flex items-center gap-2 text-slate-200'>
-                <Users size={16} className='text-slate-400' />
-                <h3 className='text-sm font-semibold'>
-                  Ranking completo ({MONTHS_FULL[reportMonth]})
-                </h3>
+              <div className='flex flex-col gap-1 text-slate-200'>
+                <div className='flex items-center gap-2'>
+                  <Users size={16} className='text-slate-400' />
+                  <h3 className='text-sm font-semibold'>Ranking de clientes</h3>
+                </div>
+                <div className='flex items-center gap-2 text-xs text-slate-400'>
+                  <span>{MONTHS_FULL[reportMonth]}</span>
+                  <span className='text-slate-600'>•</span>
+                  <span>por Valor (R$)</span>
+                </div>
               </div>
               <button
                 type='button'
                 onClick={() => setIsRankingOpen(false)}
-                className='text-slate-400 hover:text-white px-2 py-1 text-sm font-semibold'
+                className='h-10 w-10 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors'
+                aria-label='Fechar'
               >
-                Fechar
+                <X size={18} />
               </button>
             </div>
 
@@ -591,36 +614,78 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                     .slice(0, 2)
                     .map((p) => p[0]?.toUpperCase() || '')
                     .join('')
+                  const colors = getAvatarColors(client.clientId || client.name)
+
+                  const rankStyles =
+                    idx === 0
+                      ? 'bg-emerald-500/10 border-emerald-500/40'
+                      : idx === 1
+                      ? 'bg-cyan-500/10 border-cyan-500/40'
+                      : idx === 2
+                      ? 'bg-indigo-500/10 border-indigo-500/40'
+                      : 'bg-slate-800/60 border-slate-700'
+
+                  const badgeStyles =
+                    idx === 0
+                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-100'
+                      : idx === 1
+                      ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-100'
+                      : idx === 2
+                      ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-100'
+                      : 'bg-slate-700/60 text-slate-300'
+
+                  const primaryValue = formatCurrency(client.totalValue)
+                  const secondaryValue = `${client.totalLiters.toLocaleString('pt-BR')} L`
 
                   return (
                     <React.Fragment key={client.clientId + idx}>
-                      <div className='flex items-start gap-3 py-2'>
-                        <span className='text-xs font-extrabold text-slate-300 bg-slate-700/60 rounded-full px-2 py-0.5 w-8 text-center mt-1'>
+                      <div className={`flex items-start gap-3 py-3 px-3 rounded-xl border ${rankStyles}`}>
+                        <span
+                          className={`text-xs font-extrabold rounded-full px-2 py-0.5 w-8 text-center mt-1 border ${badgeStyles}`}
+                        >
                           {idx + 1}
                         </span>
-                        <div className='h-11 w-11 rounded-full bg-slate-700/60 border border-slate-600 flex items-center justify-center text-slate-100 shrink-0 overflow-hidden'>
+                        <div
+                          className='h-10 w-10 rounded-full border border-slate-700 flex items-center justify-center text-slate-100 shrink-0 overflow-hidden'
+                          style={{ backgroundColor: colors.bg, color: colors.text }}
+                        >
                           {client.avatar ? (
                             <img src={client.avatar} alt={client.name} className='h-full w-full object-cover' />
                           ) : (
-                            <span className='text-sm font-bold'>{initials}</span>
+                            <span className='text-xs font-bold'>{initials}</span>
                           )}
                         </div>
                         <div className='min-w-0 flex-1 space-y-1'>
                           <p className='text-white font-semibold truncate'>{client.name}</p>
                           <div className='flex items-center gap-2 text-sm text-slate-200 font-semibold'>
-                            <span>{formatCurrency(client.totalValue)}</span>
+                            <span>{primaryValue}</span>
                             <span className='text-slate-500'>•</span>
-                            <span className='text-xs text-slate-400'>
-                              {client.totalLiters.toLocaleString('pt-BR')} L
-                            </span>
+                            <span className='text-xs text-slate-400'>{secondaryValue}</span>
                           </div>
                         </div>
+                        {idx === 0 && <span className='text-lg mr-1' role='img' aria-label='Top 1'>🏆</span>}
                       </div>
                       {idx !== monthlyRanking.length - 1 && <div className='h-px bg-slate-800 my-1' />}
                     </React.Fragment>
                   )
                 })
               )}
+            </div>
+
+            <div className='border-t border-slate-800 px-4 py-3 text-sm text-slate-200 flex items-center justify-between'>
+              <div className='flex items-center gap-2'>
+                <span className='font-semibold'>Total do mês:</span>
+                <span className='text-white font-bold'>
+                  {formatCurrency(monthlyTotals[reportMonth]?.totalValue || 0)}
+                </span>
+                <span className='text-slate-500'>•</span>
+                <span className='text-slate-300'>
+                  {(monthlyTotals[reportMonth]?.totalLiters || 0).toLocaleString('pt-BR')} L
+                </span>
+              </div>
+              <div className='text-xs text-slate-400'>
+                Clientes ativos: <span className='text-slate-200 font-semibold'>{monthlyRanking.length}</span>
+              </div>
             </div>
           </div>
         </div>
