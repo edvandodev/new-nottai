@@ -399,6 +399,7 @@ function App() {
           onClick={() => {
             setActiveTab('CLIENTS')
             setIsClientDetailsView(false)
+            setSelectedClientId(null)
           }}
           className={`${navItemBase} ${
             activeTab === 'CLIENTS' ? navActive : navInactive

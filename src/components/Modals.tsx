@@ -396,6 +396,7 @@ export const AddSaleModal = ({
                 className='w-full p-3 text-center rounded-lg bg-slate-700 border border-slate-600 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:outline-none text-xl font-bold'
                 placeholder='1'
                 value={liters}
+                onFocus={() => setLiters('')}
                 onChange={(e) => setLiters(e.target.value)}
               />
               <span className='absolute right-4 top-3.5 text-slate-400 font-medium text-sm'>
