@@ -1,6 +1,8 @@
 import { jsPDF } from 'jspdf'
 import { Filesystem, Directory } from '@capacitor/filesystem'
+import { FileOpener } from '@capawesome-team/capacitor-file-opener'
 import { Share } from '@capacitor/share'
+import { Capacitor } from '@capacitor/core'
 import type { Sale } from '@/types'
 
 const toBase64 = async (blob: Blob) => {
@@ -15,7 +17,8 @@ export const generateReceipt = (
   clientName: string,
   amount: number,
   salesPaid: Sale[],
-  paymentDate: string
+  paymentDate: string,
+  action: 'open' | 'share' = 'open'
 ) => {
   const doc = new jsPDF()
 
@@ -109,7 +112,9 @@ export const generateReceipt = (
     '_'
   )}_${new Date().getTime()}.pdf`
 
-  const tryShareNative = async () => {
+  const isNative = Capacitor.isNativePlatform?.() ?? false
+
+  const openNative = async () => {
     const pdfBlob = doc.output('blob')
     const base64 = await toBase64(pdfBlob)
 
@@ -120,34 +125,61 @@ export const generateReceipt = (
       console.warn('Permissão do Filesystem não concedida', err)
     }
 
+    // Tenta salvar em Documents (mais compatível com visualizadores de PDF no Android).
+    let saveDirectory: Directory = Directory.Cache
+    let savePath = `receipts/${fileName}`
+
+    // App-specific (não requer permissões em Android 11+)
     const saveResult = await Filesystem.writeFile({
-      path: `receipts/${fileName}`,
+      path: savePath,
       data: base64,
-      directory: Directory.Cache,
+      directory: saveDirectory,
       recursive: true
     })
 
     const uri = await Filesystem.getUri({
-      path: saveResult.uri || `receipts/${fileName}`,
-      directory: Directory.Cache
+      path: savePath,
+      directory: saveDirectory
     })
 
-    await Share.share({
-      title: 'Comprovante de Pagamento',
-      text: 'PDF gerado pela Nottai',
-      url: uri.uri,
-      dialogTitle: 'Compartilhar comprovante'
-    })
+    const target = uri.uri || saveResult?.uri
+    if (target) {
+      if (action === 'share') {
+        await Share.share({
+          title: 'Comprovante de Pagamento',
+          text: `Comprovante de ${clientName}`,
+          url: target,
+          dialogTitle: 'Compartilhar PDF'
+        })
+      } else {
+        await FileOpener.openFile({ path: target, contentType: 'application/pdf' })
+      }
+      return
+    }
+
+    const blobUrl = URL.createObjectURL(pdfBlob)
+    window.open(blobUrl, '_blank')
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
   }
 
-  // Tenta salvar/compartilhar nativo; se falhar, usa download web como fallback.
+  // Tenta salvar e abrir nativo; se falhar, usa download/visualização web como fallback.
   try {
-    tryShareNative().catch((err) => {
-      console.warn('Falha ao usar Filesystem/Share, fallback para download', err)
+    if (!isNative) {
+      if (action === 'share') {
+        alert('Compartilhar não é suportado no navegador; o PDF será baixado.')
+      }
+      doc.save(fileName)
+      return
+    }
+
+    openNative().catch((err) => {
+      console.warn('Falha ao salvar/abrir/compartilhar PDF nativo, fallback para download', err)
+      alert('Não foi possível abrir/compartilhar o PDF. Verifique se há leitor de PDF instalado.')
       doc.save(fileName)
     })
   } catch (err) {
-    console.warn('Falha ao usar Filesystem/Share, fallback para download', err)
+    console.warn('Falha ao salvar/abrir/compartilhar PDF nativo, fallback para download', err)
+    alert('Não foi possível abrir/compartilhar o PDF. Verifique se há leitor de PDF instalado.')
     doc.save(fileName)
   }
 }

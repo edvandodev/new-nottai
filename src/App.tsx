@@ -424,11 +424,11 @@ function App() {
       case 'CLIENTS':
         return 'Meus Clientes'
       case 'REPORTS':
-        return 'Relat?rios'
+        return 'Relatórios'
       case 'SETTINGS':
         return 'Ajustes'
       case 'PAYMENTS':
-        return 'Hist?rico'
+        return 'Histórico'
       default:
         return ''
     }
@@ -523,7 +523,7 @@ function App() {
             className='mb-1 transition-transform group-active:scale-90'
           />
           <span className='text-[10px] font-medium tracking-wide'>
-            Relat?rios
+            Relatórios
           </span>
         </button>
 

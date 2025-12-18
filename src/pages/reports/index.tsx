@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react'
+﻿import React, { useEffect, useMemo, useState } from "react"
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -10,7 +10,6 @@ import {
   X
 } from 'lucide-react'
 import type { Client, Payment, Sale } from '@/types'
-import { MonthYearFilterButtons } from '@/components/MonthYearFilterButtons'
 
 type ReportsPageProps = {
   sales: Sale[]
@@ -159,6 +158,63 @@ type StatsSummaryCardProps = {
   change: { direction: ChangeDirection; percent: number }
 }
 
+type ViewMode = 'month' | 'week'
+
+const MonthYearToggle = ({
+  monthLabel,
+  yearLabel,
+  onPressMonth,
+  onPressYear
+}: {
+  monthLabel: string
+  yearLabel: string
+  onPressMonth: () => void
+  onPressYear: () => void
+}) => (
+  <div className='inline-flex items-center rounded-full border border-white/10 bg-white/5 overflow-hidden shadow-inner'>
+    <button
+      type='button'
+      onClick={onPressMonth}
+      className='px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/5 transition'
+    >
+      {monthLabel}
+    </button>
+    <div className='w-px self-stretch bg-white/10' />
+    <button
+      type='button'
+      onClick={onPressYear}
+      className='px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/5 transition'
+    >
+      {yearLabel}
+    </button>
+  </div>
+)
+
+const ViewToggle = ({
+  value,
+  onChange
+}: {
+  value: ViewMode
+  onChange: (v: ViewMode) => void
+}) => {
+  const optionClasses = (mode: ViewMode) =>
+    [
+      'px-4 py-2 rounded-full text-sm font-medium transition',
+      value === mode ? 'bg-white/12 text-white shadow' : 'text-white/70 hover:text-white'
+    ].join(' ')
+
+  return (
+    <div className='inline-flex rounded-full border border-white/10 bg-white/5 p-1 shadow-inner'>
+      <button type='button' onClick={() => onChange('month')} className={optionClasses('month')}>
+        Mês
+      </button>
+      <button type='button' onClick={() => onChange('week')} className={optionClasses('week')}>
+        Semana
+      </button>
+    </div>
+  )
+}
+
 const StatsSummaryCard = ({
   title,
   icon,
@@ -201,7 +257,7 @@ const StatsSummaryCard = ({
             {title}
           </p>
           <p
-            className={`text-lg font-extrabold ${accentText} whitespace-nowrap overflow-hidden text-ellipsis`}
+            className={`text-base font-extrabold ${accentText} whitespace-nowrap overflow-hidden text-ellipsis`}
             title={mainValue}
           >
             {mainValue}
@@ -217,17 +273,15 @@ const StatsSummaryCard = ({
       <div className='h-px w-full bg-slate-700/70' />
 
       <div className='space-y-1'>
-        <p className='text-slate-400 text-xs font-medium'>
-          Mês passado{' '}
-          <span className={accent === 'blue' ? 'text-blue-200' : 'text-green-200'}>
+        <p className='text-slate-400 text-[11px] font-medium'>Mês passado</p>
+        <div className='flex items-center justify-between text-xs text-slate-400'>
+          <span className='font-semibold whitespace-nowrap overflow-hidden text-ellipsis'>
             {previousValue}
           </span>
-        </p>
-        <div className='flex items-center gap-2 text-sm font-semibold'>
-          <span className={changeColor} aria-label='Variacao percentual'>
+          <span className={`flex items-center gap-1 font-bold ${changeColor}`}>
             {renderChangeIcon()}
+            {percentLabel}
           </span>
-          <span className={changeColor}>{percentLabel}</span>
         </div>
       </div>
     </div>
@@ -237,6 +291,8 @@ const StatsSummaryCard = ({
 export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
   const [reportYear, setReportYear] = useState(new Date().getFullYear())
   const [reportMonth, setReportMonth] = useState(new Date().getMonth())
+  const [showMonthPicker, setShowMonthPicker] = useState(false)
+  const [showYearPicker, setShowYearPicker] = useState(false)
 
   const mergedSales = useMemo(() => {
     const byId = new Map<string, Sale>()
@@ -289,7 +345,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
   const litersChange = computeChange(reportData.totalLiters, previousTotals.liters)
   const valueChange = computeChange(reportData.totalValue, previousTotals.value)
 
-  const [viewMode, setViewMode] = useState<'monthly' | 'weekly'>('monthly')
+  const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [tooltipMonth, setTooltipMonth] = useState<number | null>(null)
   const [isRankingOpen, setIsRankingOpen] = useState(false)
 
@@ -300,7 +356,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
   const hasMonthlyData = monthlyTotals.some((m) => m.totalValue > 0)
 
   useEffect(() => {
-    if (viewMode === 'monthly') setTooltipMonth(reportMonth)
+    if (viewMode === 'month') setTooltipMonth(reportMonth)
     else setTooltipMonth(null)
   }, [reportMonth, viewMode])
 
@@ -331,12 +387,66 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
 
   return (
     <div className='space-y-6 animate-fade-in'>
-      <MonthYearFilterButtons
-        month={reportMonth}
-        year={reportYear}
-        onChangeMonth={setReportMonth}
-        onChangeYear={setReportYear}
-      />
+      <div className='flex items-center justify-end relative'>
+        <MonthYearToggle
+          monthLabel={MONTHS_SHORT[reportMonth]}
+          yearLabel={String(reportYear)}
+          onPressMonth={() => {
+            setShowYearPicker(false)
+            setShowMonthPicker((prev) => !prev)
+          }}
+          onPressYear={() => {
+            setShowMonthPicker(false)
+            setShowYearPicker((prev) => !prev)
+          }}
+        />
+        {showMonthPicker && (
+          <div className='absolute right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-lg p-2 z-30 w-40'>
+            <div className='max-h-64 overflow-y-auto custom-scrollbar space-y-1'>
+              {MONTHS_FULL.map((label, idx) => (
+                <button
+                  key={label}
+                  type='button'
+                  onClick={() => {
+                    setReportMonth(idx)
+                    setShowMonthPicker(false)
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+                    idx === reportMonth
+                      ? 'bg-blue-600/20 text-white'
+                      : 'text-slate-200 hover:bg-slate-800'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {showYearPicker && (
+          <div className='absolute right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-lg p-2 z-30 w-28'>
+            <div className='max-h-64 overflow-y-auto custom-scrollbar space-y-1'>
+              {Array.from({ length: 9 }, (_, i) => reportYear - 4 + i).map((year) => (
+                <button
+                  key={year}
+                  type='button'
+                  onClick={() => {
+                    setReportYear(year)
+                    setShowYearPicker(false)
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+                    year === reportYear
+                      ? 'bg-blue-600/20 text-white'
+                      : 'text-slate-200 hover:bg-slate-800'
+                  }`}
+                >
+                  {year}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className='grid grid-cols-2 gap-4'>
         <StatsSummaryCard
@@ -362,21 +472,13 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
           <div className='flex items-center gap-2'>
             <BarChart3 size={18} className='text-slate-500' />
             <h3 className='text-slate-200 text-sm font-bold uppercase tracking-wider'>
-              Vendas por Mês
+              {viewMode === 'month' ? 'Vendas por Mês' : 'Vendas por Semana'}
             </h3>
           </div>
-          <button
-            type='button'
-            onClick={() =>
-              setViewMode((prev) => (prev === 'monthly' ? 'weekly' : 'monthly'))
-            }
-            className='text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-600 bg-slate-800 text-slate-200 hover:border-blue-500 hover:text-white transition-colors'
-          >
-            {viewMode === 'monthly' ? 'Ver por semana' : 'Ver por mes'}
-          </button>
+          <ViewToggle value={viewMode} onChange={setViewMode} />
         </div>
 
-        {viewMode === 'monthly' ? (
+        {viewMode === 'month' ? (
           hasMonthlyData ? (
             <div className='bg-slate-900/50 border border-slate-800 rounded-xl p-4'>
               <div className='flex items-center justify-between text-sm text-slate-300 mb-4'>
@@ -505,7 +607,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsRankingOpen(true)}
               className='ml-auto text-xs font-semibold text-blue-300 hover:text-blue-200 cursor-pointer inline-flex items-center gap-1'
             >
-              VER MAIS
+              VER TODOS
               <ChevronRight size={18} strokeWidth={3} className='text-blue-300 group-hover:text-blue-200' />
             </span>
           )}
@@ -694,7 +796,5 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
     </div>
   )
 }
-
-
 
 

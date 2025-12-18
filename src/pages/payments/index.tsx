@@ -219,3 +219,4 @@ export function PaymentsPage({ payments, onGenerateReceipt, onDeletePayment }: P
     </div>
   )
 }
+

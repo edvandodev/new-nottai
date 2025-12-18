@@ -25,6 +25,7 @@ type ClientsPageProps = {
   payments: Payment[]
   clientBalances: Map<string, number>
   priceSettings: PriceSettings
+  resetToListSignal?: number
   onAddClient: () => void
   onEditClient: (client: Client) => void
   onAddSale: (clientId: string) => void
@@ -196,6 +197,7 @@ export function ClientsPage({
   payments,
   clientBalances,
   priceSettings,
+  resetToListSignal,
   onAddClient,
   onEditClient,
   onAddSale,
@@ -315,6 +317,12 @@ export function ClientsPage({
       setIsDebtOpen(false)
     }
   }, [selectedClientId, selectedClient])
+
+  useEffect(() => {
+    setView('LIST')
+    setSelectedClientId(null)
+    setIsDebtOpen(false)
+  }, [resetToListSignal])
 
   const selectedClientHistory = useMemo(() => {
     if (!selectedClientId) {
