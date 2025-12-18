@@ -308,7 +308,7 @@ function App() {
           />
         )
       case 'REPORTS':
-        return <ReportsPage sales={sales} payments={payments} />
+        return <ReportsPage sales={sales} payments={payments} clients={clients} />
       case 'SETTINGS':
         return (
           <SettingsPage

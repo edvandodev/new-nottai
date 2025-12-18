@@ -1,18 +1,37 @@
-import React, { useMemo, useState } from 'react'
+﻿import React, { useEffect, useMemo, useState } from 'react'
 import {
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
+  ChevronRight,
   DollarSign,
-  Droplets
+  Droplets,
+  Users
 } from 'lucide-react'
-import type { Payment, Sale } from '@/types'
+import type { Client, Payment, Sale } from '@/types'
 import { MonthYearFilterButtons } from '@/components/MonthYearFilterButtons'
 
 type ReportsPageProps = {
   sales: Sale[]
   payments: Payment[]
+  clients: Client[]
 }
+
+const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+const MONTHS_FULL = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro'
+]
 
 const parseDate = (
   value: string | number | Date | { seconds?: number; nanoseconds?: number }
@@ -37,6 +56,63 @@ const parseDate = (
     return Number.isNaN(d.getTime()) ? null : d
   }
   return null
+}
+
+const filterSalesByMonth = (sales: Sale[], year: number, monthIndex: number) =>
+  sales.filter((s) => {
+    const d = parseDate(s.date as any)
+    if (!d) return false
+    return d.getFullYear() === year && d.getMonth() === monthIndex
+  })
+
+const getMonthlyTotals = (sales: Sale[], year: number) => {
+  const totals = Array.from({ length: 12 }, () => ({ totalValue: 0, totalLiters: 0 }))
+  sales.forEach((s) => {
+    const d = parseDate(s.date as any)
+    if (!d) return
+    if (d.getFullYear() !== year) return
+    const idx = d.getMonth()
+    totals[idx].totalValue += s.totalValue
+    totals[idx].totalLiters += s.liters
+  })
+  return totals
+}
+
+const getTopClientsByMonth = (
+  sales: Sale[],
+  clients: Client[],
+  year: number,
+  monthIndex: number,
+  topN = 3
+) => {
+  const filtered = filterSalesByMonth(sales, year, monthIndex)
+  const nameById = new Map(clients.map((c) => [c.id, c.name]))
+  const avatarById = new Map(clients.map((c) => [c.id, c.avatar]))
+
+  const aggregated = new Map<
+    string,
+    { clientId: string; name: string; avatar?: string; totalValue: number; totalLiters: number }
+  >()
+
+  filtered.forEach((s) => {
+    const clientId = s.clientId || 'desconhecido'
+    const current =
+      aggregated.get(clientId) || {
+        clientId,
+        name: nameById.get(clientId) || 'Cliente',
+        avatar: avatarById.get(clientId),
+        totalValue: 0,
+        totalLiters: 0
+      }
+    current.totalValue += s.totalValue
+    current.totalLiters += s.liters
+    if (!current.avatar) current.avatar = avatarById.get(clientId)
+    aggregated.set(clientId, current)
+  })
+
+  return Array.from(aggregated.values())
+    .sort((a, b) => b.totalValue - a.totalValue)
+    .slice(0, topN)
 }
 
 const computeMonthTotals = (
@@ -124,7 +200,7 @@ const StatsSummaryCard = ({
             {title}
           </p>
           <p
-            className={`text-xl font-extrabold ${accentText} whitespace-nowrap overflow-hidden text-ellipsis`}
+            className={`text-lg font-extrabold ${accentText} whitespace-nowrap overflow-hidden text-ellipsis`}
             title={mainValue}
           >
             {mainValue}
@@ -157,7 +233,7 @@ const StatsSummaryCard = ({
   )
 }
 
-export function ReportsPage({ sales, payments }: ReportsPageProps) {
+export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
   const [reportYear, setReportYear] = useState(new Date().getFullYear())
   const [reportMonth, setReportMonth] = useState(new Date().getMonth())
 
@@ -176,11 +252,7 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
     val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
   const { reportData, previousTotals } = useMemo(() => {
-    const filtered = mergedSales.filter((s) => {
-      const d = parseDate(s.date as any)
-      if (!d) return false
-      return d.getFullYear() === reportYear && d.getMonth() === reportMonth
-    })
+    const filtered = filterSalesByMonth(mergedSales, reportYear, reportMonth)
 
     const totalLiters = filtered.reduce((acc, cur) => acc + cur.liters, 0)
     const totalValue = filtered.reduce((acc, cur) => acc + cur.totalValue, 0)
@@ -216,6 +288,30 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
   const litersChange = computeChange(reportData.totalLiters, previousTotals.liters)
   const valueChange = computeChange(reportData.totalValue, previousTotals.value)
 
+  const [viewMode, setViewMode] = useState<'monthly' | 'weekly'>('monthly')
+  const [tooltipMonth, setTooltipMonth] = useState<number | null>(null)
+  const [isRankingOpen, setIsRankingOpen] = useState(false)
+
+  const monthlyTotals = useMemo(
+    () => getMonthlyTotals(mergedSales, reportYear),
+    [mergedSales, reportYear]
+  )
+  const hasMonthlyData = monthlyTotals.some((m) => m.totalValue > 0)
+
+  useEffect(() => {
+    if (viewMode === 'monthly') setTooltipMonth(reportMonth)
+    else setTooltipMonth(null)
+  }, [reportMonth, viewMode])
+
+  const topClients = useMemo(
+    () => getTopClientsByMonth(mergedSales, clients, reportYear, reportMonth, 3),
+    [clients, mergedSales, reportMonth, reportYear]
+  )
+  const monthlyRanking = useMemo(
+    () => getTopClientsByMonth(mergedSales, clients, reportYear, reportMonth, clients.length || 50),
+    [clients, mergedSales, reportMonth, reportYear]
+  )
+
   return (
     <div className='space-y-6 animate-fade-in'>
       <MonthYearFilterButtons
@@ -245,14 +341,109 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
       </div>
 
       <div>
-        <div className='flex items-center gap-2 mb-3'>
-          <BarChart3 size={18} className='text-slate-500' />
-          <h3 className='text-slate-400 text-sm font-bold uppercase tracking-wider'>
-            Desempenho por Semana
-          </h3>
+        <div className='flex items-center justify-between gap-3 mb-4'>
+          <div className='flex items-center gap-2'>
+            <BarChart3 size={18} className='text-slate-500' />
+            <h3 className='text-slate-200 text-sm font-bold uppercase tracking-wider'>
+              Vendas por Mês
+            </h3>
+          </div>
+          <button
+            type='button'
+            onClick={() =>
+              setViewMode((prev) => (prev === 'monthly' ? 'weekly' : 'monthly'))
+            }
+            className='text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-600 bg-slate-800 text-slate-200 hover:border-blue-500 hover:text-white transition-colors'
+          >
+            {viewMode === 'monthly' ? 'Ver por semana' : 'Ver por mes'}
+          </button>
         </div>
 
-        {reportData.weeks.length === 0 ? (
+        {viewMode === 'monthly' ? (
+          hasMonthlyData ? (
+            <div className='bg-slate-900/50 border border-slate-800 rounded-xl p-4'>
+              <div className='flex items-center justify-between text-sm text-slate-300 mb-4'>
+                <span className='font-semibold text-slate-100'>
+                  {MONTHS_FULL[reportMonth]}
+                </span>
+                <div className='flex items-center gap-3 text-xs sm:text-sm text-slate-300'>
+                  <span className='font-semibold'>
+                    {formatCurrency(monthlyTotals[reportMonth]?.totalValue || 0)}
+                  </span>
+                  <span className='text-slate-400'>•</span>
+                  <span className='font-semibold'>
+                    {(monthlyTotals[reportMonth]?.totalLiters || 0).toLocaleString('pt-BR')} L
+                  </span>
+                </div>
+              </div>
+              <div className='overflow-x-auto no-scrollbar'>
+                <div className='min-w-[640px]'>
+                  {(() => {
+                    const maxValue = Math.max(...monthlyTotals.map((m) => m.totalValue), 1)
+                    return (
+                      <div className='grid grid-cols-12 gap-0.5 sm:gap-1 h-48 items-end'>
+                        {monthlyTotals.map((entry, idx) => {
+                          const isZero = entry.totalValue === 0
+                          const barHeightPct = isZero
+                            ? 6
+                            : Math.max((entry.totalValue / maxValue) * 100, 8)
+                          const isActive = idx === reportMonth
+                          return (
+                            <button
+                              key={idx}
+                              type='button'
+                              onClick={() => {
+                                setReportMonth(idx)
+                                setTooltipMonth(idx)
+                              }}
+                              className='relative flex flex-col items-center gap-2 group'
+                              title={`${MONTHS_SHORT[idx]} - ${formatCurrency(entry.totalValue)}`}
+                            >
+                              <div className='h-32 sm:h-40 w-[42%] bg-slate-800/5 overflow-hidden flex items-end justify-center'>
+                                <div
+                                  className={`w-full transition-all ${
+                                    isActive
+                                      ? 'bg-blue-400 shadow-lg shadow-blue-900/30'
+                                      : 'bg-slate-600'
+                                  }`}
+                                  style={{
+                                    height: `${barHeightPct}%`,
+                                    opacity: isZero ? 0.2 : 1
+                                  }}
+                                />
+                              </div>
+                              {tooltipMonth === idx && (
+                                <div className='absolute -top-10 sm:-top-12 bg-slate-800 text-slate-100 text-xs px-2.5 py-1 rounded-lg border border-slate-700 shadow-lg whitespace-nowrap'>
+                                  <span className='font-semibold'>{formatCurrency(entry.totalValue)}</span>
+                                  {entry.totalLiters ? (
+                                    <span className='text-slate-400 ml-2'>
+                                      {entry.totalLiters.toLocaleString('pt-BR')} L
+                                    </span>
+                                  ) : null}
+                                </div>
+                              )}
+                              <span
+                                className={`text-[11px] font-semibold uppercase tracking-wide ${
+                                  isActive ? 'text-blue-200' : 'text-slate-400'
+                                }`}
+                              >
+                                {MONTHS_SHORT[idx]}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className='bg-slate-900/50 rounded-xl p-8 text-center border border-slate-800 border-dashed'>
+              <p className='text-slate-500'>Nenhuma venda registrada neste periodo.</p>
+            </div>
+          )
+        ) : reportData.weeks.length === 0 ? (
           <div className='bg-slate-900/50 rounded-xl p-8 text-center border border-slate-800 border-dashed'>
             <p className='text-slate-500'>
               Nenhuma venda registrada neste periodo.
@@ -282,6 +473,162 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
           </div>
         )}
       </div>
+
+      <div className='space-y-3'>
+        <div className='flex items-center gap-2 text-slate-200'>
+          <Users size={16} className='text-slate-400' />
+          <h3 className='text-sm font-semibold'>
+            TOP CLIENTES ({MONTHS_FULL[reportMonth].toUpperCase()})
+          </h3>
+          {monthlyRanking.length > 0 && (
+            <span
+              role='button'
+              tabIndex={0}
+              onClick={() => setIsRankingOpen(true)}
+              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsRankingOpen(true)}
+              className='ml-auto text-xs font-semibold text-blue-300 hover:text-blue-200 cursor-pointer inline-flex items-center gap-1'
+            >
+              VER MAIS
+              <ChevronRight size={18} strokeWidth={3} className='text-blue-300 group-hover:text-blue-200' />
+            </span>
+          )}
+        </div>
+
+        {topClients.length === 0 ? (
+          <div className='bg-slate-900 rounded-lg border border-slate-800 px-4 py-6 text-center text-slate-500 text-sm'>
+            Nenhuma venda registrada neste periodo.
+          </div>
+        ) : (
+          <div className='flex gap-3 overflow-x-auto no-scrollbar pb-1'>
+            {topClients.map((client, idx) => {
+              const initials = client.name
+                .trim()
+                .split(/\s+/)
+                .slice(0, 2)
+                .map((p) => p[0]?.toUpperCase() || '')
+                .join('')
+
+              const badgeStyles = [
+                'bg-emerald-500/20 border-emerald-500/40 text-emerald-100',
+                'bg-cyan-500/20 border-cyan-500/40 text-cyan-100',
+                'bg-indigo-500/20 border-indigo-500/40 text-indigo-100'
+              ]
+              const cardStyles = [
+                'border-emerald-500/40 bg-emerald-500/10',
+                'border-cyan-500/40 bg-cyan-500/10',
+                'border-indigo-500/40 bg-indigo-500/10'
+              ]
+              const colorIndex = Math.min(idx, 2)
+
+              return (
+                <div
+                  key={client.clientId + idx}
+                  className={`relative min-w-[200px] rounded-xl p-3 flex-1 shadow-sm border ${cardStyles[colorIndex]}`}
+                >
+                  <span
+                    className={`absolute top-2 right-2 text-[10px] font-extrabold rounded-full px-2 py-0.5 ${badgeStyles[colorIndex]}`}
+                  >
+                    {idx + 1}
+                  </span>
+                  <div className='flex items-center gap-3'>
+                    <div className='h-11 w-11 rounded-full bg-slate-900/40 border border-slate-600 flex items-center justify-center text-slate-100 shrink-0 overflow-hidden'>
+                      {client.avatar ? (
+                        <img
+                          src={client.avatar}
+                          alt={client.name}
+                          className='h-full w-full object-cover'
+                        />
+                      ) : (
+                        <span className='text-sm font-bold'>{initials}</span>
+                      )}
+                    </div>
+                    <div className='space-y-1 min-w-0'>
+                      <p className='text-white font-semibold truncate'>{client.name}</p>
+                      <p className='text-sm text-slate-200 font-semibold'>
+                        {formatCurrency(client.totalValue)}
+                      </p>
+                      <p className='text-xs text-slate-400'>
+                        {client.totalLiters.toLocaleString('pt-BR')} L
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {isRankingOpen && (
+        <div className='fixed inset-0 z-40 bg-black/60 backdrop-blur-md flex items-center justify-center px-4'>
+          <div className='w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden'>
+            <div className='flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/80'>
+              <div className='flex items-center gap-2 text-slate-200'>
+                <Users size={16} className='text-slate-400' />
+                <h3 className='text-sm font-semibold'>
+                  Ranking completo ({MONTHS_FULL[reportMonth]})
+                </h3>
+              </div>
+              <button
+                type='button'
+                onClick={() => setIsRankingOpen(false)}
+                className='text-slate-400 hover:text-white px-2 py-1 text-sm font-semibold'
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className='max-h-[70vh] overflow-y-auto custom-scrollbar p-4 space-y-2'>
+              {monthlyRanking.length === 0 ? (
+                <div className='text-center text-slate-500 py-8'>
+                  Nenhuma venda registrada neste periodo.
+                </div>
+              ) : (
+                monthlyRanking.map((client, idx) => {
+                  const initials = client.name
+                    .trim()
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((p) => p[0]?.toUpperCase() || '')
+                    .join('')
+
+                  return (
+                    <React.Fragment key={client.clientId + idx}>
+                      <div className='flex items-start gap-3 py-2'>
+                        <span className='text-xs font-extrabold text-slate-300 bg-slate-700/60 rounded-full px-2 py-0.5 w-8 text-center mt-1'>
+                          {idx + 1}
+                        </span>
+                        <div className='h-11 w-11 rounded-full bg-slate-700/60 border border-slate-600 flex items-center justify-center text-slate-100 shrink-0 overflow-hidden'>
+                          {client.avatar ? (
+                            <img src={client.avatar} alt={client.name} className='h-full w-full object-cover' />
+                          ) : (
+                            <span className='text-sm font-bold'>{initials}</span>
+                          )}
+                        </div>
+                        <div className='min-w-0 flex-1 space-y-1'>
+                          <p className='text-white font-semibold truncate'>{client.name}</p>
+                          <div className='flex items-center gap-2 text-sm text-slate-200 font-semibold'>
+                            <span>{formatCurrency(client.totalValue)}</span>
+                            <span className='text-slate-500'>•</span>
+                            <span className='text-xs text-slate-400'>
+                              {client.totalLiters.toLocaleString('pt-BR')} L
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {idx !== monthlyRanking.length - 1 && <div className='h-px bg-slate-800 my-1' />}
+                    </React.Fragment>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
+
+
+
