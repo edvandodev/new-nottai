@@ -798,3 +798,4 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
 }
 
 
+

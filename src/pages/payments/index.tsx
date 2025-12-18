@@ -187,11 +187,11 @@ export function PaymentsPage({ payments, onGenerateReceipt, onDeletePayment }: P
                           <div className='flex gap-3'>
                             {payment.salesSnapshot && (
                               <button
-                                onClick={() => onGenerateReceipt(payment)}
+                                onClick={() => void onGenerateReceipt(payment)}
                                 className='flex-1 py-2 bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 border border-blue-600/30 transition-colors'
                               >
                                 <FileText size={16} />
-                                Baixar Comprovante PDF
+                                Ver Comprovante PDF
                               </button>
                             )}
 

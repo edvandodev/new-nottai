@@ -13,12 +13,11 @@ const toBase64 = async (blob: Blob) => {
   return btoa(binary)
 }
 
-export const generateReceipt = (
+const buildReceiptDoc = (
   clientName: string,
   amount: number,
   salesPaid: Sale[],
-  paymentDate: string,
-  action: 'open' | 'share' = 'open'
+  paymentDate: string
 ) => {
   const doc = new jsPDF()
 
@@ -79,9 +78,7 @@ export const generateReceipt = (
   doc.setFont('helvetica', 'normal')
 
   salesPaid.forEach((sale) => {
-    const dateStr = new Date(sale.date + 'T12:00:00').toLocaleDateString(
-      'pt-BR'
-    )
+    const dateStr = new Date(sale.date as any).toLocaleDateString('pt-BR')
     const itemDesc = `Leite (${sale.liters}L) - ${dateStr}`
     const itemValue = formatBRL(sale.totalValue)
 
@@ -107,29 +104,107 @@ export const generateReceipt = (
   doc.setFont('helvetica', 'italic')
   doc.text('Gerado por Nottai', pageWidth / 2, yPos, { align: 'center' })
 
-  const fileName = `Comprovante_${clientName.replace(
-    /\s+/g,
-    '_'
-  )}_${new Date().getTime()}.pdf`
+  const fileName = `Comprovante_${clientName.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`
+  return { doc, fileName }
+}
 
+export const generateReceiptFile = async (
+  clientName: string,
+  amount: number,
+  salesPaid: Sale[],
+  paymentDate: string
+) => {
+  const { doc, fileName } = buildReceiptDoc(clientName, amount, salesPaid, paymentDate)
+  const pdfBlob = doc.output('blob')
+  const base64 = await toBase64(pdfBlob)
+  const savePath = `receipts/${fileName}`
+  const saveDirectory: Directory = Directory.Documents
+
+  await Filesystem.writeFile({
+    path: savePath,
+    data: base64,
+    directory: saveDirectory,
+    recursive: true
+  })
+
+  const uri = await Filesystem.getUri({
+    path: savePath,
+    directory: saveDirectory
+  })
+
+  return { base64, path: savePath, uri: uri.uri ?? null, fileName }
+}
+
+export type ReceiptFileRef = {
+  source: 'native' | 'web'
+  directory?: Directory
+  path?: string
+  uri: string | null
+  fileName: string
+  mimeType: string
+  base64?: string
+}
+
+export const createReceiptFile = async (
+  clientName: string,
+  amount: number,
+  salesPaid: Sale[],
+  paymentDate: string
+): Promise<ReceiptFileRef> => {
+  const { doc, fileName } = buildReceiptDoc(clientName, amount, salesPaid, paymentDate)
+  const pdfBlob = doc.output('blob')
+  const mimeType = 'application/pdf'
+  const isNative = Capacitor.isNativePlatform?.() ?? false
+
+  if (!isNative) {
+    const blobUrl = URL.createObjectURL(pdfBlob)
+    return { source: 'web', uri: blobUrl, fileName, mimeType }
+  }
+
+  const base64 = await toBase64(pdfBlob)
+  const savePath = `receipts/${fileName}`
+  const saveDirectory: Directory = Directory.Documents
+
+  await Filesystem.writeFile({
+    path: savePath,
+    data: base64,
+    directory: saveDirectory,
+    recursive: true
+  })
+
+  const uri = await Filesystem.getUri({
+    path: savePath,
+    directory: saveDirectory
+  })
+
+  return {
+    source: 'native',
+    directory: saveDirectory,
+    path: savePath,
+    uri: uri.uri ?? null,
+    fileName,
+    mimeType,
+    base64
+  }
+}
+
+export const generateReceipt = (
+  clientName: string,
+  amount: number,
+  salesPaid: Sale[],
+  paymentDate: string,
+  action: 'open' | 'share' = 'open'
+) => {
+  const { doc, fileName } = buildReceiptDoc(clientName, amount, salesPaid, paymentDate)
   const isNative = Capacitor.isNativePlatform?.() ?? false
 
   const openNative = async () => {
     const pdfBlob = doc.output('blob')
     const base64 = await toBase64(pdfBlob)
 
-    // Solicita permissões de arquivo; em Android 13+ o diretório interno não precisa de STORAGE.
-    try {
-      await Filesystem.requestPermissions()
-    } catch (err) {
-      console.warn('Permissão do Filesystem não concedida', err)
-    }
+    const savePath = `receipts/${fileName}`
+    const saveDirectory: Directory = Directory.Documents
 
-    // Tenta salvar em Documents (mais compatível com visualizadores de PDF no Android).
-    let saveDirectory: Directory = Directory.Cache
-    let savePath = `receipts/${fileName}`
-
-    // App-specific (não requer permissões em Android 11+)
     const saveResult = await Filesystem.writeFile({
       path: savePath,
       data: base64,
@@ -162,7 +237,6 @@ export const generateReceipt = (
     setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
   }
 
-  // Tenta salvar e abrir nativo; se falhar, usa download/visualização web como fallback.
   try {
     if (!isNative) {
       if (action === 'share') {

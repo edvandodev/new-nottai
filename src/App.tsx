@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+﻿import React, { useEffect, useMemo, useState } from 'react'
 import { App as CapacitorApp } from '@capacitor/app'
 import { firestoreService } from './services/firestore'
 import {
@@ -16,7 +16,9 @@ import {
   ConfirmModal,
   SuccessReceiptModal
 } from './components/Modals'
-import { generateReceipt } from './services/pdfGenerator'
+import { createReceiptFile } from './services/pdfGenerator'
+import type { ReceiptFileRef } from './services/pdfGenerator'
+import { PdfViewerModal } from './components/PdfViewerModal'
 import { Milk, Settings as SettingsIcon, TrendingUp, Users } from 'lucide-react'
 
 // Import Pages
@@ -86,6 +88,8 @@ function App() {
     sales: Sale[]
     date: string
   } | null>(null)
+  const [pdfFile, setPdfFile] = useState<ReceiptFileRef | null>(null)
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
 
   // Firestore Listeners
   useEffect(() => {
@@ -104,7 +108,7 @@ function App() {
         const initial = await firestoreService.getPriceSettings()
         if (!cancelled && initial) setPriceSettings(initial)
       } catch (error) {
-        console.error('Falha ao buscar configura??es de pre?o', error)
+        console.error('Falha ao buscar configurações de preço', error)
       }
     })()
 
@@ -133,14 +137,19 @@ function App() {
           setIsPayModalOpen(false)
           return
         }
-        if (isReceiptModalOpen) {
-          setIsReceiptModalOpen(false)
-          return
-        }
-        if (clientToDeleteId) {
-          setClientToDeleteId(null)
-          return
-        }
+      if (isReceiptModalOpen) {
+        setIsReceiptModalOpen(false)
+        return
+      }
+      if (isPdfViewerOpen) {
+        setIsPdfViewerOpen(false)
+        setPdfFile(null)
+        return
+      }
+      if (clientToDeleteId) {
+        setClientToDeleteId(null)
+        return
+      }
         if (saleToDeleteId) {
           setSaleToDeleteId(null)
           return
@@ -321,22 +330,30 @@ function App() {
     setSelectedClientId(null)
   }
 
-  const handleGenerateReceipt = (payment?: Payment) => {
-    const info = payment
-      ? {
-          clientName: payment.clientName,
-          amount: payment.amount,
-          sales: payment.salesSnapshot || [],
-          date: payment.date
-        }
-      : lastPaymentInfo
-    if (info) {
-      generateReceipt(info.clientName, info.amount, info.sales, info.date)
+  const handleGenerateReceipt = async (payment?: Payment) => {
+  const info = payment
+    ? {
+        clientName: payment.clientName,
+        amount: payment.amount,
+        sales: payment.salesSnapshot || [],
+        date: payment.date
+      }
+    : lastPaymentInfo
+  if (info) {
+    try {
+      const file = await createReceiptFile(info.clientName, info.amount, info.sales, info.date)
+      setPdfFile(file)
+      setIsPdfViewerOpen(true)
       if (!payment) setIsReceiptModalOpen(false)
-    } else alert('N?o h? informa??es para gerar o recibo.')
+    } catch (err) {
+      console.error('Falha ao gerar comprovante', err)
+      alert('Não foi possível gerar o comprovante.')
+    }
+  } else {
+    alert('Não há informações para gerar o recibo.')
   }
-
-  // --- Deletion Handlers exposed to pages ---
+}
+// --- Deletion Handlers exposed to pages ---
   const confirmDeleteClient = async () => {
     if (!clientToDeleteId) return
     await firestoreService.deleteClient(clientToDeleteId)
@@ -400,7 +417,7 @@ function App() {
                 }
                 setPriceSettings(next)
               } catch (error) {
-                console.error('Falha ao salvar configuracoes de preco', error)
+                console.error('Falha ao buscar configurações de preço', error)
                 throw error
               }
             }}
@@ -597,7 +614,7 @@ function App() {
         onClose={() => setClientToDeleteId(null)}
         onConfirm={confirmDeleteClient}
         title='Excluir Cliente'
-        message='Tem certeza? Todo o hist?rico de vendas e pagamentos ser? perdido.'
+        message='Tem certeza? Todo o histórico de vendas e pagamentos ser? perdido.'
         isDanger
       />
       <ConfirmModal
@@ -616,11 +633,38 @@ function App() {
         message='Deseja remover este registro de pagamento?'
         isDanger
       />
+
+      <PdfViewerModal
+        open={isPdfViewerOpen}
+        onClose={() => {
+          if (pdfFile?.source === 'web' && pdfFile.uri) {
+            URL.revokeObjectURL(pdfFile.uri)
+          }
+          setIsPdfViewerOpen(false)
+          setPdfFile(null)
+        }}
+        file={pdfFile}
+        title='Comprovante PDF'
+      />
     </div>
   )
 }
 
 export default App
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

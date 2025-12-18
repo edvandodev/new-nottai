@@ -738,7 +738,7 @@ export function ClientsPage({
                         const isPayment = item.type === 'payment'
                         const title = isSale
                           ? `${item.liters} ${item.liters === 1 ? 'Litro' : 'Litros'}`
-                          : 'Pagamento recebido'
+                          : 'Pag. recebido'
 
                         const amount = item.amount
                         const ts = normalizeTimestamp(item.createdAt)
@@ -770,7 +770,7 @@ export function ClientsPage({
                               </div>
 
                               <div className='min-w-0'>
-                                <p className='text-white font-medium truncate'>
+                                <p className='text-white font-medium whitespace-nowrap'>
                                   {title}
                                 </p>
                                 <p className='text-slate-500 text-xs'>
@@ -783,7 +783,7 @@ export function ClientsPage({
                               <span
                                 className={`text-base font-bold ${
                                   isPayment ? 'text-emerald-400' : 'text-red-400'
-                                }`}
+                                } shrink-0 tabular-nums`}
                               >
                                 {formatCurrency(amount)}
                               </span>

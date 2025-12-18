@@ -603,7 +603,7 @@ export const SuccessReceiptModal = ({
             className='w-full py-3.5 px-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/50 flex items-center justify-center gap-2'
           >
             <Share2 size={20} />
-            Baixar Comprovante
+            Abrir Comprovante
           </button>
           <button
             type='button'
@@ -617,3 +617,6 @@ export const SuccessReceiptModal = ({
     </Modal>
   )
 }
+
+
+
