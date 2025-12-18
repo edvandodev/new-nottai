@@ -163,21 +163,21 @@ export const firestoreService = {
     let cancelled = false
 
     ;(async () => {
-      callbackId =
-        await FirebaseFirestore.addCollectionSnapshotListener<PriceSettings>(
-          { reference: SETTINGS },
-          (event, error) => {
-            if (cancelled) return
-            if (error || !event) {
-              console.error('listenToPriceSettings falhou', error)
-              callback(null)
-              return
-            }
-
-            const priceDoc = event.snapshots.find((s) => s.id === 'price')
-            callback(priceDoc?.data ?? null)
+      callbackId = await FirebaseFirestore.addDocumentSnapshotListener<
+        PriceSettings
+      >(
+        { reference: `${SETTINGS}/price` },
+        (event, error) => {
+          if (cancelled) return
+          if (error || !event) {
+            console.error('listenToPriceSettings falhou', error)
+            callback(null)
+            return
           }
-        )
+
+          callback(event.snapshot.data ?? null)
+        }
+      )
     })()
 
     return async () => {
@@ -186,6 +186,13 @@ export const firestoreService = {
         await FirebaseFirestore.removeSnapshotListener({ callbackId })
       }
     }
+  },
+
+  getPriceSettings: async (): Promise<PriceSettings | null> => {
+    const result = await FirebaseFirestore.getDocument<PriceSettings>({
+      reference: `${SETTINGS}/price`
+    })
+    return result.snapshot.data ?? null
   },
 
   savePriceSettings: async (settings: PriceSettings) => {

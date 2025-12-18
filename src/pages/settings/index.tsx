@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { DollarSign, Tag } from 'lucide-react'
 import type { PriceSettings } from '@/types'
 
@@ -36,7 +36,10 @@ export function SettingsPage({
     try {
       setIsSaving(true)
       await onSavePriceSettings(next)
-      alert('Preços atualizados com sucesso!')
+      alert('Precos atualizados com sucesso!')
+    } catch (error) {
+      console.error('Falha ao salvar precos', error)
+      alert('Nao foi possivel salvar os precos. Tente novamente.')
     } finally {
       setIsSaving(false)
     }

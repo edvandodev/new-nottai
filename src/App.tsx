@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+﻿import React, { useEffect, useMemo, useState } from 'react'
 import { firestoreService } from './services/firestore'
 import {
   Client,
@@ -90,31 +90,51 @@ function App() {
 
   // Firestore Listeners
   useEffect(() => {
+    let cancelled = false
     const unsubscribers = [
       firestoreService.listenToClients(setClients),
       firestoreService.listenToSales(setSales),
       firestoreService.listenToPayments(setPayments),
       firestoreService.listenToPriceSettings((settings) => {
-        if (settings) setPriceSettings(settings)
+        if (!cancelled && settings) setPriceSettings(settings)
       })
     ]
-    return () => unsubscribers.forEach((unsub) => unsub())
+
+    ;(async () => {
+      try {
+        const initial = await firestoreService.getPriceSettings()
+        if (!cancelled && initial) setPriceSettings(initial)
+      } catch (error) {
+        console.error('Falha ao buscar configurações de preço', error)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+      unsubscribers.forEach((unsub) => unsub())
+    }
   }, [])
 
   // Memoized Calculations
   const clientBalances = useMemo(() => {
     const balances = new Map<string, number>()
     clients.forEach((c) => balances.set(c.id, 0))
+
     sales.forEach((s) => {
-      if (!s.isPaid) {
-        balances.set(
-          s.clientId,
-          (balances.get(s.clientId) || 0) + s.totalValue
-        )
-      }
+      balances.set(s.clientId, (balances.get(s.clientId) || 0) + s.totalValue)
     })
+
+    payments.forEach((p) => {
+      balances.set(p.clientId, (balances.get(p.clientId) || 0) - p.amount)
+    })
+
+    clients.forEach((c) => {
+      const current = balances.get(c.id) || 0
+      balances.set(c.id, Math.max(0, current))
+    })
+
     return balances
-  }, [clients, sales])
+  }, [clients, sales, payments])
 
   const currentClientPrice = useMemo(() => {
     const client = clients.find((c) => c.id === selectedClientId)
@@ -161,10 +181,27 @@ function App() {
 
   const handleSaveSale = async (liters: number, date: string) => {
     if (!selectedClientId) return
+
+    const toDateTime = (dateStr: string) => {
+      const now = new Date()
+      const [year, month, day] = dateStr.split('-').map(Number)
+      if ([year, month, day].some((v) => Number.isNaN(v))) return now.toISOString()
+      const dt = new Date(
+        year,
+        (month || 1) - 1,
+        day || 1,
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds(),
+        now.getMilliseconds()
+      )
+      return dt.toISOString()
+    }
+
     const newSale: Sale = {
       id: crypto.randomUUID(),
       clientId: selectedClientId,
-      date,
+      date: toDateTime(date),
       liters,
       totalValue: liters * currentClientPrice,
       isPaid: false
@@ -179,23 +216,28 @@ function App() {
     setIsPayModalOpen(true)
   }
 
-  const handleConfirmPayDebt = async () => {
+  const handleConfirmPayDebt = async (paidAmount: number) => {
     if (!selectedClientId) return
     const client = clients.find((c) => c.id === selectedClientId)
-    const amount = clientBalances.get(selectedClientId) || 0
-    if (amount <= 0 || !client) return
+    const balance = Math.max(0, clientBalances.get(selectedClientId) || 0)
+    if (balance <= 0 || !client) return
+
+    const amount = Math.min(paidAmount, balance)
+    if (amount <= 0) return
 
     const currentDate = new Date().toISOString()
-    const salesToBePaid = sales.filter(
+    const unpaidSales = sales.filter(
       (s) => s.clientId === selectedClientId && !s.isPaid
     )
+    const shouldClearAll = amount >= balance
+    const salesToBePaid = shouldClearAll ? unpaidSales : []
     const newPayment: Payment = {
       id: crypto.randomUUID(),
       clientId: selectedClientId,
       clientName: client.name,
       amount,
       date: currentDate,
-      salesSnapshot: salesToBePaid
+      salesSnapshot: unpaidSales
     }
     await firestoreService.savePayment(newPayment, salesToBePaid)
 
@@ -272,22 +314,26 @@ function App() {
           <SettingsPage
             priceSettings={priceSettings}
             onSavePriceSettings={async (next) => {
-              // Não altera config: evita quebrar build se o type do firestoreService não tiver esse método.
               const fs: any = firestoreService as any
-              if (typeof fs.savePriceSettings === 'function') {
-                await fs.savePriceSettings(next)
-                return
+              try {
+                if (typeof fs.savePriceSettings === 'function') {
+                  await fs.savePriceSettings(next)
+                } else if (typeof fs.setPriceSettings === 'function') {
+                  await fs.setPriceSettings(next)
+                } else {
+                  console.warn(
+                    'Nenhum metodo de salvar preco encontrado em firestoreService (savePriceSettings/setPriceSettings).'
+                  )
+                  alert(
+                    'Nao encontrei um metodo para salvar as configuracoes de preco no firestoreService.'
+                  )
+                  return
+                }
+                setPriceSettings(next)
+              } catch (error) {
+                console.error('Falha ao salvar configuracoes de preco', error)
+                throw error
               }
-              if (typeof fs.setPriceSettings === 'function') {
-                await fs.setPriceSettings(next)
-                return
-              }
-              console.warn(
-                'Nenhum método de salvar preço encontrado em firestoreService (savePriceSettings/setPriceSettings).'
-              )
-              alert(
-                'Não encontrei um método para salvar as configurações de preço no firestoreService.'
-              )
             }}
           />
         )

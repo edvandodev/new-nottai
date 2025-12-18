@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react'
+﻿import React, { useEffect, useMemo, useState } from 'react'
 import {
   CheckCircle,
   ChevronLeft,
+  AlertTriangle,
   DollarSign,
   MessageCircle,
   Pencil,
@@ -32,6 +33,153 @@ type ClientsPageProps = {
   onDetailsViewChange: (isDetails: boolean) => void
 }
 
+type HistoryEvent = {
+  id: string
+  type: 'sale' | 'payment'
+  amount: number
+  createdAt: string | number | Date | { seconds?: number; nanoseconds?: number; toMillis?: () => number }
+  liters?: number
+}
+
+type DayGroup = {
+  key: string
+  label: string
+  items: HistoryEvent[]
+}
+
+const TYPE_PRIORITY: Record<HistoryEvent['type'], number> = {
+  payment: 2,
+  sale: 1
+}
+
+const normalizeTimestamp = (
+  value: HistoryEvent['createdAt'] | null | undefined
+): number => {
+  if (!value) return 0
+
+  if (value instanceof Date) return value.getTime()
+
+  if (typeof value === 'number') return value
+
+  if (typeof value === 'string') {
+    const t = new Date(value).getTime()
+    return Number.isNaN(t) ? 0 : t
+  }
+
+  if (typeof value === 'object') {
+    if (typeof value.toMillis === 'function') {
+      const t = value.toMillis()
+      return Number.isNaN(t) ? 0 : t
+    }
+    if (typeof value.seconds === 'number') {
+      const millis =
+        value.seconds * 1000 +
+        (typeof value.nanoseconds === 'number'
+          ? Math.floor(value.nanoseconds / 1_000_000)
+          : 0)
+      return millis
+    }
+  }
+
+  const fallback = new Date(value as any).getTime()
+  return Number.isNaN(fallback) ? 0 : fallback
+}
+
+const sortHistoryEvents = (events: HistoryEvent[]) => {
+  return [...events].sort((a, b) => {
+    const tsA = normalizeTimestamp(a.createdAt)
+    const tsB = normalizeTimestamp(b.createdAt)
+
+    if (tsA !== tsB) return tsB - tsA
+
+    const prioA = TYPE_PRIORITY[a.type] || 0
+    const prioB = TYPE_PRIORITY[b.type] || 0
+    if (prioA !== prioB) return prioB - prioA
+
+    return String(a.id).localeCompare(String(b.id))
+  })
+}
+
+const getDayKey = (ts: number) => {
+  const d = new Date(ts)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const formatDayLabel = (ts: number) => {
+  const months = [
+    'jan',
+    'fev',
+    'mar',
+    'abr',
+    'mai',
+    'jun',
+    'jul',
+    'ago',
+    'set',
+    'out',
+    'nov',
+    'dez'
+  ]
+  const target = new Date(ts)
+  const todayKey = getDayKey(Date.now())
+  const yesterdayKey = getDayKey(Date.now() - 24 * 60 * 60 * 1000)
+  const targetKey = getDayKey(ts)
+
+  if (targetKey === todayKey) return 'Hoje'
+  if (targetKey === yesterdayKey) return 'Ontem'
+
+  const day = String(target.getDate()).padStart(2, '0')
+  const month = months[target.getMonth()] || ''
+  const year = target.getFullYear()
+  return `${day} ${month} ${year}`
+}
+
+const groupHistoryEventsByDay = (events: HistoryEvent[]): DayGroup[] => {
+  const groupsMap = new Map<string, DayGroup>()
+
+  events.forEach((event) => {
+    const ts = normalizeTimestamp(event.createdAt)
+    const key = getDayKey(ts)
+    if (!groupsMap.has(key)) {
+      groupsMap.set(key, {
+        key,
+        label: formatDayLabel(ts),
+        items: []
+      })
+    }
+    groupsMap.get(key)!.items.push(event)
+  })
+
+  return Array.from(groupsMap.values()).sort((a, b) =>
+    b.key.localeCompare(a.key)
+  )
+}
+
+const getBalance = (events: HistoryEvent[]) => {
+  const sales = events.filter((e) => e.type === 'sale').reduce((acc, e) => acc + (e.amount || 0), 0)
+  const payments = events.filter((e) => e.type === 'payment').reduce((acc, e) => acc + (e.amount || 0), 0)
+  const balance = sales - payments
+  return { sales, payments, balance }
+}
+
+const getLastPaymentDate = (events: HistoryEvent[]) => {
+  const lastPaymentTs = Math.max(
+    0,
+    ...events
+      .filter((e) => e.type === 'payment')
+      .map((e) => normalizeTimestamp(e.createdAt))
+  )
+  return lastPaymentTs > 0 ? lastPaymentTs : null
+}
+
+const shouldShowOpenDebtBanner = (events: HistoryEvent[]) => {
+  const { balance } = getBalance(events)
+  return balance > 0
+}
+
 export function ClientsPage({
   clients,
   sales,
@@ -58,6 +206,19 @@ export function ClientsPage({
   const formatCurrency = (val: number) =>
     val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
+  const formatTimeLabel = (date: Date) =>
+    date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+  const formatBannerDate = (ts: number) => {
+    if (!ts) return ''
+    const months = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ']
+    const d = new Date(ts)
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = months[d.getMonth()] || ''
+    const year = String(d.getFullYear()).slice(-2)
+    return `${day} ${month} ${year}`
+  }
+
   const totalReceivable = useMemo(() => {
     return clients.reduce((acc, c) => {
       const bal = clientBalances.get(c.id) || 0
@@ -70,13 +231,13 @@ export function ClientsPage({
     clients.forEach((c) => map.set(c.id, 0))
 
     sales.forEach((s) => {
-      const t = new Date(s.date).getTime()
+      const t = normalizeTimestamp(s.date as any)
       const cur = map.get(s.clientId) || 0
       if (t > cur) map.set(s.clientId, t)
     })
 
     payments.forEach((p) => {
-      const t = new Date(p.date).getTime()
+      const t = normalizeTimestamp(p.date as any)
       const cur = map.get(p.clientId) || 0
       if (t > cur) map.set(p.clientId, t)
     })
@@ -116,19 +277,51 @@ export function ClientsPage({
   }, [selectedClientId, selectedClient])
 
   const selectedClientHistory = useMemo(() => {
-    if (!selectedClientId)
-      return [] as Array<
-        (Sale & { type: 'sale' }) | (Payment & { type: 'payment' })
-      >
-    const clientSales = sales
-      .filter((s) => s.clientId === selectedClientId)
-      .map((s) => ({ ...s, type: 'sale' as const }))
-    const clientPayments = payments
-      .filter((p) => p.clientId === selectedClientId)
-      .map((p) => ({ ...p, type: 'payment' as const }))
-    return [...clientSales, ...clientPayments].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    )
+    if (!selectedClientId) {
+      return {
+        events: [] as HistoryEvent[],
+        groups: [] as DayGroup[],
+        balance: 0,
+        lastPaymentTs: null as number | null,
+        bannerBalance: 0
+      }
+    }
+
+    const historyEvents: HistoryEvent[] = [
+      ...sales
+        .filter((s) => s.clientId === selectedClientId)
+        .map((s) => ({
+          id: s.id,
+          type: 'sale' as const,
+          amount: s.totalValue,
+          liters: s.liters,
+          createdAt: s.date
+        })),
+      ...payments
+        .filter((p) => p.clientId === selectedClientId)
+        .map((p) => ({
+          id: p.id,
+          type: 'payment' as const,
+          amount: p.amount,
+          createdAt: p.date
+        }))
+    ]
+
+    const sorted = sortHistoryEvents(historyEvents)
+    const groups = groupHistoryEventsByDay(sorted)
+    const lastPaymentTs = getLastPaymentDate(sorted)
+    const { balance } = getBalance(sorted)
+
+    let bannerBalance = 0
+    if (lastPaymentTs) {
+      const eventsUpToLastPayment = sorted.filter(
+        (e) => normalizeTimestamp(e.createdAt) <= lastPaymentTs
+      )
+      const { balance: balAtLastPayment } = getBalance(eventsUpToLastPayment)
+      bannerBalance = Math.max(0, balAtLastPayment)
+    }
+
+    return { events: sorted, groups, balance, lastPaymentTs, bannerBalance }
   }, [sales, payments, selectedClientId])
 
   const getClientPrice = (client: Client) =>
@@ -413,82 +606,108 @@ export function ClientsPage({
               </h3>
             </div>
 
-            {selectedClientHistory.length === 0 ? (
+            {selectedClientHistory.bannerBalance > 0 ? (
+              <div className='mb-3 bg-amber-800/30 border border-amber-700 text-amber-100 rounded-lg px-4 py-2 flex items-center gap-2 shadow-sm'>
+                <AlertTriangle size={18} className='shrink-0' />
+                <div className='space-y-0.5'>
+                  <p className='text-sm font-semibold leading-snug'>
+                    {`Débito de ${formatCurrency(selectedClientHistory.bannerBalance)} em aberto `}
+                    {selectedClientHistory.lastPaymentTs
+                      ? `após o pagamento do dia ${formatBannerDate(selectedClientHistory.lastPaymentTs)}`
+                      : '(sem pagamento registrado)'}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            {selectedClientHistory.groups.length === 0 ? (
               <div className='text-center py-10 rounded-2xl border border-slate-800 border-dashed bg-slate-900/30'>
                 <p className='text-slate-500'>
-                  Nenhuma movimentação registrada.
+                  Nenhuma movimentaÃ§Ã£o registrada.
                 </p>
               </div>
             ) : (
-              <div className='space-y-3'>
-                {selectedClientHistory.map((item) => {
-                  const isSale = item.type === 'sale'
-                  const title = isSale
-                    ? `${(item as Sale).liters} ${
-                        (item as Sale).liters === 1 ? 'Litro' : 'Litros'
-                      }`
-                    : 'Pagamento recebido'
-                  const amount = isSale
-                    ? (item as Sale).totalValue
-                    : (item as Payment).amount
-                  const dateLabel = new Date(item.date).toLocaleDateString(
-                    'pt-BR',
-                    { timeZone: 'UTC' }
-                  )
+              <div className='space-y-5'>
+                {selectedClientHistory.groups.map((group) => (
+                  <div key={group.key} className='space-y-3'>
+                    <p className='text-xs font-semibold text-slate-500 px-1 uppercase tracking-wide'>
+                      {group.label}
+                    </p>
+                    <div className='space-y-3'>
+                      {group.items.map((item) => {
+                        const isSale = item.type === 'sale'
+                        const isPayment = item.type === 'payment'
+                        const title = isSale
+                          ? `${item.liters} ${item.liters === 1 ? 'Litro' : 'Litros'}`
+                          : 'Pagamento recebido'
 
-                  return (
-                    <div
-                      key={`${item.type}-${item.id}`}
-                      className='bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between group hover:border-slate-700 transition-colors'
-                    >
-                      <div className='flex items-center gap-4 min-w-0'>
-                        <div
-                          className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${
-                            isSale
-                              ? 'bg-blue-600/20 text-blue-400'
-                              : 'bg-emerald-600/20 text-emerald-400'
-                          }`}
-                        >
-                          {isSale ? (
-                            <ShoppingCart size={20} />
-                          ) : (
-                            <DollarSign size={20} />
-                          )}
-                        </div>
+                        const amount = item.amount
+                        const ts = normalizeTimestamp(item.createdAt)
+                        const dateObj = new Date(ts)
+                        const timeLabel = formatTimeLabel(dateObj)
 
-                        <div className='min-w-0'>
-                          <p className='text-white font-medium truncate'>
-                            {title}
-                          </p>
-                          <p className='text-slate-500 text-xs'>{dateLabel}</p>
-                        </div>
-                      </div>
+                        return (
+                          <div
+                            key={`${item.type}-${item.id}`}
+                            className='bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between group hover:border-slate-700 transition-colors'
+                          >
+                            <div className='flex items-center gap-4 min-w-0'>
+                              <div
+                                className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${
+                                  isSale
+                                    ? 'bg-blue-600/20 text-blue-400'
+                                    : isPayment
+                                    ? 'bg-emerald-600/20 text-emerald-400'
+                                    : 'bg-amber-600/20 text-amber-400'
+                                }`}
+                              >
+                                {isSale ? (
+                                  <ShoppingCart size={20} />
+                                ) : isPayment ? (
+                                  <DollarSign size={20} />
+                                ) : (
+                                  <Wallet size={20} />
+                                )}
+                              </div>
 
-                      <div className='flex items-center gap-2 shrink-0'>
-                        <span
-                          className={`text-base font-bold ${
-                            isSale ? 'text-red-400' : 'text-emerald-400'
-                          }`}
-                        >
-                          {isSale
-                            ? `- ${formatCurrency(amount)}`
-                            : `+ ${formatCurrency(amount)}`}
-                        </span>
-                        <button
-                          onClick={() =>
-                            isSale
-                              ? onDeleteSale(item.id)
-                              : onDeletePayment(item.id)
-                          }
-                          className='p-2 text-slate-600 hover:text-red-400 transition-colors'
-                          aria-label='Excluir'
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                              <div className='min-w-0'>
+                                <p className='text-white font-medium truncate'>
+                                  {title}
+                                </p>
+                                <p className='text-slate-500 text-xs'>
+                                  {timeLabel}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className='flex items-center gap-2 shrink-0'>
+                              <span
+                                className={`text-base font-bold ${
+                                  isPayment
+                                    ? 'text-emerald-400'
+                                    : 'text-red-400'
+                                }`}
+                              >
+                                {formatCurrency(amount)}
+                              </span>
+                              <button
+                                onClick={() =>
+                                  isSale
+                                    ? onDeleteSale(item.id)
+                                    : onDeletePayment(item.id)
+                                }
+                                className='p-2 text-slate-600 hover:text-red-400 transition-colors'
+                                aria-label='Excluir'
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
-                  )
-                })}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -499,3 +718,5 @@ export function ClientsPage({
 
   return view === 'LIST' ? renderClientList() : renderClientDetails()
 }
+
+

@@ -1,4 +1,4 @@
-Ôªøimport React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   X,
   Minus,
@@ -71,7 +71,9 @@ export const ConfirmModal = ({
               <Trash2 size={24} />
             </div>
           )}
-          <p className='text-slate-300 text-lg leading-relaxed pt-1'>{message}</p>
+          <p className='text-slate-300 text-lg leading-relaxed pt-1'>
+            {message}
+          </p>
         </div>
         <div className='flex gap-3'>
           <button
@@ -196,15 +198,24 @@ export const AddClientModal = ({
             className='relative h-24 w-24 rounded-full bg-slate-700 border-2 border-dashed border-slate-500 hover:border-blue-500 cursor-pointer flex items-center justify-center overflow-hidden transition-all group'
           >
             {avatar ? (
-              <img src={avatar} alt='Preview' className='h-full w-full object-cover' />
+              <img
+                src={avatar}
+                alt='Preview'
+                className='h-full w-full object-cover'
+              />
             ) : (
-              <Camera size={32} className='text-slate-400 group-hover:text-blue-400' />
+              <Camera
+                size={32}
+                className='text-slate-400 group-hover:text-blue-400'
+              />
             )}
             <div className='absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'>
               <span className='text-xs text-white font-medium'>Alterar</span>
             </div>
           </div>
-          <p className='text-xs text-slate-500 mt-2'>Toque para adicionar foto</p>
+          <p className='text-xs text-slate-500 mt-2'>
+            Toque para adicionar foto
+          </p>
           <input
             type='file'
             ref={fileInputRef}
@@ -238,10 +249,9 @@ export const AddClientModal = ({
             }}
           />
         </div>
-
         <div>
           <label className='block text-sm font-medium text-slate-400 mb-1'>
-            Telefone (WhatsApp)
+            Telefone (Whatsapp)
           </label>
           <input
             type='tel'
@@ -267,7 +277,9 @@ export const AddClientModal = ({
               }`}
             >
               <span className='text-sm font-semibold'>Padr√£o</span>
-              <span className='text-xs'>{formatCurrency(priceSettings.standard)}/L</span>
+              <span className='text-xs'>
+                {formatCurrency(priceSettings.standard)}/L
+              </span>
             </button>
 
             <button
@@ -283,7 +295,9 @@ export const AddClientModal = ({
                 <Tag size={12} />
                 <span className='text-sm font-semibold'>Personalizado</span>
               </div>
-              <span className='text-xs'>{formatCurrency(priceSettings.custom)}/L</span>
+              <span className='text-xs'>
+                {formatCurrency(priceSettings.custom)}/L
+              </span>
             </button>
           </div>
         </div>
@@ -415,7 +429,9 @@ export const AddSaleModal = ({
 
         <div className='bg-slate-700/50 p-4 rounded-lg border border-slate-700 text-center'>
           <p className='text-sm text-slate-400'>Total a Pagar</p>
-          <p className='text-3xl font-bold text-green-400 mt-1'>{calculatedTotal}</p>
+          <p className='text-3xl font-bold text-green-400 mt-1'>
+            {calculatedTotal}
+          </p>
           <p className='text-xs text-slate-500 mt-1'>
             (
             {currentPrice.toLocaleString('pt-BR', {
@@ -483,7 +499,6 @@ export const PayDebtModal = ({
     onConfirm(normalized)
     onClose()
   }
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} title='Confirmar Pagamento'>
       <div className='space-y-6'>
@@ -495,7 +510,8 @@ export const PayDebtModal = ({
 
         <div className='text-center'>
           <p className='text-slate-300 mb-2'>
-            Total a receber de <span className='text-white font-bold'>{clientName}</span>:
+            Total a receber de{' '}
+            <span className='text-white font-bold'>{clientName}</span>:
           </p>
           <p className='text-4xl font-bold text-white'>
             {totalValue.toLocaleString('pt-BR', {
@@ -526,7 +542,7 @@ export const PayDebtModal = ({
             placeholder='Informe o valor recebido'
           />
           <p className='text-xs text-slate-500'>
-            Valor restante permanece como d√©bito em aberto no hist√≥rico.
+            Valor restante permanece como dÈbito em aberto no histÛrico.
           </p>
           {error && (
             <div className='bg-red-500/10 border border-red-500/30 text-red-300 text-sm p-2 rounded-lg'>
@@ -538,7 +554,7 @@ export const PayDebtModal = ({
         <div className='bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-left flex gap-3'>
           <AlertTriangle className='text-yellow-500 shrink-0' size={20} />
           <p className='text-sm text-yellow-200/80'>
-            Ao confirmar, registramos o pagamento e, se o valor for menor que o saldo, manteremos o restante em aberto no <strong>Hist√≥rico</strong>.
+            Ao confirmar, registramos o pagamento e, se o valor for menor que o saldo, manteremos o restante em aberto no <strong>HistÛrico</strong>.
           </p>
         </div>
 
@@ -588,7 +604,9 @@ export const SuccessReceiptModal = ({
         <div>
           <h3 className='text-xl font-bold text-white mb-2'>Tudo certo!</h3>
           <p className='text-slate-400'>
-            O pagamento de <span className='text-white font-semibold'>{clientName}</span> foi salvo com sucesso.
+            O pagamento de{' '}
+            <span className='text-white font-semibold'>{clientName}</span> foi
+            salvo com sucesso.
           </p>
           <p className='text-slate-500 text-sm mt-2'>
             Deseja gerar o comprovante PDF agora?
@@ -616,3 +634,7 @@ export const SuccessReceiptModal = ({
     </Modal>
   )
 }
+
+
+
+
