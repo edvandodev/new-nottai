@@ -1,4 +1,5 @@
-﻿import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { App as CapacitorApp } from '@capacitor/app'
 import { firestoreService } from './services/firestore'
 import {
   Client,
@@ -77,10 +78,8 @@ function App() {
   // Deletion and Confirmation State
   const [clientToDeleteId, setClientToDeleteId] = useState<string | null>(null)
   const [saleToDeleteId, setSaleToDeleteId] = useState<string | null>(null)
-  const [paymentToDeleteId, setPaymentToDeleteId] = useState<string | null>(
-    null
-  )
-
+  const [paymentToDeleteId, setPaymentToDeleteId] = useState<string | null>(null)
+  const [lastBackTime, setLastBackTime] = useState(0)
   const [lastPaymentInfo, setLastPaymentInfo] = useState<{
     clientName: string
     amount: number
@@ -105,7 +104,7 @@ function App() {
         const initial = await firestoreService.getPriceSettings()
         if (!cancelled && initial) setPriceSettings(initial)
       } catch (error) {
-        console.error('Falha ao buscar configurações de preço', error)
+        console.error('Falha ao buscar configura??es de pre?o', error)
       }
     })()
 
@@ -114,6 +113,76 @@ function App() {
       unsubscribers.forEach((unsub) => unsub())
     }
   }, [])
+
+  // Android back button handling
+  useEffect(() => {
+    let backHandler: { remove: () => void } | void
+
+    const register = async () => {
+      if (!CapacitorApp?.addListener) return
+      backHandler = await CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+        if (isClientModalOpen) {
+          setIsClientModalOpen(false)
+          return
+        }
+        if (isSaleModalOpen) {
+          setIsSaleModalOpen(false)
+          return
+        }
+        if (isPayModalOpen) {
+          setIsPayModalOpen(false)
+          return
+        }
+        if (isReceiptModalOpen) {
+          setIsReceiptModalOpen(false)
+          return
+        }
+        if (clientToDeleteId) {
+          setClientToDeleteId(null)
+          return
+        }
+        if (saleToDeleteId) {
+          setSaleToDeleteId(null)
+          return
+        }
+        if (paymentToDeleteId) {
+          setPaymentToDeleteId(null)
+          return
+        }
+
+        if (activeTab === 'CLIENTS' && isClientDetailsView) {
+          setIsClientDetailsView(false)
+          setSelectedClientId(null)
+          return
+        }
+
+        if (activeTab !== 'CLIENTS') {
+          setActiveTab('CLIENTS')
+          setIsClientDetailsView(false)
+          return
+        }
+
+        if (canGoBack) {
+          window.history.back()
+          return
+        }
+
+        const now = Date.now()
+        if (now - lastBackTime < 1500) {
+          CapacitorApp.exitApp()
+        } else {
+          setLastBackTime(now)
+          alert('Pressione voltar novamente para sair')
+        }
+      })
+    }
+
+    register()
+
+    return () => {
+      backHandler?.remove?.()
+    }
+  }, [activeTab, clientToDeleteId, isClientDetailsView, isClientModalOpen, isPayModalOpen, isReceiptModalOpen, isSaleModalOpen, lastBackTime, paymentToDeleteId, saleToDeleteId])
 
   // Memoized Calculations
   const clientBalances = useMemo(() => {
@@ -264,7 +333,7 @@ function App() {
     if (info) {
       generateReceipt(info.clientName, info.amount, info.sales, info.date)
       if (!payment) setIsReceiptModalOpen(false)
-    } else alert('Não há informações para gerar o recibo.')
+    } else alert('N?o h? informa??es para gerar o recibo.')
   }
 
   // --- Deletion Handlers exposed to pages ---
@@ -355,18 +424,18 @@ function App() {
       case 'CLIENTS':
         return 'Meus Clientes'
       case 'REPORTS':
-        return 'Relatórios'
+        return 'Relat?rios'
       case 'SETTINGS':
         return 'Ajustes'
       case 'PAYMENTS':
-        return 'Histórico'
+        return 'Hist?rico'
       default:
         return ''
     }
   }, [activeTab])
 
   const renderHeader = () => {
-    // Layout original: some quando está em detalhes do cliente.
+    // Layout original: some quando est? em detalhes do cliente.
     if (activeTab === 'CLIENTS' && isClientDetailsView) return null
 
     return (
@@ -454,7 +523,7 @@ function App() {
             className='mb-1 transition-transform group-active:scale-90'
           />
           <span className='text-[10px] font-medium tracking-wide'>
-            Relatórios
+            Relat?rios
           </span>
         </button>
 
@@ -528,7 +597,7 @@ function App() {
         onClose={() => setClientToDeleteId(null)}
         onConfirm={confirmDeleteClient}
         title='Excluir Cliente'
-        message='Tem certeza? Todo o histórico de vendas e pagamentos será perdido.'
+        message='Tem certeza? Todo o hist?rico de vendas e pagamentos ser? perdido.'
         isDanger
       />
       <ConfirmModal
@@ -552,3 +621,16 @@ function App() {
 }
 
 export default App
+
+
+
+
+
+
+
+
+
+
+
+
+
