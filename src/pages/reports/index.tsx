@@ -3,31 +3,16 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
-  Calendar,
   DollarSign,
   Droplets
 } from 'lucide-react'
 import type { Payment, Sale } from '@/types'
+import { MonthYearFilterButtons } from '@/components/MonthYearFilterButtons'
 
 type ReportsPageProps = {
   sales: Sale[]
   payments: Payment[]
 }
-
-const MONTHS = [
-  'Janeiro',
-  'Fevereiro',
-  'Marco',
-  'Abril',
-  'Maio',
-  'Junho',
-  'Julho',
-  'Agosto',
-  'Setembro',
-  'Outubro',
-  'Novembro',
-  'Dezembro'
-]
 
 const parseDate = (
   value: string | number | Date | { seconds?: number; nanoseconds?: number }
@@ -131,17 +116,22 @@ const StatsSummaryCard = ({
 
   return (
     <div
-      className={`rounded-2xl p-4 border ${accentBorder} flex flex-col gap-3 shadow-sm`}
+      className={`rounded-2xl p-4 border ${accentBorder} flex flex-col gap-3 shadow-sm overflow-hidden`}
     >
-      <div className='flex items-start justify-between'>
-        <div className='space-y-1'>
+      <div className='flex items-start justify-between gap-3'>
+        <div className='space-y-1 flex-1 min-w-0'>
           <p className='text-xs uppercase tracking-wide text-slate-400 font-semibold'>
             {title}
           </p>
-          <p className={`text-3xl font-extrabold ${accentText}`}>{mainValue}</p>
+          <p
+            className={`text-xl font-extrabold ${accentText} whitespace-nowrap overflow-hidden text-ellipsis`}
+            title={mainValue}
+          >
+            {mainValue}
+          </p>
         </div>
         <div
-          className={`h-10 w-10 rounded-full flex items-center justify-center ${accentIconBg}`}
+          className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${accentIconBg}`}
         >
           {icon}
         </div>
@@ -151,7 +141,7 @@ const StatsSummaryCard = ({
 
       <div className='space-y-1'>
         <p className='text-slate-400 text-xs font-medium'>
-          Em relacao ao mes anterior{' '}
+          Mês passado{' '}
           <span className={accent === 'blue' ? 'text-blue-200' : 'text-green-200'}>
             {previousValue}
           </span>
@@ -184,18 +174,6 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
 
   const formatCurrency = (val: number) =>
     val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-
-  const availableYears = useMemo(() => {
-    const years = new Set<number>()
-    years.add(new Date().getFullYear())
-
-    mergedSales.forEach((s) => {
-      const d = parseDate(s.date as any)
-      if (d) years.add(d.getFullYear())
-    })
-
-    return Array.from(years).sort((a, b) => b - a)
-  }, [mergedSales])
 
   const { reportData, previousTotals } = useMemo(() => {
     const filtered = mergedSales.filter((s) => {
@@ -240,45 +218,17 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
 
   return (
     <div className='space-y-6 animate-fade-in'>
-      <div className='bg-slate-800 rounded-2xl p-4 border border-slate-700'>
-        <div className='flex items-center gap-2 text-slate-400 mb-3 uppercase text-xs font-bold tracking-wider'>
-          <Calendar size={14} />
-          Filtro de Periodo
-        </div>
-        <div className='flex gap-3'>
-          <div className='flex-1'>
-            <select
-              value={reportMonth}
-              onChange={(e) => setReportMonth(Number(e.target.value))}
-              className='w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none'
-            >
-              {MONTHS.map((m, i) => (
-                <option key={m} value={i}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className='flex-1'>
-            <select
-              value={reportYear}
-              onChange={(e) => setReportYear(Number(e.target.value))}
-              className='w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none'
-            >
-              {availableYears.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
+      <MonthYearFilterButtons
+        month={reportMonth}
+        year={reportYear}
+        onChangeMonth={setReportMonth}
+        onChangeYear={setReportYear}
+      />
 
-      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+      <div className='grid grid-cols-2 gap-4'>
         <StatsSummaryCard
           title='Total Litros'
-          icon={<Droplets size={18} />}
+          icon={<Droplets size={12} />}
           accent='blue'
           mainValue={`${reportData.totalLiters} L`}
           previousValue={`${previousTotals.liters} L`}
@@ -286,7 +236,7 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
         />
         <StatsSummaryCard
           title='Valor Total'
-          icon={<DollarSign size={18} />}
+          icon={<DollarSign size={12} />}
           accent='green'
           mainValue={formatCurrency(reportData.totalValue)}
           previousValue={formatCurrency(previousTotals.value)}
