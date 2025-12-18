@@ -10,7 +10,7 @@ type ReportsPageProps = {
 const MONTHS = [
   'Janeiro',
   'Fevereiro',
-  'Março',
+  'Marco',
   'Abril',
   'Maio',
   'Junho',
@@ -21,6 +21,31 @@ const MONTHS = [
   'Novembro',
   'Dezembro'
 ]
+
+const parseDate = (
+  value: string | number | Date | { seconds?: number; nanoseconds?: number }
+) => {
+  if (!value) return null
+  if (value instanceof Date) return value
+  if (typeof value === 'number') {
+    const d = new Date(value)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+  if (typeof value === 'string') {
+    const d = new Date(value)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+  if (typeof value === 'object' && typeof value.seconds === 'number') {
+    const millis =
+      value.seconds * 1000 +
+      (typeof value.nanoseconds === 'number'
+        ? Math.floor(value.nanoseconds / 1_000_000)
+        : 0)
+    const d = new Date(millis)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+  return null
+}
 
 export function ReportsPage({ sales, payments }: ReportsPageProps) {
   const [reportYear, setReportYear] = useState(new Date().getFullYear())
@@ -44,16 +69,18 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
     const years = new Set<number>()
     years.add(new Date().getFullYear())
 
-    mergedSales.forEach((s) =>
-      years.add(new Date(`${s.date}T12:00:00`).getFullYear())
-    )
+    mergedSales.forEach((s) => {
+      const d = parseDate(s.date as any)
+      if (d) years.add(d.getFullYear())
+    })
 
     return Array.from(years).sort((a, b) => b - a)
   }, [mergedSales])
 
   const reportData = useMemo(() => {
     const filtered = mergedSales.filter((s) => {
-      const d = new Date(`${s.date}T12:00:00`)
+      const d = parseDate(s.date as any)
+      if (!d) return false
       return d.getFullYear() === reportYear && d.getMonth() === reportMonth
     })
 
@@ -65,7 +92,8 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
       { liters: number; value: number; label: string }
     > = {}
     filtered.forEach((s) => {
-      const d = new Date(`${s.date}T12:00:00`)
+      const d = parseDate(s.date as any)
+      if (!d) return
       const weekNum = Math.ceil(d.getDate() / 7)
       if (!weeks[weekNum])
         weeks[weekNum] = { liters: 0, value: 0, label: `Semana ${weekNum}` }
@@ -85,7 +113,7 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
       <div className='bg-slate-800 rounded-2xl p-4 border border-slate-700'>
         <div className='flex items-center gap-2 text-slate-400 mb-3 uppercase text-xs font-bold tracking-wider'>
           <Calendar size={14} />
-          Filtro de Período
+          Filtro de Periodo
         </div>
         <div className='flex gap-3'>
           <div className='flex-1'>
@@ -154,7 +182,7 @@ export function ReportsPage({ sales, payments }: ReportsPageProps) {
         {reportData.weeks.length === 0 ? (
           <div className='bg-slate-900/50 rounded-xl p-8 text-center border border-slate-800 border-dashed'>
             <p className='text-slate-500'>
-              Nenhuma venda registrada neste período.
+              Nenhuma venda registrada neste periodo.
             </p>
           </div>
         ) : (
