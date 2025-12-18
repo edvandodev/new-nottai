@@ -615,44 +615,41 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                     .map((p) => p[0]?.toUpperCase() || '')
                     .join('')
                   const colors = getAvatarColors(client.clientId || client.name)
-
-                  const rankStyles =
+                  const isTopThree = idx < 3
+                  const rowHighlight =
                     idx === 0
-                      ? 'bg-emerald-500/10 border-emerald-500/40'
+                      ? 'border-emerald-500/40 bg-emerald-500/10'
                       : idx === 1
-                      ? 'bg-cyan-500/10 border-cyan-500/40'
+                      ? 'border-cyan-500/40 bg-cyan-500/10'
                       : idx === 2
-                      ? 'bg-indigo-500/10 border-indigo-500/40'
-                      : 'bg-slate-800/60 border-slate-700'
-
-                  const badgeStyles =
+                      ? 'border-indigo-500/40 bg-indigo-500/10'
+                      : ''
+                  const numberColor =
                     idx === 0
-                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-100'
+                      ? 'text-emerald-300'
                       : idx === 1
-                      ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-100'
+                      ? 'text-cyan-300'
                       : idx === 2
-                      ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-100'
-                      : 'bg-slate-700/60 text-slate-300'
+                      ? 'text-indigo-300'
+                      : 'text-slate-400'
 
                   const primaryValue = formatCurrency(client.totalValue)
                   const secondaryValue = `${client.totalLiters.toLocaleString('pt-BR')} L`
 
                   return (
                     <React.Fragment key={client.clientId + idx}>
-                      <div className={`flex items-start gap-3 py-3 px-3 rounded-xl border ${rankStyles}`}>
-                        <span
-                          className={`text-xs font-extrabold rounded-full px-2 py-0.5 w-8 text-center mt-1 border ${badgeStyles}`}
-                        >
-                          {idx + 1}
-                        </span>
+                      <div
+                        className={`flex items-start gap-3 py-3 ${isTopThree ? `px-3 rounded-xl border ${rowHighlight}` : ''}`}
+                      >
+                        <span className={`text-xl font-extrabold mt-0.5 ${numberColor}`}>{idx + 1}</span>
                         <div
-                          className='h-10 w-10 rounded-full border border-slate-700 flex items-center justify-center text-slate-100 shrink-0 overflow-hidden'
+                          className='h-9 w-9 rounded-full border border-slate-700 flex items-center justify-center text-slate-100 shrink-0 overflow-hidden'
                           style={{ backgroundColor: colors.bg, color: colors.text }}
                         >
                           {client.avatar ? (
                             <img src={client.avatar} alt={client.name} className='h-full w-full object-cover' />
                           ) : (
-                            <span className='text-xs font-bold'>{initials}</span>
+                            <span className='text-[11px] font-bold'>{initials}</span>
                           )}
                         </div>
                         <div className='min-w-0 flex-1 space-y-1'>
@@ -663,7 +660,11 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                             <span className='text-xs text-slate-400'>{secondaryValue}</span>
                           </div>
                         </div>
-                        {idx === 0 && <span className='text-lg mr-1' role='img' aria-label='Top 1'>🏆</span>}
+                        {idx === 0 && (
+                          <span className='text-lg mr-1' role='img' aria-label='Top 1'>
+                            🏆
+                          </span>
+                        )}
                       </div>
                       {idx !== monthlyRanking.length - 1 && <div className='h-px bg-slate-800 my-1' />}
                     </React.Fragment>
