@@ -512,6 +512,12 @@ export function ClientsPage({
 
     const balance = clientBalances.get(selectedClient.id) || 0
     const clientPrice = getClientPrice(selectedClient)
+    const lastPaymentEvent = selectedClientHistory.events.find((e) => e.type === 'payment')
+    const lastPaymentAmount = lastPaymentEvent?.amount || 0
+    const previousBalanceEstimate = Math.max(
+      0,
+      selectedClientHistory.bannerBalance + lastPaymentAmount
+    )
 
     return (
       <div className='animate-fade-in relative min-h-screen pb-24 bg-slate-950'>
@@ -678,11 +684,15 @@ export function ClientsPage({
                     }`}
                   >
                     <div className='px-3 pb-3 pt-2 border-t border-slate-700/70 space-y-2'>
-                      {selectedClient?.name ? (
-                        <p className='text-xs leading-snug text-slate-300'>
-                          Cliente: <span className='font-semibold text-white'>{selectedClient.name}</span>
-                        </p>
-                      ) : null}
+                      <p className='text-xs leading-snug text-slate-300'>
+                        {selectedClientHistory.lastPaymentTs
+                          ? `Após o pagamento de ${formatCurrency(
+                              lastPaymentAmount
+                            )}, o total de ${formatCurrency(
+                              previousBalanceEstimate
+                            )} ficou com saldo pendente.`
+                          : 'Sem pagamento registrado; saldo pendente atualizado com a última movimentação.'}
+                      </p>
                       <p className='text-xs leading-snug text-slate-300'>
                         Último pagamento:{' '}
                         <span className='font-semibold text-white'>
