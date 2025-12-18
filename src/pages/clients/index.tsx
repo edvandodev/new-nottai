@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   CheckCircle,
   ChevronLeft,
@@ -37,7 +37,11 @@ type HistoryEvent = {
   id: string
   type: 'sale' | 'payment'
   amount: number
-  createdAt: string | number | Date | { seconds?: number; nanoseconds?: number; toMillis?: () => number }
+  createdAt:
+    | string
+    | number
+    | Date
+    | { seconds?: number; nanoseconds?: number; toMillis?: () => number }
   liters?: number
 }
 
@@ -159,8 +163,12 @@ const groupHistoryEventsByDay = (events: HistoryEvent[]): DayGroup[] => {
 }
 
 const getBalance = (events: HistoryEvent[]) => {
-  const sales = events.filter((e) => e.type === 'sale').reduce((acc, e) => acc + (e.amount || 0), 0)
-  const payments = events.filter((e) => e.type === 'payment').reduce((acc, e) => acc + (e.amount || 0), 0)
+  const sales = events
+    .filter((e) => e.type === 'sale')
+    .reduce((acc, e) => acc + (e.amount || 0), 0)
+  const payments = events
+    .filter((e) => e.type === 'payment')
+    .reduce((acc, e) => acc + (e.amount || 0), 0)
   const balance = sales - payments
   return { sales, payments, balance }
 }
@@ -198,10 +206,21 @@ export function ClientsPage({
   const [view, setView] = useState<'LIST' | 'DETAILS'>('LIST')
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isDebtOpen, setIsDebtOpen] = useState(false)
 
   useEffect(() => {
     onDetailsViewChange(view === 'DETAILS')
   }, [view, onDetailsViewChange])
+
+  useEffect(() => {
+    if (view === 'LIST') {
+      setIsDebtOpen(false)
+    }
+  }, [view])
+
+  useEffect(() => {
+    setIsDebtOpen(false)
+  }, [selectedClientId])
 
   const formatCurrency = (val: number) =>
     val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -211,7 +230,20 @@ export function ClientsPage({
 
   const formatBannerDate = (ts: number) => {
     if (!ts) return ''
-    const months = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ']
+    const months = [
+      'JAN',
+      'FEV',
+      'MAR',
+      'ABR',
+      'MAI',
+      'JUN',
+      'JUL',
+      'AGO',
+      'SET',
+      'OUT',
+      'NOV',
+      'DEZ'
+    ]
     const d = new Date(ts)
     const day = String(d.getDate()).padStart(2, '0')
     const month = months[d.getMonth()] || ''
@@ -273,6 +305,7 @@ export function ClientsPage({
     if (selectedClientId && !selectedClient) {
       setSelectedClientId(null)
       setView('LIST')
+      setIsDebtOpen(false)
     }
   }, [selectedClientId, selectedClient])
 
@@ -607,24 +640,40 @@ export function ClientsPage({
             </div>
 
             {selectedClientHistory.bannerBalance > 0 ? (
-              <div className='mb-3 bg-amber-800/30 border border-amber-700 text-amber-100 rounded-lg px-4 py-2 flex items-center gap-2 shadow-sm'>
-                <AlertTriangle size={18} className='shrink-0' />
-                <div className='space-y-0.5'>
-                  <p className='text-sm font-semibold leading-snug'>
-                    {`Débito de ${formatCurrency(selectedClientHistory.bannerBalance)} em aberto `}
-                    {selectedClientHistory.lastPaymentTs
-                      ? `após o pagamento do dia ${formatBannerDate(selectedClientHistory.lastPaymentTs)}`
-                      : '(sem pagamento registrado)'}
-                  </p>
-                </div>
+              <div className='mb-3 space-y-2'>
+                <button
+                  type='button'
+                  onClick={() => setIsDebtOpen((prev) => !prev)}
+                  className='w-full rounded-lg border border-amber-600/60 bg-amber-900/20 text-amber-100 px-3 py-2 flex items-center gap-3 hover:border-amber-500/80 transition-colors'
+                >
+                  <AlertTriangle size={16} className='shrink-0 text-amber-300' />
+                  <div className='flex-1 flex items-center justify-between gap-2 min-w-0'>
+                    <span className='text-sm font-semibold truncate'>
+                      Pendência - {formatCurrency(selectedClientHistory.bannerBalance)}
+                    </span>
+                    <span className='text-xs font-semibold text-amber-200 flex items-center gap-1'>
+                      {isDebtOpen ? 'Ocultar' : 'Ver'} {'>'}
+                    </span>
+                  </div>
+                </button>
+                {isDebtOpen && (
+                  <div className='rounded-lg border border-amber-700/50 bg-amber-900/15 px-3 py-2 text-xs text-amber-100 animate-fade-in'>
+                    <p className='leading-snug'>
+                      Saldo pendente: {formatCurrency(selectedClientHistory.bannerBalance)}{' '}
+                      {selectedClientHistory.lastPaymentTs
+                        ? `após o último pagamento (${formatBannerDate(
+                            selectedClientHistory.lastPaymentTs
+                          )})`
+                        : '(sem pagamento registrado)'}
+                    </p>
+                  </div>
+                )}
               </div>
             ) : null}
 
             {selectedClientHistory.groups.length === 0 ? (
               <div className='text-center py-10 rounded-2xl border border-slate-800 border-dashed bg-slate-900/30'>
-                <p className='text-slate-500'>
-                  Nenhuma movimentaÃ§Ã£o registrada.
-                </p>
+                <p className='text-slate-500'>Nenhuma movimentação registrada.</p>
               </div>
             ) : (
               <div className='space-y-5'>
@@ -683,9 +732,7 @@ export function ClientsPage({
                             <div className='flex items-center gap-2 shrink-0'>
                               <span
                                 className={`text-base font-bold ${
-                                  isPayment
-                                    ? 'text-emerald-400'
-                                    : 'text-red-400'
+                                  isPayment ? 'text-emerald-400' : 'text-red-400'
                                 }`}
                               >
                                 {formatCurrency(amount)}
@@ -718,5 +765,4 @@ export function ClientsPage({
 
   return view === 'LIST' ? renderClientList() : renderClientDetails()
 }
-
 
