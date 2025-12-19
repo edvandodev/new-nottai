@@ -4,6 +4,7 @@ import {
   ArrowUpRight,
   BarChart3,
   ChevronRight,
+  Clock,
   DollarSign,
   Droplets,
   Users,
