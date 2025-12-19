@@ -59,6 +59,8 @@ function App() {
   // Navigation State
   const [activeTab, setActiveTab] = useState<TabState>('CLIENTS')
   const [isClientDetailsView, setIsClientDetailsView] = useState(false)
+  const [isMinimalHeaderScrolled, setIsMinimalHeaderScrolled] =
+    useState(false)
 
   // Data State
   const [clients, setClients] = useState<Client[]>([])
@@ -116,6 +118,16 @@ function App() {
     return () => {
       cancelled = true
       unsubscribers.forEach((unsub) => unsub())
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsMinimalHeaderScrolled(window.scrollY > 8)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
     }
   }, [])
 
@@ -470,9 +482,47 @@ function App() {
     }
   }, [activeTab])
 
+  const minimalHeaderActive =
+    (activeTab === 'CLIENTS' && !isClientDetailsView) ||
+    activeTab === 'PAYMENTS' ||
+    activeTab === 'REPORTS'
+
   const renderHeader = () => {
-    // Layout original: some quando est? em detalhes do cliente.
-    if (activeTab === 'CLIENTS' && isClientDetailsView) return null
+    const renderMinimalHeader = (title: string) => {
+      const headerClasses = `sticky top-0 z-50 transition-all duration-200 ${
+        isMinimalHeaderScrolled
+          ? 'bg-slate-950/55 backdrop-blur-xl border-b border-white/10'
+          : 'bg-transparent border-b border-transparent'
+      }`
+
+      return (
+        <header
+          className={headerClasses}
+          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        >
+          <div className='px-4 pt-3 pb-3 max-w-2xl mx-auto'>
+            <div className='flex items-center justify-between'>
+              <h1 className='text-xl font-semibold tracking-tight text-white/95'>
+                {title}
+              </h1>
+            </div>
+          </div>
+        </header>
+      )
+    }
+
+    if (activeTab === 'CLIENTS') {
+      if (isClientDetailsView) return null
+      return renderMinimalHeader('Meus Clientes')
+    }
+
+    if (activeTab === 'PAYMENTS') {
+      return renderMinimalHeader('Meus Pagamentos')
+    }
+
+    if (activeTab === 'REPORTS') {
+      return renderMinimalHeader('Relatórios')
+    }
 
     return (
       <header
@@ -585,13 +635,15 @@ function App() {
     </div>
   )
 
+  const mainPaddingClass =
+    activeTab === 'CLIENTS' && isClientDetailsView ? 'p-0' : 'p-4'
+  const mainAdditionalTop = minimalHeaderActive ? 'pt-6' : ''
+
   return (
     <div className='min-h-screen bg-slate-950 text-slate-100 font-sans pb-32'>
       {renderHeader()}
       <main
-        className={`max-w-2xl mx-auto ${
-          activeTab === 'CLIENTS' && isClientDetailsView ? 'p-0' : 'p-4'
-        }`}
+        className={`max-w-2xl mx-auto ${mainPaddingClass} ${mainAdditionalTop}`}
       >
         {renderActivePage()}
       </main>
