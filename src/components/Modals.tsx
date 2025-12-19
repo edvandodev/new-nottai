@@ -472,12 +472,13 @@ export const AddSaleModal = ({
         className='relative w-full max-w-2xl mx-auto bg-slate-900/95 border border-slate-800 rounded-t-[28px] shadow-2xl flex flex-col'
         style={{
           maxHeight: '75vh',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           transform: `translateY(${translateY}px)`,
           transition: isDragging ? 'none' : 'transform 200ms ease'
         }}
       >
         <div
-          className='pt-3 pb-2 flex flex-col items-center gap-2 cursor-grab'
+          className='pt-4 pb-3 flex flex-col items-center gap-3 cursor-grab'
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -498,7 +499,11 @@ export const AddSaleModal = ({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className='flex-1 overflow-y-auto px-5 pb-5 space-y-5 custom-scrollbar'>
+        <form
+          id='add-sale-form'
+          onSubmit={handleSubmit}
+          className='flex-1 overflow-y-auto px-5 pb-5 space-y-5 custom-scrollbar'
+        >
           <div>
             <label className='block text-sm font-medium text-slate-400 mb-1'>
               Data
@@ -571,7 +576,10 @@ export const AddSaleModal = ({
           </div>
         </form>
 
-        <div className='sticky bottom-0 w-full border-t border-slate-800 bg-slate-900/95 backdrop-blur px-5 py-4 flex gap-3'>
+        <div
+          className='sticky bottom-0 w-full border-t border-slate-800 bg-slate-900/95 backdrop-blur px-5 py-4 flex gap-3'
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+        >
           <button
             type='button'
             onClick={handleClose}
@@ -581,6 +589,7 @@ export const AddSaleModal = ({
           </button>
           <button
             type='submit'
+            form='add-sale-form'
             className='flex-1 h-11 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-500 transition-colors active:scale-95'
           >
             Salvar
@@ -599,7 +608,7 @@ type PayDebtModalProps = {
   totalValue: number
 }
 
-export const PayDebtModal = ({
+const PayDebtModalLegacy = ({
   isOpen,
   onClose,
   onConfirm,
@@ -705,6 +714,255 @@ export const PayDebtModal = ({
         </div>
       </div>
     </Modal>
+  )
+}
+
+export const PayDebtModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  clientName,
+  totalValue
+}: PayDebtModalProps) => {
+  const [amount, setAmount] = useState('')
+  const [error, setError] = useState('')
+  const [translateY, setTranslateY] = useState(100)
+  const [isDragging, setIsDragging] = useState(false)
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false)
+  const [shouldRender, setShouldRender] = useState(false)
+  const startYRef = useRef(0)
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const amountInputRef = useRef<HTMLInputElement>(null)
+  const closingFromInsideRef = useRef(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      setAmount(totalValue > 0 ? totalValue.toFixed(2) : '')
+      setError('')
+    }
+  }, [isOpen, totalValue])
+
+  useEffect(() => {
+    if (!isOpen) return
+    closingFromInsideRef.current = false
+    setShouldRender(true)
+    setTranslateY(100)
+    const raf = requestAnimationFrame(() => setTranslateY(0))
+    const focusTimer = setTimeout(() => {
+      amountInputRef.current?.focus()
+    }, 140)
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') handleClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(focusTimer)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!shouldRender) return
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [shouldRender])
+
+  useEffect(() => {
+    if (isOpen || !shouldRender) return
+    if (closingFromInsideRef.current) {
+      closingFromInsideRef.current = false
+      const timer = setTimeout(() => setShouldRender(false), 0)
+      return () => clearTimeout(timer)
+    }
+    setIsAnimatingOut(true)
+    setTranslateY(100)
+    const timer = setTimeout(() => {
+      setIsAnimatingOut(false)
+      setShouldRender(false)
+    }, 220)
+    return () => clearTimeout(timer)
+  }, [isOpen, shouldRender])
+
+  const handleClose = () => {
+    if (isAnimatingOut) return
+    closingFromInsideRef.current = true
+    setIsAnimatingOut(true)
+    setTranslateY(100)
+    setTimeout(() => {
+      setIsAnimatingOut(false)
+      onClose()
+    }, 220)
+  }
+
+  const handleConfirm = () => {
+    const parsed = parseFloat(amount.replace(',', '.'))
+    const normalized = Math.min(totalValue, isNaN(parsed) ? 0 : parsed)
+
+    if (normalized <= 0) {
+      setError('Informe um valor maior que zero.')
+      return
+    }
+
+    onConfirm(normalized)
+    handleClose()
+  }
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return
+    const target = e.target as HTMLElement
+    if (target.closest('button')) return
+    setIsDragging(true)
+    startYRef.current = e.clientY
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return
+    const delta = Math.max(0, e.clientY - startYRef.current)
+    setTranslateY(delta)
+  }
+
+  const handlePointerUp = () => {
+    if (!isDragging) return
+    setIsDragging(false)
+    const sheetHeight = sheetRef.current?.getBoundingClientRect().height || 1
+    if (translateY > sheetHeight * 0.25) {
+      handleClose()
+      return
+    }
+    setTranslateY(0)
+  }
+
+  if (!shouldRender) return null
+
+  const backdropOpacity = Math.max(
+    0,
+    0.6 - Math.min(0.6, (translateY / (sheetRef.current?.offsetHeight || 1)) * 0.45)
+  )
+
+  return (
+    <div className='fixed inset-0 z-50 flex items-end justify-center'>
+      <div
+        className='absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity'
+        style={{ opacity: backdropOpacity }}
+        onClick={handleClose}
+        aria-hidden='true'
+      />
+      <div
+        ref={sheetRef}
+        className='relative w-full max-w-2xl mx-auto bg-slate-900/95 border border-slate-800 rounded-t-[28px] shadow-2xl flex flex-col'
+        style={{
+          maxHeight: '75vh',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          transform: `translateY(${translateY}px)`,
+          transition: isDragging ? 'none' : 'transform 200ms ease'
+        }}
+      >
+        <div
+          className='pt-4 pb-3 flex flex-col items-center gap-3 cursor-grab'
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          style={{ touchAction: 'none' }}
+        >
+          <span className='h-1.5 w-12 rounded-full bg-slate-700/70' />
+          <div className='w-full flex items-center justify-between px-5'>
+            <h3 className='text-base font-semibold text-white'>Receber</h3>
+            <button
+              type='button'
+              onClick={handleClose}
+              className='h-11 w-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors'
+              aria-label='Fechar'
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        <div className='flex-1 overflow-y-auto px-5 pb-5 space-y-5 custom-scrollbar'>
+          <div className='flex justify-center'>
+            <div className='h-14 w-14 bg-green-500/15 rounded-full flex items-center justify-center text-green-400 border border-green-500/20'>
+              <CheckCircle size={28} />
+            </div>
+          </div>
+
+          <div className='text-center space-y-1'>
+            <p className='text-slate-300 text-sm'>
+              Total a receber de <span className='text-white font-semibold'>{clientName}</span>
+            </p>
+            <p className='text-3xl font-bold text-white'>
+              {totalValue.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              })}
+            </p>
+            <p className='text-xs text-slate-500'>
+              Ajuste o valor caso o pagamento seja parcial.
+            </p>
+          </div>
+
+          <div className='space-y-2'>
+            <label className='block text-sm font-medium text-slate-300'>
+              Valor a receber
+            </label>
+            <input
+              ref={amountInputRef}
+              type='number'
+              min='0'
+              max={totalValue}
+              step='0.01'
+              value={amount}
+              onChange={(e) => {
+                setAmount(e.target.value)
+                setError('')
+              }}
+              className='w-full p-3 rounded-2xl bg-slate-900 border border-slate-800 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:outline-none'
+              placeholder='Informe o valor recebido'
+            />
+            <p className='text-xs text-slate-500'>
+              Valor restante permanece como d‚bito em aberto no hist¢rico.
+            </p>
+            {error && (
+              <div className='bg-red-500/10 border border-red-500/30 text-red-300 text-sm p-2 rounded-lg'>
+                {error}
+              </div>
+            )}
+          </div>
+
+          <div className='bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 text-left flex gap-3'>
+            <AlertTriangle className='text-yellow-500 shrink-0' size={20} />
+            <p className='text-sm text-yellow-200/80'>
+              Ao confirmar, registramos o pagamento e, se o valor for menor que o saldo,
+              manteremos o restante em aberto no <strong>Hist¢rico</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div
+          className='sticky bottom-0 w-full border-t border-slate-800 bg-slate-900/95 backdrop-blur px-5 py-4 flex gap-3'
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <button
+            type='button'
+            onClick={handleClose}
+            className='flex-1 h-11 bg-slate-800 text-white rounded-xl font-semibold hover:bg-slate-700 transition-colors active:scale-95'
+          >
+            Cancelar
+          </button>
+          <button
+            type='button'
+            onClick={handleConfirm}
+            className='flex-1 h-11 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-500 transition-colors active:scale-95'
+          >
+            Receber
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
