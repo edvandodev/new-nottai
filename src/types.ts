@@ -6,6 +6,10 @@ export type Client = {
   phone: string
   priceType: PriceType
   avatar?: string
+  createdAt?: number
+  updatedAt?: number
+  updatedBy?: string
+  deviceId?: string
 }
 
 export type Sale = {
@@ -15,6 +19,10 @@ export type Sale = {
   liters: number
   totalValue: number
   isPaid?: boolean
+  createdAt?: number
+  updatedAt?: number
+  updatedBy?: string
+  deviceId?: string
 }
 
 export type Payment = {
@@ -24,6 +32,10 @@ export type Payment = {
   amount: number
   date: string
   salesSnapshot?: Sale[]
+  createdAt?: number
+  updatedAt?: number
+  updatedBy?: string
+  deviceId?: string
 }
 
 export type PriceSettings = {

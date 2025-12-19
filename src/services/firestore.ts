@@ -1,33 +1,187 @@
 import { FirebaseFirestore } from '@capacitor-firebase/firestore'
 import type { Client, Sale, Payment, PriceSettings } from '@/types'
+import { getDeviceId } from './device'
 
-const CLIENTS = 'clients'
-const SALES = 'sales'
-const PAYMENTS = 'payments'
-const SETTINGS = 'settings'
+let currentUid: string | null = null
+let lastSyncAt: number | null = null
+const syncCallbacks = new Set<(ts: number) => void>()
+
+const backfilledClients = new Set<string>()
+const backfilledSales = new Set<string>()
+const backfilledPayments = new Set<string>()
+
+const requireUid = (): string => {
+  if (!currentUid) {
+    throw new Error('Usuario nao autenticado')
+  }
+  return currentUid
+}
+
+const clientPath = () => `users/${requireUid()}/clients`
+const salesPath = () => `users/${requireUid()}/sales`
+const paymentsPath = () => `users/${requireUid()}/payments`
+const settingsPath = () => `users/${requireUid()}/settings`
 
 const stripUndefined = <T extends Record<string, any>>(obj: T): Partial<T> =>
   Object.fromEntries(
     Object.entries(obj).filter(([, v]) => v !== undefined)
   ) as Partial<T>
 
+const noteSync = () => {
+  lastSyncAt = Date.now()
+  syncCallbacks.forEach((cb) => {
+    try {
+      cb(lastSyncAt as number)
+    } catch (error) {
+      console.error('Erro ao notificar sync', error)
+    }
+  })
+}
+
+const backfillMeta = async (
+  reference: string,
+  id: string,
+  data: any,
+  cache: Set<string>
+) => {
+  if (cache.has(id)) return
+  const hasMeta =
+    data?.createdAt !== undefined &&
+    data?.updatedAt !== undefined &&
+    data?.updatedBy !== undefined &&
+    data?.deviceId !== undefined
+  if (hasMeta) return
+  cache.add(id)
+  const now = Date.now()
+  const uid = currentUid || 'unknown'
+  try {
+    await FirebaseFirestore.updateDocument({
+      reference: `${reference}/${id}`,
+      data: {
+        createdAt: data?.createdAt ?? now,
+        updatedAt: data?.updatedAt ?? now,
+        updatedBy: data?.updatedBy ?? uid,
+        deviceId: data?.deviceId ?? getDeviceId()
+      }
+    })
+  } catch (error) {
+    console.error(`Falha ao backfill meta para ${reference}/${id}`, error)
+  }
+}
+
+const getMetaForCreate = (uid: string) => {
+  const now = Date.now()
+  const deviceId = getDeviceId()
+  return {
+    createdAt: now,
+    updatedAt: now,
+    updatedBy: uid,
+    deviceId
+  }
+}
+
+const getMetaForUpdate = (uid: string) => {
+  const now = Date.now()
+  const deviceId = getDeviceId()
+  return {
+    updatedAt: now,
+    updatedBy: uid,
+    deviceId
+  }
+}
+
 export const firestoreService = {
+  setUser: (uid: string | null): void => {
+    currentUid = uid
+  },
+
+  onSync: (cb: (ts: number) => void) => {
+    syncCallbacks.add(cb)
+    return () => syncCallbacks.delete(cb)
+  },
+
+  getLastSyncAt: (): number | null => lastSyncAt,
+
+  async getDoc<T>(reference: string): Promise<T | null> {
+    const result = await FirebaseFirestore.getDocument<T>({ reference })
+    return result.snapshot.data ?? null
+  },
+
+  async setDoc<T>(reference: string, data: T, merge = true): Promise<void> {
+    await FirebaseFirestore.setDocument({ reference, data, merge })
+  },
+
+  async updateDoc(reference: string, data: Record<string, any>): Promise<void> {
+    await FirebaseFirestore.updateDocument({ reference, data })
+  },
+
+  async deleteDoc(reference: string): Promise<void> {
+    await FirebaseFirestore.deleteDocument({ reference })
+  },
+
+  async deleteCollectionDocuments(reference: string): Promise<void> {
+    try {
+      const result: any = await (FirebaseFirestore as any).getCollection?.({
+        reference
+      })
+      const documents: any[] =
+        result?.documents || result?.snapshots || result?.documentsSnapshot || []
+      for (const doc of documents) {
+        const id = doc?.id || doc?.documentId || doc?.reference?.split('/')?.pop()
+        if (!id) continue
+        await FirebaseFirestore.deleteDocument({
+          reference: `${reference}/${id}`
+        })
+      }
+    } catch (error) {
+      console.error(`Falha ao deletar documentos da colecao ${reference}`, error)
+      throw error
+    }
+  },
+
+  async deleteUserData(uid: string): Promise<void> {
+    try {
+      const base = `users/${uid}`
+      await Promise.all([
+        firestoreService.deleteCollectionDocuments(`${base}/clients`),
+        firestoreService.deleteCollectionDocuments(`${base}/sales`),
+        firestoreService.deleteCollectionDocuments(`${base}/payments`),
+        firestoreService.deleteCollectionDocuments(`${base}/settings`),
+        firestoreService.deleteCollectionDocuments(`${base}/meta`)
+      ])
+
+      await firestoreService.deleteDoc(`${base}/settings/price`).catch(() => {})
+      await firestoreService.deleteDoc(`${base}/meta/profile`).catch(() => {})
+    } catch (error) {
+      console.error('Falha ao deletar dados do usuario', error)
+      throw error
+    }
+  },
+
   listenToClients: (callback) => {
     let cancelled = false
 
+    const reference = clientPath()
+
     const callbackIdPromise = FirebaseFirestore.addCollectionSnapshotListener(
-      { reference: CLIENTS },
+      { reference },
       (event, error) => {
         if (cancelled) return
         if (error || !event) {
           console.error('listenToClients falhou', error)
           return
         }
-        const clients = event.snapshots.map((s) => ({
-          ...(s.data ?? {}),
-          id: s.id
-        }))
+        const clients = event.snapshots.map((s) => {
+          const data = s.data ?? {}
+          const client = {
+            ...data,
+            id: s.id
+          }
+          void backfillMeta(reference, s.id, data, backfilledClients)
+          return client
+        })
         callback(clients as Client[])
+        noteSync()
       }
     )
 
@@ -42,21 +196,32 @@ export const firestoreService = {
     }
   },
 
+  async getClientById(clientId: string): Promise<Client | null> {
+    return firestoreService.getDoc<Client>(`${clientPath()}/${clientId}`)
+  },
+
   saveClient: async (client: Client) => {
+    const uid = requireUid()
     const { id, ...clientDataRaw } = client
 
-    const clientData = stripUndefined(clientDataRaw)
+    const meta = client.createdAt
+      ? getMetaForUpdate(uid)
+      : getMetaForCreate(uid)
+
+    const clientData = { ...stripUndefined(clientDataRaw), ...meta }
+    const reference = clientPath()
 
     await FirebaseFirestore.setDocument({
-      reference: `${CLIENTS}/${id}`,
+      reference: `${reference}/${id}`,
       data: clientData,
       merge: true
     })
   },
 
   deleteClient: async (clientId: string) => {
+    const reference = clientPath()
     await FirebaseFirestore.deleteDocument({
-      reference: `${CLIENTS}/${clientId}`
+      reference: `${reference}/${clientId}`
     })
   },
 
@@ -64,19 +229,25 @@ export const firestoreService = {
     let callbackId: string | null = null
     let cancelled = false
 
+    const reference = salesPath()
+
     ;(async () => {
       callbackId = await FirebaseFirestore.addCollectionSnapshotListener<
         Omit<Sale, 'id'>
-      >({ reference: SALES }, (event, error) => {
+      >({ reference }, (event, error) => {
         if (cancelled) return
         if (error || !event) {
           console.error('listenToSales falhou', error)
           return
         }
-        const sales = event.snapshots.map(
-          (s) => ({ ...(s.data ?? {}), id: s.id } as Sale)
-        )
+        const sales = event.snapshots.map((s) => {
+          const data = s.data ?? {}
+          const sale = { ...(data as any), id: s.id } as Sale
+          void backfillMeta(reference, s.id, data, backfilledSales)
+          return sale
+        })
         callback(sales)
+        noteSync()
       })
     })()
 
@@ -89,17 +260,21 @@ export const firestoreService = {
   },
 
   saveSale: async (sale: Sale) => {
+    const uid = requireUid()
     const { id, ...saleData } = sale
+    const reference = salesPath()
+    const meta = sale.createdAt ? getMetaForUpdate(uid) : getMetaForCreate(uid)
     await FirebaseFirestore.setDocument({
-      reference: `${SALES}/${id}`,
-      data: saleData,
+      reference: `${reference}/${id}`,
+      data: { ...saleData, ...meta },
       merge: true
     })
   },
 
   deleteSale: async (saleId: string) => {
+    const reference = salesPath()
     await FirebaseFirestore.deleteDocument({
-      reference: `${SALES}/${saleId}`
+      reference: `${reference}/${saleId}`
     })
   },
 
@@ -107,19 +282,25 @@ export const firestoreService = {
     let callbackId: string | null = null
     let cancelled = false
 
+    const reference = paymentsPath()
+
     ;(async () => {
       callbackId = await FirebaseFirestore.addCollectionSnapshotListener<
         Omit<Payment, 'id'>
-      >({ reference: PAYMENTS }, (event, error) => {
+      >({ reference }, (event, error) => {
         if (cancelled) return
         if (error || !event) {
           console.error('listenToPayments falhou', error)
           return
         }
-        const payments = event.snapshots.map(
-          (s) => ({ ...(s.data ?? {}), id: s.id } as Payment)
-        )
+        const payments = event.snapshots.map((s) => {
+          const data = s.data ?? {}
+          const payment = { ...(data as any), id: s.id } as Payment
+          void backfillMeta(reference, s.id, data, backfilledPayments)
+          return payment
+        })
         callback(payments)
+        noteSync()
       })
     })()
 
@@ -132,18 +313,24 @@ export const firestoreService = {
   },
 
   savePayment: async (payment: Payment, salesToMarkAsPaid: Sale[]) => {
+    const uid = requireUid()
     const { id: paymentId, ...paymentData } = payment
+
+    const metaPayment = payment.createdAt
+      ? getMetaForUpdate(uid)
+      : getMetaForCreate(uid)
+    const metaUpdate = getMetaForUpdate(uid)
 
     const operations = [
       {
         type: 'set' as const,
-        reference: `${PAYMENTS}/${paymentId}`,
-        data: paymentData
+        reference: `${paymentsPath()}/${paymentId}`,
+        data: { ...paymentData, ...metaPayment }
       },
       ...salesToMarkAsPaid.map((sale) => ({
         type: 'update' as const,
-        reference: `${SALES}/${sale.id}`,
-        data: { isPaid: true }
+        reference: `${salesPath()}/${sale.id}`,
+        data: { isPaid: true, ...metaUpdate }
       }))
     ]
 
@@ -151,8 +338,9 @@ export const firestoreService = {
   },
 
   deletePayment: async (paymentId: string) => {
+    const reference = paymentsPath()
     await FirebaseFirestore.deleteDocument({
-      reference: `${PAYMENTS}/${paymentId}`
+      reference: `${reference}/${paymentId}`
     })
   },
 
@@ -162,11 +350,13 @@ export const firestoreService = {
     let callbackId: string | null = null
     let cancelled = false
 
+    const reference = `${settingsPath()}/price`
+
     ;(async () => {
       callbackId = await FirebaseFirestore.addDocumentSnapshotListener<
         PriceSettings
       >(
-        { reference: `${SETTINGS}/price` },
+        { reference },
         (event, error) => {
           if (cancelled) return
           if (error || !event) {
@@ -176,6 +366,7 @@ export const firestoreService = {
           }
 
           callback(event.snapshot.data ?? null)
+          noteSync()
         }
       )
     })()
@@ -190,15 +381,16 @@ export const firestoreService = {
 
   getPriceSettings: async (): Promise<PriceSettings | null> => {
     const result = await FirebaseFirestore.getDocument<PriceSettings>({
-      reference: `${SETTINGS}/price`
+      reference: `${settingsPath()}/price`
     })
     return result.snapshot.data ?? null
   },
 
   savePriceSettings: async (settings: PriceSettings) => {
+    const uid = requireUid()
     await FirebaseFirestore.setDocument({
-      reference: `${SETTINGS}/price`,
-      data: settings,
+      reference: `${settingsPath()}/price`,
+      data: { ...settings, ...getMetaForUpdate(uid) } as any,
       merge: true
     })
   }

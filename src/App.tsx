@@ -1,6 +1,8 @@
-﻿import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { App as CapacitorApp } from '@capacitor/app'
 import { firestoreService } from './services/firestore'
+import { authService, type AppUser } from './services/auth'
+import { ensureUserInitialized } from './services/bootstrap'
 import {
   Client,
   Sale,
@@ -20,12 +22,14 @@ import { createReceiptFile } from './services/pdfGenerator'
 import type { ReceiptFileRef } from './services/pdfGenerator'
 import { PdfViewerModal } from './components/PdfViewerModal'
 import { Milk, Settings as SettingsIcon, TrendingUp, Users } from 'lucide-react'
+import { SyncStatusPill } from './components/SyncStatusPill'
 
 // Import Pages
 import { ClientsPage } from './pages/clients'
 import { ReportsPage } from './pages/reports'
 import { SettingsPage } from './pages/settings'
 import { PaymentsPage } from './pages/payments'
+import { AuthPage } from './pages/auth'
 
 const DEFAULT_SETTINGS: PriceSettings = {
   standard: 0,
@@ -56,6 +60,12 @@ const CustomPaymentIcon = ({
 )
 
 function App() {
+  const [authReady, setAuthReady] = useState(false)
+  const [user, setUser] = useState<AppUser | null>(null)
+  const [dataReady, setDataReady] = useState(false)
+  const [dataError, setDataError] = useState<string | null>(null)
+  const [retryTick, setRetryTick] = useState(0)
+
   // Navigation State
   const [activeTab, setActiveTab] = useState<TabState>('CLIENTS')
   const [isClientDetailsView, setIsClientDetailsView] = useState(false)
@@ -93,9 +103,88 @@ function App() {
   } | null>(null)
   const [pdfFile, setPdfFile] = useState<ReceiptFileRef | null>(null)
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
+  const [editingClientLoadedUpdatedAt, setEditingClientLoadedUpdatedAt] =
+    useState<number>(0)
+
+  // Email verification state
+  const [isSendingVerification, setIsSendingVerification] = useState(false)
+  const [isCheckingVerification, setIsCheckingVerification] = useState(false)
+
+  useEffect(() => {
+    authService.setLanguageToPortuguese().catch(() => undefined)
+  }, [])
+
+  // Auth
+  useEffect(() => {
+    let isMounted = true
+
+    const unsubscribe = authService.onAuthStateChange((nextUser) => {
+      if (!isMounted) return
+      setUser(nextUser)
+    })
+
+    ;(async () => {
+      try {
+        const current = await authService.getCurrentUser()
+        if (isMounted) setUser(current)
+      } catch (error) {
+        console.error('Falha ao obter usuario atual', error)
+      } finally {
+        if (isMounted) setAuthReady(true)
+      }
+    })()
+
+    return () => {
+      isMounted = false
+      unsubscribe?.()
+    }
+  }, [])
+
+  useEffect(() => {
+    firestoreService.setUser(user?.uid ?? null)
+    if (!user) {
+      setDataReady(false)
+      setDataError(null)
+      setClients([])
+      setSales([])
+      setPayments([])
+      setPriceSettings(DEFAULT_SETTINGS)
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (!authReady || !user) return
+
+    let cancelled = false
+
+    const run = async () => {
+      setDataReady(false)
+      setDataError(null)
+      firestoreService.setUser(user.uid)
+      try {
+        await ensureUserInitialized(user.uid)
+        if (!cancelled) setDataReady(true)
+      } catch (error) {
+        console.error('Falha ao preparar conta', error)
+        if (!cancelled) {
+          setDataError(
+            'Nao foi possivel preparar sua conta. Verifique sua internet e tente novamente.'
+          )
+        }
+      }
+    }
+
+    run()
+
+    return () => {
+      cancelled = true
+    }
+  }, [authReady, user, retryTick])
 
   // Firestore Listeners
   useEffect(() => {
+    if (!authReady || !user || !dataReady) return
+
     let cancelled = false
     const unsubscribers = [
       firestoreService.listenToClients(setClients),
@@ -111,7 +200,7 @@ function App() {
         const initial = await firestoreService.getPriceSettings()
         if (!cancelled && initial) setPriceSettings(initial)
       } catch (error) {
-        console.error('Falha ao buscar configurações de preço', error)
+        console.error('Falha ao buscar configuracoes de preco', error)
       }
     })()
 
@@ -119,7 +208,7 @@ function App() {
       cancelled = true
       unsubscribers.forEach((unsub) => unsub())
     }
-  }, [])
+  }, [authReady, user, dataReady])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -249,6 +338,37 @@ function App() {
       : priceSettings?.standard ?? 0
   }, [clients, selectedClientId, priceSettings])
 
+  const handleResendVerification = async () => {
+    try {
+      setIsSendingVerification(true)
+      await authService.sendEmailVerification()
+      alert('Enviamos um novo email de verificacao (se existir uma conta).')
+    } catch (error) {
+      console.error('Falha ao reenviar verificacao', error)
+      alert('Nao foi possivel reenviar. Tente novamente.')
+    } finally {
+      setIsSendingVerification(false)
+    }
+  }
+
+  const handleCheckVerification = async () => {
+    try {
+      setIsCheckingVerification(true)
+      const refreshed = await authService.reloadUser()
+      setUser(refreshed)
+      if (refreshed?.emailVerified) {
+        alert('Email verificado com sucesso!')
+      } else {
+        alert('Ainda nao detectamos a verificacao. Tente novamente apos confirmar o email.')
+      }
+    } catch (error) {
+      console.error('Falha ao checar verificacao', error)
+      alert('Nao foi possivel verificar agora. Tente novamente.')
+    } finally {
+      setIsCheckingVerification(false)
+    }
+  }
+
   // --- Modal & Action Handlers ---
   const handleAddClient = () => {
     setEditingClient(null)
@@ -257,6 +377,7 @@ function App() {
 
   const handleEditClient = (client: Client) => {
     setEditingClient(client)
+    setEditingClientLoadedUpdatedAt(client.updatedAt ?? 0)
     setIsClientModalOpen(true)
   }
 
@@ -266,6 +387,22 @@ function App() {
     priceType: PriceType,
     avatar?: string
   ) => {
+    if (editingClient) {
+      try {
+        const remote = await firestoreService.getClientById(editingClient.id)
+        const remoteUpdatedAt = remote?.updatedAt ?? 0
+        if (remoteUpdatedAt > (editingClientLoadedUpdatedAt || 0)) {
+          const confirmOverwrite = window.confirm(
+            'Esse cliente foi atualizado em outro dispositivo. Deseja sobrescrever mesmo assim?'
+          )
+          if (!confirmOverwrite) {
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Falha ao verificar conflito do cliente', error)
+      }
+    }
     const clientToSave = {
       ...(editingClient || {}),
       id: editingClient?.id || crypto.randomUUID(),
@@ -276,6 +413,7 @@ function App() {
     }
     await firestoreService.saveClient(clientToSave as Client)
     setEditingClient(null)
+    setEditingClientLoadedUpdatedAt(0)
     setIsClientModalOpen(false)
   }
 
@@ -358,29 +496,29 @@ function App() {
   }
 
   const handleGenerateReceipt = async (payment?: Payment) => {
-  const info = payment
-    ? {
-        clientName: payment.clientName,
-        amount: payment.amount,
-        sales: payment.salesSnapshot || [],
-        date: payment.date
+    const info = payment
+      ? {
+          clientName: payment.clientName,
+          amount: payment.amount,
+          sales: payment.salesSnapshot || [],
+          date: payment.date
+        }
+      : lastPaymentInfo
+    if (info) {
+      try {
+        const file = await createReceiptFile(info.clientName, info.amount, info.sales, info.date)
+        setPdfFile(file)
+        setIsPdfViewerOpen(true)
+        if (!payment) setIsReceiptModalOpen(false)
+      } catch (err) {
+        console.error('Falha ao gerar comprovante', err)
+        alert('Nao foi possivel gerar o comprovante.')
       }
-    : lastPaymentInfo
-  if (info) {
-    try {
-      const file = await createReceiptFile(info.clientName, info.amount, info.sales, info.date)
-      setPdfFile(file)
-      setIsPdfViewerOpen(true)
-      if (!payment) setIsReceiptModalOpen(false)
-    } catch (err) {
-      console.error('Falha ao gerar comprovante', err)
-      alert('Não foi possível gerar o comprovante.')
+    } else {
+      alert('Nao ha informacoes para gerar o recibo.')
     }
-  } else {
-    alert('Não há informações para gerar o recibo.')
   }
-}
-// --- Deletion Handlers exposed to pages ---
+  // --- Deletion Handlers exposed to pages ---
   const confirmDeleteClient = async () => {
     if (!clientToDeleteId) return
     await firestoreService.deleteClient(clientToDeleteId)
@@ -397,6 +535,35 @@ function App() {
     if (!paymentToDeleteId) return
     await firestoreService.deletePayment(paymentToDeleteId)
     setPaymentToDeleteId(null)
+  }
+
+  const renderVerificationBanner = () => {
+    if (!user || user.emailVerified) return null
+    return (
+      <div className='mx-4 mt-3 mb-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-100 px-4 py-3 flex flex-col gap-2'>
+        <div className='flex items-center justify-between gap-2'>
+          <p className='text-sm font-semibold'>Email nao verificado</p>
+          <span className='text-xs text-amber-200/80'>{user.email || 'Sem email'}</span>
+        </div>
+        <p className='text-xs text-amber-100/80'>Verifique seu email para liberar todos os recursos.</p>
+        <div className='flex flex-wrap gap-2'>
+          <button
+            onClick={handleResendVerification}
+            disabled={isSendingVerification}
+            className='px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500/30 border border-amber-400/50 text-amber-50 disabled:opacity-60'
+          >
+            {isSendingVerification ? 'Enviando...' : 'Reenviar verificacao'}
+          </button>
+          <button
+            onClick={handleCheckVerification}
+            disabled={isCheckingVerification}
+            className='px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 border border-slate-600 text-white disabled:opacity-60'
+          >
+            {isCheckingVerification ? 'Checando...' : 'Ja verifiquei'}
+          </button>
+        </div>
+      </div>
+    )
   }
 
   // --- Render Logic ---
@@ -445,10 +612,13 @@ function App() {
                 }
                 setPriceSettings(next)
               } catch (error) {
-                console.error('Falha ao buscar configurações de preço', error)
+                console.error('Falha ao buscar configuracoes de preco', error)
                 throw error
               }
             }}
+            currentUserEmail={user?.email ?? undefined}
+            currentUserId={user?.uid}
+            onSignOut={() => authService.signOut()}
           />
         )
       case 'PAYMENTS':
@@ -472,11 +642,11 @@ function App() {
       case 'CLIENTS':
         return 'Meus Clientes'
       case 'REPORTS':
-        return 'Relatórios'
+        return 'Relatorios'
       case 'SETTINGS':
         return 'Ajustes'
       case 'PAYMENTS':
-        return 'Histórico'
+        return 'Historico'
       default:
         return ''
     }
@@ -501,10 +671,11 @@ function App() {
           style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         >
           <div className='px-4 pt-3 pb-3 max-w-2xl mx-auto'>
-            <div className='flex items-center justify-between'>
+            <div className='flex items-center justify-between gap-3'>
               <h1 className='text-xl font-semibold tracking-tight text-white/95'>
                 {title}
               </h1>
+              <SyncStatusPill />
             </div>
           </div>
         </header>
@@ -521,7 +692,7 @@ function App() {
     }
 
     if (activeTab === 'REPORTS') {
-      return renderMinimalHeader('Relatórios')
+      return renderMinimalHeader('Relatorios')
     }
 
     return (
@@ -529,7 +700,7 @@ function App() {
         className='sticky top-0 z-40 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 shadow-md'
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className='max-w-2xl mx-auto px-4 h-16 flex items-center justify-between pt-[env(safe-area-inset-top,0px)]'>
+        <div className='max-w-2xl mx-auto px-4 h-16 flex items-center justify-between gap-3 pt-[env(safe-area-inset-top,0px)]'>
           <div className='flex items-center gap-3'>
             <div className='bg-blue-600 p-2 rounded-lg'>
               <Milk size={24} className='text-white' />
@@ -538,6 +709,7 @@ function App() {
               {tabTitle}
             </h1>
           </div>
+          <SyncStatusPill />
         </div>
       </header>
     )
@@ -610,7 +782,7 @@ function App() {
             className='mb-1 transition-transform group-active:scale-90'
           />
           <span className='text-[10px] font-medium tracking-wide'>
-            Relatórios
+            Relatorios
           </span>
         </button>
 
@@ -639,9 +811,52 @@ function App() {
     activeTab === 'CLIENTS' && isClientDetailsView ? 'p-0' : 'p-4'
   const mainAdditionalTop = minimalHeaderActive ? 'pt-6' : ''
 
+  if (!authReady) {
+    return (
+      <div className='min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center'>
+        <span className='animate-pulse text-slate-300'>Carregando...</span>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <AuthPage />
+  }
+
+  if (!dataReady && !dataError) {
+    return (
+      <div className='min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center'>
+        <span className='animate-pulse text-slate-300'>
+          Preparando sua conta...
+        </span>
+      </div>
+    )
+  }
+
+  if (dataError) {
+    return (
+      <div className='min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-6 text-center space-y-4'>
+        <div className='space-y-2'>
+          <h1 className='text-xl font-bold text-white'>Erro ao preparar conta</h1>
+          <p className='text-slate-300 text-sm'>{dataError}</p>
+        </div>
+        <button
+          onClick={() => {
+            setDataError(null)
+            setRetryTick((n) => n + 1)
+          }}
+          className='px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all active:scale-[0.99]'
+        >
+          Tentar novamente
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className='min-h-screen bg-slate-950 text-slate-100 font-sans pb-32'>
       {renderHeader()}
+      {renderVerificationBanner()}
       <main
         className={`max-w-2xl mx-auto ${mainPaddingClass} ${mainAdditionalTop}`}
       >
@@ -686,7 +901,7 @@ function App() {
         onClose={() => setClientToDeleteId(null)}
         onConfirm={confirmDeleteClient}
         title='Excluir Cliente'
-        message='Tem certeza? Todo o histórico de vendas e pagamentos ser? perdido.'
+        message='Tem certeza? Todo o historico de vendas e pagamentos sera perdido.'
         isDanger
       />
       <ConfirmModal
@@ -723,31 +938,3 @@ function App() {
 }
 
 export default App
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
