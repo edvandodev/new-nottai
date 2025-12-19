@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import {
   CheckCircle,
   ChevronLeft,
+  ChevronRight,
   AlertTriangle,
   DollarSign,
   MessageCircle,
@@ -53,6 +54,8 @@ type DayGroup = {
   label: string
   items: HistoryEvent[]
 }
+
+type ClientFilter = 'ALL' | 'BALANCE' | 'ZERO' | 'AZ'
 
 const TYPE_PRIORITY: Record<HistoryEvent['type'], number> = {
   payment: 2,
@@ -191,6 +194,29 @@ const shouldShowOpenDebtBanner = (events: HistoryEvent[]) => {
   return balance > 0
 }
 
+const getInitials = (name: string) => {
+  const parts = String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+  if (parts.length === 0) return ''
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+}
+
+const getAvatarColors = (input: string) => {
+  let hash = 0
+  for (let i = 0; i < input.length; i++) {
+    hash = (hash << 5) - hash + input.charCodeAt(i)
+    hash |= 0
+  }
+  const hue = Math.abs(hash) % 360
+  return {
+    bg: `hsl(${hue}, 35%, 22%)`,
+    text: `hsl(${hue}, 70%, 80%)`
+  }
+}
+
 export function ClientsPage({
   clients,
   sales,
@@ -210,6 +236,9 @@ export function ClientsPage({
   const [view, setView] = useState<'LIST' | 'DETAILS'>('LIST')
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [filterMode, setFilterMode] = useState<ClientFilter>('ALL')
+  const [showPaymentPicker, setShowPaymentPicker] = useState(false)
   const [isDebtOpen, setIsDebtOpen] = useState(false)
 
   useEffect(() => {
@@ -220,11 +249,21 @@ export function ClientsPage({
     if (view === 'LIST') {
       setIsDebtOpen(false)
     }
+    if (view !== 'LIST') {
+      setShowPaymentPicker(false)
+    }
   }, [view])
 
   useEffect(() => {
     setIsDebtOpen(false)
   }, [selectedClientId])
+
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setDebouncedQuery(searchQuery)
+    }, 300)
+    return () => clearTimeout(handle)
+  }, [searchQuery])
 
   const formatCurrency = (val: number) =>
     val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -267,6 +306,18 @@ export function ClientsPage({
     }, 0)
   }, [clients, clientBalances])
 
+  const paymentCandidates = useMemo(() => {
+    return clients
+      .filter((c) => (clientBalances.get(c.id) || 0) > 0)
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [clients, clientBalances])
+
+  useEffect(() => {
+    if (paymentCandidates.length <= 1) {
+      setShowPaymentPicker(false)
+    }
+  }, [paymentCandidates.length])
+
   const lastInteractions = useMemo(() => {
     const map = new Map<string, number>()
     clients.forEach((c) => map.set(c.id, 0))
@@ -287,13 +338,29 @@ export function ClientsPage({
   }, [clients, sales, payments])
 
   const filteredClients = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
+    const q = debouncedQuery.trim().toLowerCase()
     let result = [...clients]
 
     if (q) {
       result = result.filter((client) =>
         `${client.name} ${client.phone || ''}`.toLowerCase().includes(q)
       )
+    }
+
+    if (filterMode === 'BALANCE') {
+      result = result.filter(
+        (client) => (clientBalances.get(client.id) || 0) > 0
+      )
+    }
+
+    if (filterMode === 'ZERO') {
+      result = result.filter(
+        (client) => (clientBalances.get(client.id) || 0) === 0
+      )
+    }
+
+    if (filterMode === 'AZ') {
+      return result.sort((a, b) => a.name.localeCompare(b.name))
     }
 
     // Sort by recency (igual layout_original)
@@ -303,7 +370,7 @@ export function ClientsPage({
       if (lastB === lastA) return a.name.localeCompare(b.name)
       return lastB - lastA
     })
-  }, [clients, searchQuery, lastInteractions])
+  }, [clients, debouncedQuery, filterMode, lastInteractions, clientBalances])
 
   const selectedClient = useMemo(
     () => clients.find((c) => c.id === selectedClientId),
@@ -394,9 +461,26 @@ export function ClientsPage({
     setSelectedClientId(null)
   }
 
+  const handlePaymentCTA = () => {
+    if (paymentCandidates.length === 0) return
+    if (paymentCandidates.length === 1) {
+      onPayDebt(paymentCandidates[0].id)
+      return
+    }
+    setShowPaymentPicker((prev) => !prev)
+  }
+
+  const handleSelectPaymentClient = (clientId: string) => {
+    setShowPaymentPicker(false)
+    onPayDebt(clientId)
+  }
+
   const renderClientList = () => (
-    <div className='space-y-4 animate-fade-in'>
-      <div className='bg-gradient-to-r from-slate-800 to-slate-850 p-5 rounded-2xl border border-slate-700/50 shadow-md flex items-center justify-between relative overflow-hidden'>
+    <div
+      className='space-y-4 animate-fade-in'
+      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+    >
+      <div className='bg-slate-900/60 p-5 rounded-2xl border border-slate-800 shadow-sm flex items-center justify-between relative overflow-hidden'>
         <div className='absolute top-0 right-0 w-24 h-24 bg-green-500/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none' />
         <div className='relative z-10'>
           <span className='block text-slate-400 text-sm font-medium mb-1'>
@@ -406,36 +490,121 @@ export function ClientsPage({
             {formatCurrency(totalReceivable)}
           </span>
         </div>
-        <div className='h-10 w-10 bg-slate-700/50 rounded-full flex items-center justify-center text-green-400 border border-slate-600/30'>
-          <DollarSign size={20} />
-        </div>
+        <button
+          type='button'
+          onClick={handlePaymentCTA}
+          disabled={paymentCandidates.length === 0}
+          className={`relative z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 ${
+            paymentCandidates.length > 0
+              ? 'bg-emerald-600/20 text-emerald-200 border border-emerald-500/30 hover:bg-emerald-600/30'
+              : 'bg-slate-800/60 text-slate-500 border border-slate-700 cursor-not-allowed'
+          }`}
+        >
+          <DollarSign size={14} />
+          Receber
+        </button>
       </div>
 
-      {clients.length > 0 && (
-        <div className='relative'>
-          <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
-            <Search size={20} className='text-slate-500' />
-          </div>
-          <input
-            type='text'
-            className='w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all'
-            placeholder='Buscar cliente por nome ou telefone...'
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
+      {showPaymentPicker && paymentCandidates.length > 1 && (
+        <div className='bg-slate-900/70 border border-slate-800 rounded-2xl p-4 shadow-sm'>
+          <div className='flex items-center justify-between mb-3'>
+            <p className='text-sm font-semibold text-slate-200'>
+              Selecione um cliente para receber
+            </p>
             <button
-              onClick={() => setSearchQuery('')}
-              className='absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-white transition-colors'
-              aria-label='Limpar busca'
+              type='button'
+              onClick={() => setShowPaymentPicker(false)}
+              className='text-slate-500 hover:text-slate-200 transition-colors'
+              aria-label='Fechar seleção'
             >
-              <X size={18} />
+              <X size={16} />
             </button>
-          )}
+          </div>
+          <div className='max-h-56 overflow-y-auto custom-scrollbar space-y-2'>
+            {paymentCandidates.map((client) => {
+              const balance = clientBalances.get(client.id) || 0
+              const initials = getInitials(client.name)
+              const colors = getAvatarColors(client.name)
+              return (
+                <button
+                  key={client.id}
+                  type='button'
+                  onClick={() => handleSelectPaymentClient(client.id)}
+                  className='w-full flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-left hover:border-slate-700 transition-all active:scale-[0.98]'
+                >
+                  <div className='flex items-center gap-3 min-w-0'>
+                    <div
+                      className='h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0'
+                      style={{ backgroundColor: colors.bg, color: colors.text }}
+                    >
+                      {initials}
+                    </div>
+                    <span className='text-sm text-slate-100 font-semibold truncate'>
+                      {client.name}
+                    </span>
+                  </div>
+                  <span className='text-sm font-semibold text-emerald-300 tabular-nums'>
+                    {formatCurrency(balance)}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
 
-      <div className='flex justify-between items-center pt-4 pb-1'>
+      {clients.length > 0 && (
+        <>
+          <div className='relative'>
+            <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
+              <Search size={18} className='text-slate-500' />
+            </div>
+            <input
+              type='text'
+              className='w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all'
+              placeholder='Buscar cliente por nome ou telefone...'
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className='absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-white transition-colors active:scale-95'
+                aria-label='Limpar busca'
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+
+          <div className='flex gap-2 overflow-x-auto no-scrollbar pt-0.5'>
+            {[
+              { label: 'Todos', value: 'ALL' as const },
+              { label: 'Com saldo', value: 'BALANCE' as const },
+              { label: 'Zerados', value: 'ZERO' as const },
+              { label: 'A–Z', value: 'AZ' as const }
+            ].map((chip) => {
+              const isActive = filterMode === chip.value
+              return (
+                <button
+                  key={chip.value}
+                  type='button'
+                  onClick={() => setFilterMode(chip.value)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
+                    isActive
+                      ? 'bg-blue-600/20 text-blue-200 border-blue-500/30'
+                      : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:text-slate-200'
+                  }`}
+                >
+                  {chip.label}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      <div className='flex justify-between items-center pt-1 pb-1'>
         <h2 className='text-sm uppercase tracking-wider text-slate-500 font-semibold ml-1'>
           {searchQuery
             ? `Resultados (${filteredClients.length})`
@@ -458,28 +627,29 @@ export function ClientsPage({
             Adicione um novo cliente acima.
           </p>
         </div>
+      ) : filteredClients.length === 0 ? (
+        <div className='text-center py-16 px-6 rounded-2xl bg-slate-900/60 border border-slate-800'>
+          <p className='text-slate-400 text-base'>Nenhum cliente encontrado</p>
+        </div>
       ) : (
-        <div className='space-y-3'>
+        <div className='space-y-2'>
           {filteredClients.map((client) => {
             const balance = clientBalances.get(client.id) || 0
+            const initials = getInitials(client.name)
+            const colors = getAvatarColors(client.name)
             return (
               <button
                 key={client.id}
                 onClick={() => handleOpenClient(client.id)}
-                className='w-full bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-sm transition-all hover:border-slate-600 active:scale-[0.99] text-left'
+                className='w-full bg-slate-900/60 rounded-xl border border-slate-800 shadow-[0_6px_18px_rgba(0,0,0,0.18)] transition-all hover:border-slate-700 active:scale-[0.98] active:opacity-90 text-left'
               >
-                <div className='p-4 flex items-center justify-between'>
-                  <div className='flex items-center gap-4 min-w-0'>
-                    <div className='h-12 w-12 rounded-full bg-slate-900 border border-slate-700 overflow-hidden flex items-center justify-center shrink-0'>
-                      {client.avatar ? (
-                        <img
-                          src={client.avatar}
-                          alt={client.name}
-                          className='h-full w-full object-cover'
-                        />
-                      ) : (
-                        <Users size={22} className='text-slate-600' />
-                      )}
+                <div className='px-3.5 py-3 flex items-center justify-between gap-3'>
+                  <div className='flex items-center gap-3 min-w-0'>
+                    <div
+                      className='h-10 w-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0'
+                      style={{ backgroundColor: colors.bg, color: colors.text }}
+                    >
+                      {initials}
                     </div>
 
                     <div className='min-w-0'>
@@ -494,17 +664,20 @@ export function ClientsPage({
                     </div>
                   </div>
 
-                  <div className='text-right pl-2 shrink-0'>
-                    <span className='block text-xs text-slate-500 font-medium uppercase mb-1'>
-                      Saldo
-                    </span>
-                    <span
-                      className={`text-xl font-bold ${
-                        balance > 0 ? 'text-red-400' : 'text-slate-400'
-                      }`}
-                    >
-                      {formatCurrency(balance)}
-                    </span>
+                  <div className='flex items-center gap-3 shrink-0'>
+                    <div className='text-right'>
+                      <span className='block text-[10px] text-slate-500 font-semibold uppercase'>
+                        Saldo
+                      </span>
+                      <span
+                        className={`text-base font-bold tabular-nums ${
+                          balance > 0 ? 'text-emerald-400' : 'text-slate-400'
+                        }`}
+                      >
+                        {formatCurrency(balance)}
+                      </span>
+                    </div>
+                    <ChevronRight size={16} className='text-slate-600' />
                   </div>
                 </div>
               </button>

@@ -443,8 +443,11 @@ function App() {
         return (
           <PaymentsPage
             payments={payments}
+            clients={clients}
+            clientBalances={clientBalances}
             onGenerateReceipt={handleGenerateReceipt}
             onDeletePayment={setPaymentToDeleteId}
+            onPayDebt={handlePayDebt}
           />
         )
       default:
@@ -499,7 +502,7 @@ function App() {
 
   const renderBottomNav = () => (
     <div className='fixed bottom-0 left-0 right-0 z-40 bg-slate-900 border-t border-slate-800 rounded-t-[2.5rem] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.5)] px-2 pb-6 pt-2'>
-      <div className='flex justify-around items-center max-w-lg mx-auto w-full'>
+      <div className='flex items-center justify-between gap-2 max-w-lg mx-auto w-full px-4'>
         <button
           onClick={() => {
             setActiveTab('CLIENTS')
@@ -668,6 +671,7 @@ function App() {
 }
 
 export default App
+
 
 
 
