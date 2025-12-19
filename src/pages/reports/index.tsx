@@ -1,9 +1,10 @@
-﻿import React, { useEffect, useMemo, useState } from "react"
+﻿import React, { useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
   CalendarDays,
+  ChevronLeft,
   ChevronRight,
   DollarSign,
   Droplets,
@@ -164,29 +165,51 @@ type ViewMode = 'month' | 'week'
 const MonthYearToggle = ({
   monthLabel,
   yearLabel,
-  onPressMonth,
-  onPressYear
+  onPrevMonth,
+  onNextMonth,
+  onPressCenter
 }: {
   monthLabel: string
   yearLabel: string
-  onPressMonth: () => void
-  onPressYear: () => void
+  onPrevMonth: () => void
+  onNextMonth: () => void
+  onPressCenter: () => void
 }) => (
-  <div className='inline-flex items-center rounded-full border border-white/10 bg-white/5 overflow-hidden shadow-inner'>
+  <div className='inline-flex items-center gap-2'>
     <button
       type='button'
-      onClick={onPressMonth}
-      className='px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/5 transition'
+      onClick={onPrevMonth}
+      aria-label='Mês anterior'
+      className='h-7 w-7 rounded-full flex items-center justify-center text-white/80 hover:text-white transition'
     >
-      {monthLabel}
+      <ChevronLeft size={16} />
     </button>
-    <div className='w-px self-stretch bg-white/10' />
+    <div className='flex items-center gap-1.5 text-sm font-semibold text-white/90'>
+      <button
+        type='button'
+        onClick={onPressCenter}
+        className='hover:text-white transition'
+        aria-label='Selecionar mês e ano'
+      >
+        {monthLabel}
+      </button>
+      <span className='text-white/60'>/</span>
+      <button
+        type='button'
+        onClick={onPressCenter}
+        className='hover:text-white transition'
+        aria-label='Selecionar mês e ano'
+      >
+        {yearLabel}
+      </button>
+    </div>
     <button
       type='button'
-      onClick={onPressYear}
-      className='px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/5 transition'
+      onClick={onNextMonth}
+      aria-label='Próximo mês'
+      className='h-7 w-7 rounded-full flex items-center justify-center text-white/80 hover:text-white transition'
     >
-      {yearLabel}
+      <ChevronRight size={16} />
     </button>
   </div>
 )
@@ -200,12 +223,12 @@ const ViewToggle = ({
 }) => {
   const optionClasses = (mode: ViewMode) =>
     [
-      'px-4 py-2 rounded-full text-sm font-medium transition',
-      value === mode ? 'bg-white/12 text-white shadow' : 'text-white/70 hover:text-white'
+      'px-3 py-1.5 rounded-full text-xs font-semibold transition',
+      value === mode ? 'bg-blue-600/30 text-blue-100 shadow' : 'text-white/70 hover:text-white'
     ].join(' ')
 
   return (
-    <div className='inline-flex rounded-full border border-white/10 bg-white/5 p-1 shadow-inner'>
+    <div className='inline-flex rounded-full border border-white/10 bg-white/5 p-0.5 shadow-inner'>
       <button type='button' onClick={() => onChange('month')} className={optionClasses('month')}>
         Mês
       </button>
@@ -290,10 +313,75 @@ const StatsSummaryCard = ({
 }
 
 export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
-  const [reportYear, setReportYear] = useState(new Date().getFullYear())
-  const [reportMonth, setReportMonth] = useState(new Date().getMonth())
-  const [showMonthPicker, setShowMonthPicker] = useState(false)
-  const [showYearPicker, setShowYearPicker] = useState(false)
+  const [reportDate, setReportDate] = useState(() => ({
+    year: new Date().getFullYear(),
+    month: new Date().getMonth()
+  }))
+  const reportYear = reportDate.year
+  const reportMonth = reportDate.month
+  const [showMonthYearPicker, setShowMonthYearPicker] = useState(false)
+  const monthYearRef = useRef<HTMLDivElement | null>(null)
+  const chartScrollRef = useRef<HTMLDivElement | null>(null)
+  const [chartScroll, setChartScroll] = useState({ leftPct: 0, widthPct: 100 })
+
+  const goPrevMonth = () => {
+    setShowMonthYearPicker(false)
+    setReportDate((prev) => {
+      if (prev.month === 0) {
+        return { year: prev.year - 1, month: 11 }
+      }
+      return { year: prev.year, month: prev.month - 1 }
+    })
+  }
+
+  const goNextMonth = () => {
+    setShowMonthYearPicker(false)
+    setReportDate((prev) => {
+      if (prev.month === 11) {
+        return { year: prev.year + 1, month: 0 }
+      }
+      return { year: prev.year, month: prev.month + 1 }
+    })
+  }
+
+  useEffect(() => {
+    if (!showMonthYearPicker) return
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null
+      if (!monthYearRef.current || !target) return
+      if (!monthYearRef.current.contains(target)) {
+        setShowMonthYearPicker(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    document.addEventListener('touchstart', handleOutsideClick)
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+      document.removeEventListener('touchstart', handleOutsideClick)
+    }
+  }, [showMonthYearPicker])
+
+  useEffect(() => {
+    const el = chartScrollRef.current
+    if (!el) return
+
+    const update = () => {
+      const total = el.scrollWidth || 1
+      const visible = el.clientWidth || 0
+      const left = el.scrollLeft || 0
+      const widthPct = Math.max(Math.min((visible / total) * 100, 100), 0)
+      const leftPct = Math.max(Math.min((left / total) * 100, 100 - widthPct), 0)
+      setChartScroll({ leftPct, widthPct })
+    }
+
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    return () => {
+      el.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+    }
+  }, [])
 
   const mergedSales = useMemo(() => {
     const byId = new Map<string, Sale>()
@@ -388,92 +476,86 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
 
   return (
     <div className='space-y-6 animate-fade-in'>
-      <div className='flex items-center justify-between gap-4'>
-        <div className='flex items-center gap-2 text-slate-200 text-sm font-bold uppercase tracking-wider'>
-          <CalendarDays size={16} className='text-slate-400' />
-          <span>Resumo do período</span>
+      <div className='space-y-3'>
+        <div className='flex items-center justify-between gap-4'>
+          <div className='flex items-center gap-2'>
+            <CalendarDays size={16} className='text-slate-400' />
+            <h3 className='text-slate-200 text-sm font-bold uppercase tracking-wider'>
+              Resumo do período
+            </h3>
+          </div>
+          <div className='relative' ref={monthYearRef}>
+            <MonthYearToggle
+              monthLabel={MONTHS_SHORT[reportMonth]}
+              yearLabel={String(reportYear)}
+              onPrevMonth={goPrevMonth}
+              onNextMonth={goNextMonth}
+              onPressCenter={() => setShowMonthYearPicker((prev) => !prev)}
+            />
+            {showMonthYearPicker && (
+              <div className='absolute right-0 mt-2 bg-slate-900/70 backdrop-blur-md border border-white/10 rounded-xl shadow-lg p-3 z-30 w-64'>
+                <div className='flex items-center justify-between mb-2 px-1'>
+                  <button
+                    type='button'
+                    onClick={() => setReportDate((prev) => ({ ...prev, year: prev.year - 1 }))}
+                    className='h-7 w-7 rounded-full flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition'
+                    aria-label='Ano anterior'
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className='text-sm font-semibold text-slate-100'>{reportYear}</span>
+                  <button
+                    type='button'
+                    onClick={() => setReportDate((prev) => ({ ...prev, year: prev.year + 1 }))}
+                    className='h-7 w-7 rounded-full flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition'
+                    aria-label='Próximo ano'
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+                <div className='grid grid-cols-3 gap-2'>
+                  {MONTHS_SHORT.map((label, idx) => (
+                    <button
+                      key={label}
+                      type='button'
+                      onClick={() => {
+                        setReportDate((prev) => ({ ...prev, month: idx }))
+                        setShowMonthYearPicker(false)
+                      }}
+                      className={`rounded-lg py-2 text-xs font-semibold transition ${
+                        idx === reportMonth
+                          ? 'bg-blue-600/25 text-white'
+                          : 'text-slate-200 hover:bg-slate-800'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <div className='relative'>
-          <MonthYearToggle
-            monthLabel={MONTHS_SHORT[reportMonth]}
-            yearLabel={String(reportYear)}
-            onPressMonth={() => {
-              setShowYearPicker(false)
-              setShowMonthPicker((prev) => !prev)
-            }}
-            onPressYear={() => {
-              setShowMonthPicker(false)
-              setShowYearPicker((prev) => !prev)
-            }}
+
+        <div className='grid grid-cols-2 gap-4'>
+          <StatsSummaryCard
+            title='Total Litros'
+            icon={<Droplets size={12} />}
+            accent='blue'
+            mainValue={`${reportData.totalLiters} L`}
+            previousValue={`${previousTotals.liters} L`}
+            change={litersChange}
           />
-          {showMonthPicker && (
-            <div className='absolute right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-lg p-2 z-30 w-40'>
-              <div className='max-h-64 overflow-y-auto custom-scrollbar space-y-1'>
-                {MONTHS_FULL.map((label, idx) => (
-                  <button
-                    key={label}
-                    type='button'
-                    onClick={() => {
-                      setReportMonth(idx)
-                      setShowMonthPicker(false)
-                    }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
-                      idx === reportMonth
-                        ? 'bg-blue-600/20 text-white'
-                        : 'text-slate-200 hover:bg-slate-800'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {showYearPicker && (
-            <div className='absolute right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-lg p-2 z-30 w-28'>
-              <div className='max-h-64 overflow-y-auto custom-scrollbar space-y-1'>
-                {Array.from({ length: 9 }, (_, i) => reportYear - 4 + i).map((year) => (
-                  <button
-                    key={year}
-                    type='button'
-                    onClick={() => {
-                      setReportYear(year)
-                      setShowYearPicker(false)
-                    }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
-                      year === reportYear
-                        ? 'bg-blue-600/20 text-white'
-                        : 'text-slate-200 hover:bg-slate-800'
-                    }`}
-                  >
-                    {year}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <StatsSummaryCard
+            title='Valor Total'
+            icon={<DollarSign size={12} />}
+            accent='green'
+            mainValue={formatCurrency(reportData.totalValue)}
+            previousValue={formatCurrency(previousTotals.value)}
+            change={valueChange}
+          />
         </div>
       </div>
-
-      <div className='grid grid-cols-2 gap-4'>
-        <StatsSummaryCard
-          title='Total Litros'
-          icon={<Droplets size={12} />}
-          accent='blue'
-          mainValue={`${reportData.totalLiters} L`}
-          previousValue={`${previousTotals.liters} L`}
-          change={litersChange}
-        />
-        <StatsSummaryCard
-          title='Valor Total'
-          icon={<DollarSign size={12} />}
-          accent='green'
-          mainValue={formatCurrency(reportData.totalValue)}
-          previousValue={formatCurrency(previousTotals.value)}
-          change={valueChange}
-        />
-      </div>
-
       <div>
         <div className='flex items-center justify-between gap-3 mb-4'>
           <div className='flex items-center gap-2'>
@@ -502,65 +584,99 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                   </span>
                 </div>
               </div>
-              <div className='overflow-x-auto no-scrollbar'>
+              <div className='overflow-x-auto no-scrollbar' ref={chartScrollRef}>
                 <div className='min-w-[640px]'>
                   {(() => {
                     const maxValue = Math.max(...monthlyTotals.map((m) => m.totalValue), 1)
                     return (
-                      <div className='grid grid-cols-12 gap-0.5 sm:gap-1 h-48 items-end'>
-                        {monthlyTotals.map((entry, idx) => {
-                          const isZero = entry.totalValue === 0
-                          const barHeightPct = isZero
-                            ? 6
-                            : Math.max((entry.totalValue / maxValue) * 100, 8)
-                          const isActive = idx === reportMonth
-                          return (
-                            <button
-                              key={idx}
-                              type='button'
-                              onClick={() => {
-                                setReportMonth(idx)
-                                setTooltipMonth(idx)
-                              }}
-                              className='relative flex flex-col items-center gap-2 group'
-                              title={`${MONTHS_SHORT[idx]} - ${formatCurrency(entry.totalValue)}`}
-                            >
-                              <div className='h-32 sm:h-40 w-[42%] bg-slate-800/5 overflow-hidden flex items-end justify-center'>
-                                <div
-                                  className={`w-full transition-all ${
-                                    isActive
-                                      ? 'bg-blue-400 shadow-lg shadow-blue-900/30'
-                                      : 'bg-slate-600'
-                                  }`}
-                                  style={{
-                                    height: `${barHeightPct}%`,
-                                    opacity: isZero ? 0.2 : 1
-                                  }}
-                                />
-                              </div>
-                              {tooltipMonth === idx && (
-                                <div className='absolute -top-10 sm:-top-12 bg-slate-800 text-slate-100 text-xs px-2.5 py-1 rounded-lg border border-slate-700 shadow-lg whitespace-nowrap'>
-                                  <span className='font-semibold'>{formatCurrency(entry.totalValue)}</span>
-                                  {entry.totalLiters ? (
-                                    <span className='text-slate-400 ml-2'>
-                                      {entry.totalLiters.toLocaleString('pt-BR')} L
-                                    </span>
-                                  ) : null}
-                                </div>
-                              )}
-                              <span
-                                className={`text-[11px] font-semibold uppercase tracking-wide ${
-                                  isActive ? 'text-blue-200' : 'text-slate-400'
-                                }`}
+                      <div className='flex gap-3'>
+                        <div className='flex h-48 flex-col justify-between text-[10px] text-slate-500'>
+                          <div className='flex items-center gap-2'>
+                            <span className='h-px w-3 bg-slate-600/70' />
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            <span className='h-px w-3 bg-slate-600/70' />
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            <span className='h-px w-3 bg-slate-600/70' />
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            <span className='h-px w-3 bg-slate-600/70' />
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            <span>0</span>
+                          </div>
+                        </div>
+                        <div className='grid grid-cols-12 gap-0.5 h-48 items-end flex-1'>
+                          {monthlyTotals.map((entry, idx) => {
+                            const isZero = entry.totalValue === 0
+                            const barHeightPct = isZero
+                              ? 6
+                              : Math.max((entry.totalValue / maxValue) * 100, 8)
+                            const isActive = idx === reportMonth
+                            const showTooltip = tooltipMonth === idx || idx === reportMonth
+                            return (
+                              <button
+                                key={idx}
+                                type='button'
+                                onClick={() => {
+                                  setReportDate((prev) => ({ ...prev, month: idx }))
+                                  setTooltipMonth(idx)
+                                }}
+                                className='relative flex flex-col items-center gap-2 group'
+                                title={`${MONTHS_SHORT[idx]} - ${formatCurrency(entry.totalValue)}`}
                               >
-                                {MONTHS_SHORT[idx]}
-                              </span>
-                            </button>
-                          )
-                        })}
+                                {isActive && (
+                                  <span className='absolute inset-y-0 w-0.5 bg-blue-500/10 z-0' />
+                                )}
+                                <div className='h-32 sm:h-40 w-[65%] bg-slate-800/5 overflow-hidden flex items-end justify-center relative z-10'>
+                                  <div
+                                    className={`w-full transition-all ${
+                                      isActive
+                                        ? 'bg-blue-400 shadow-lg shadow-blue-900/30'
+                                        : 'bg-slate-600'
+                                    }`}
+                                    style={{
+                                      height: `${barHeightPct}%`,
+                                      opacity: isZero ? 0.2 : 1
+                                    }}
+                                  />
+                                </div>
+                                {showTooltip && (
+                                  <div className='absolute -top-10 sm:-top-12 bg-slate-800 text-slate-100 text-xs px-2.5 py-1 rounded-lg border border-slate-700 shadow-lg whitespace-nowrap'>
+                                    <span className='font-semibold'>{formatCurrency(entry.totalValue)}</span>
+                                    {entry.totalLiters ? (
+                                      <span className='text-slate-400 ml-2'>
+                                        {entry.totalLiters.toLocaleString('pt-BR')} L
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                )}
+                                <span
+                                  className={`text-[11px] font-semibold uppercase tracking-wide ${
+                                    isActive ? 'text-blue-200' : 'text-slate-400'
+                                  }`}
+                                >
+                                  {MONTHS_SHORT[idx]}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
                       </div>
                     )
                   })()}
+                </div>
+              </div>
+              <div className='mt-2.5'>
+                <div className='relative h-0.5 w-full rounded-full bg-slate-800/40 overflow-hidden'>
+                  <div
+                    className='absolute top-0 h-full rounded-full bg-blue-500/40 transition-all'
+                    style={{
+                      width: `${chartScroll.widthPct}%`,
+                      left: `${chartScroll.leftPct}%`
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -603,7 +719,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
       <div className='space-y-3'>
         <div className='flex items-center gap-2 text-slate-200'>
           <Users size={16} className='text-slate-400' />
-          <h3 className='text-sm font-semibold'>
+          <h3 className='text-slate-200 text-sm font-bold uppercase tracking-wider'>
             TOP CLIENTES ({MONTHS_FULL[reportMonth].toUpperCase()})
           </h3>
           {monthlyRanking.length > 0 && (
@@ -803,5 +919,21 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
