@@ -1,10 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { App as CapacitorApp } from '@capacitor/app'
 import { firestoreService } from './services/firestore'
 import { authService, type AppUser } from './services/auth'
 import { ensureUserInitialized } from './services/bootstrap'
-import { offlineWrites } from './services/offlineWrites'
-import { pendingQueue } from './services/pendingQueue'
 import {
   Client,
   Sale,
@@ -24,8 +22,7 @@ import { createReceiptFile } from './services/pdfGenerator'
 import type { ReceiptFileRef } from './services/pdfGenerator'
 import { PdfViewerModal } from './components/PdfViewerModal'
 import { Milk, Settings as SettingsIcon, TrendingUp, Users } from 'lucide-react'
-import { PendingQueueModal } from './components/PendingQueueModal'
-import { optimisticStore } from './services/optimisticStore'
+import { SyncStatusPill } from './components/SyncStatusPill'
 
 // Import Pages
 import { ClientsPage } from './pages/clients'
@@ -68,23 +65,6 @@ function App() {
   const [dataReady, setDataReady] = useState(false)
   const [dataError, setDataError] = useState<string | null>(null)
   const [retryTick, setRetryTick] = useState(0)
-  const hydratedPending = useRef(false)
-  const [isPendingModalOpen, setIsPendingModalOpen] = useState(false)
-  const mergeWithPending = <T extends { id: string }>(
-    remote: T[],
-    local: T[],
-    keyFn: (item: T) => string
-  ): T[] => {
-    const remoteMap = new Map(remote.map((item) => [item.id, item]))
-    const result = [...remote]
-    local.forEach((item) => {
-      const key = keyFn(item)
-      if (optimisticStore.isPending(key) && !remoteMap.has(item.id)) {
-        result.push(item)
-      }
-    })
-    return result
-  }
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<TabState>('CLIENTS')
@@ -165,7 +145,6 @@ function App() {
     if (!user) {
       setDataReady(false)
       setDataError(null)
-      hydratedPending.current = false
       setClients([])
       setSales([])
       setPayments([])
@@ -182,17 +161,9 @@ function App() {
       setDataReady(false)
       setDataError(null)
       firestoreService.setUser(user.uid)
-      const cleanupAuto = pendingQueue.startAutoProcessor()
-      pendingQueue.processNow().catch(() => {})
-
       try {
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-          setDataReady(true)
-          return cleanupAuto
-        }
         await ensureUserInitialized(user.uid)
         if (!cancelled) setDataReady(true)
-        return cleanupAuto
       } catch (error) {
         console.error('Falha ao preparar conta', error)
         if (!cancelled) {
@@ -200,126 +171,15 @@ function App() {
             'Nao foi possivel preparar sua conta. Verifique sua internet e tente novamente.'
           )
         }
-        return cleanupAuto
       }
     }
 
-    let cleanup: (() => void) | void
-    run().then((c) => {
-      cleanup = c
-    })
+    run()
 
     return () => {
       cancelled = true
-      cleanup?.()
     }
   }, [authReady, user, retryTick])
-
-  useEffect(() => {
-    if (!authReady || !user || !dataReady) return
-    if (hydratedPending.current) return
-
-    let cancelled = false
-
-    ;(async () => {
-      try {
-        const items = await pendingQueue.getAll()
-        if (cancelled) return
-        items.forEach((item) => {
-          optimisticStore.apply({
-            type: item.type,
-            key: item.key,
-            payload: item.payload,
-            createdAt: item.createdAt
-          })
-        })
-        hydratedPending.current = true
-      } catch (error) {
-        console.error('Falha ao reidratar pendencias', error)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [authReady, user, dataReady])
-
-  useEffect(() => {
-    const unsub = optimisticStore.subscribe((event) => {
-      if (event.type === 'APPLY') {
-        const action = event.action
-        switch (action.type) {
-          case 'UPSERT_CLIENT': {
-            setClients((prev) => {
-              const idx = prev.findIndex((c) => c.id === action.payload.id)
-              if (idx >= 0) {
-                const next = [...prev]
-                next[idx] = { ...prev[idx], ...action.payload }
-                return next
-              }
-              return [...prev, action.payload]
-            })
-            break
-          }
-          case 'DELETE_CLIENT': {
-            setClients((prev) => prev.filter((c) => c.id !== action.payload))
-            break
-          }
-          case 'UPSERT_SALE': {
-            setSales((prev) => {
-              const idx = prev.findIndex((s) => s.id === action.payload.id)
-              if (idx >= 0) {
-                const next = [...prev]
-                next[idx] = { ...prev[idx], ...action.payload }
-                return next
-              }
-              return [...prev, action.payload]
-            })
-            break
-          }
-          case 'DELETE_SALE': {
-            setSales((prev) => prev.filter((s) => s.id !== action.payload))
-            break
-          }
-          case 'UPSERT_PAYMENT': {
-            const { payment, salesToMarkAsPaid } = action.payload
-            setPayments((prev) => {
-              const idx = prev.findIndex((p) => p.id === payment.id)
-              if (idx >= 0) {
-                const next = [...prev]
-                next[idx] = { ...prev[idx], ...payment }
-                return next
-              }
-              return [...prev, payment]
-            })
-            if (salesToMarkAsPaid?.length) {
-              setSales((prev) =>
-                prev.map((s) =>
-                  salesToMarkAsPaid.some((sm: Sale) => sm.id === s.id)
-                    ? { ...s, isPaid: true }
-                    : s
-                )
-              )
-            }
-            break
-          }
-          case 'DELETE_PAYMENT': {
-            setPayments((prev) => prev.filter((p) => p.id !== action.payload))
-            break
-          }
-          case 'SAVE_PRICE_SETTINGS': {
-            setPriceSettings(action.payload)
-            break
-          }
-          default:
-            break
-        }
-      }
-    })
-    return () => {
-      unsub?.()
-    }
-  }, [])
 
   // Firestore Listeners
   useEffect(() => {
@@ -327,33 +187,11 @@ function App() {
 
     let cancelled = false
     const unsubscribers = [
-      firestoreService.listenToClients((remoteClients) => {
-        if (cancelled) return
-        setClients((prev) =>
-          mergeWithPending(remoteClients, prev, (c) => `client:${c.id}`)
-        )
-      }),
-      firestoreService.listenToSales((remoteSales) => {
-        if (cancelled) return
-        setSales((prev) =>
-          mergeWithPending(remoteSales, prev, (s) => `sale:${s.id}`)
-        )
-      }),
-      firestoreService.listenToPayments((remotePayments) => {
-        if (cancelled) return
-        setPayments((prev) =>
-          mergeWithPending(remotePayments, prev, (p) => `payment:${p.id}`)
-        )
-      }),
+      firestoreService.listenToClients(setClients),
+      firestoreService.listenToSales(setSales),
+      firestoreService.listenToPayments(setPayments),
       firestoreService.listenToPriceSettings((settings) => {
-        if (cancelled) return
-        if (settings) {
-          setPriceSettings(settings)
-        } else if (optimisticStore.isPending('settings:price')) {
-          // keep optimistic
-        } else {
-          setPriceSettings(DEFAULT_SETTINGS)
-        }
+        if (!cancelled && settings) setPriceSettings(settings)
       })
     ]
 
@@ -573,7 +411,7 @@ function App() {
       priceType,
       ...(avatar && { avatar })
     }
-    await offlineWrites.saveClient(clientToSave as Client)
+    await firestoreService.saveClient(clientToSave as Client)
     setEditingClient(null)
     setEditingClientLoadedUpdatedAt(0)
     setIsClientModalOpen(false)
@@ -611,7 +449,7 @@ function App() {
       totalValue: liters * currentClientPrice,
       isPaid: false
     }
-    await offlineWrites.saveSale(newSale)
+    await firestoreService.saveSale(newSale)
     setIsSaleModalOpen(false)
     setSelectedClientId(null)
   }
@@ -644,7 +482,7 @@ function App() {
       date: currentDate,
       salesSnapshot: unpaidSales
     }
-    await offlineWrites.savePayment(newPayment, salesToBePaid)
+    await firestoreService.savePayment(newPayment, salesToBePaid)
 
     setLastPaymentInfo({
       clientName: client.name,
@@ -683,19 +521,19 @@ function App() {
   // --- Deletion Handlers exposed to pages ---
   const confirmDeleteClient = async () => {
     if (!clientToDeleteId) return
-    await offlineWrites.deleteClient(clientToDeleteId)
+    await firestoreService.deleteClient(clientToDeleteId)
     setClientToDeleteId(null)
   }
 
   const confirmDeleteSale = async () => {
     if (!saleToDeleteId) return
-    await offlineWrites.deleteSale(saleToDeleteId)
+    await firestoreService.deleteSale(saleToDeleteId)
     setSaleToDeleteId(null)
   }
 
   const confirmDeletePayment = async () => {
     if (!paymentToDeleteId) return
-    await offlineWrites.deletePayment(paymentToDeleteId)
+    await firestoreService.deletePayment(paymentToDeleteId)
     setPaymentToDeleteId(null)
   }
 
@@ -759,7 +597,19 @@ function App() {
             onSavePriceSettings={async (next) => {
               const fs: any = firestoreService as any
               try {
-                await offlineWrites.savePriceSettings(next)
+                if (typeof fs.savePriceSettings === 'function') {
+                  await fs.savePriceSettings(next)
+                } else if (typeof fs.setPriceSettings === 'function') {
+                  await fs.setPriceSettings(next)
+                } else {
+                  console.warn(
+                    'Nenhum metodo de salvar preco encontrado em firestoreService (savePriceSettings/setPriceSettings).'
+                  )
+                  alert(
+                    'Nao encontrei um metodo para salvar as configuracoes de preco no firestoreService.'
+                  )
+                  return
+                }
                 setPriceSettings(next)
               } catch (error) {
                 console.error('Falha ao buscar configuracoes de preco', error)
@@ -769,7 +619,6 @@ function App() {
             currentUserEmail={user?.email ?? undefined}
             currentUserId={user?.uid}
             onSignOut={() => authService.signOut()}
-            onOpenPendingModal={() => setIsPendingModalOpen(true)}
           />
         )
       case 'PAYMENTS':
@@ -826,6 +675,7 @@ function App() {
               <h1 className='text-xl font-semibold tracking-tight text-white/95'>
                 {title}
               </h1>
+              <SyncStatusPill />
             </div>
           </div>
         </header>
@@ -859,6 +709,7 @@ function App() {
               {tabTitle}
             </h1>
           </div>
+          <SyncStatusPill />
         </div>
       </header>
     )
@@ -1081,10 +932,6 @@ function App() {
         }}
         file={pdfFile}
         title='Comprovante PDF'
-      />
-      <PendingQueueModal
-        open={isPendingModalOpen}
-        onClose={() => setIsPendingModalOpen(false)}
       />
     </div>
   )

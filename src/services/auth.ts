@@ -7,6 +7,8 @@ export type AppUser = {
   emailVerified: boolean
 }
 
+const CACHE_KEY = 'nottai_last_user'
+
 const mapUser = (user: any): AppUser | null => {
   if (!user?.uid) return null
   return {
@@ -14,6 +16,29 @@ const mapUser = (user: any): AppUser | null => {
     email: user.email ?? null,
     displayName: user.displayName ?? null,
     emailVerified: !!user.emailVerified
+  }
+}
+
+const saveCachedUser = (user: AppUser | null) => {
+  if (typeof localStorage === 'undefined') return
+  if (!user) {
+    localStorage.removeItem(CACHE_KEY)
+    return
+  }
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(user))
+  } catch (error) {
+    console.warn('Nao foi possivel salvar usuario em cache', error)
+  }
+}
+
+const loadCachedUser = (): AppUser | null => {
+  if (typeof localStorage === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(CACHE_KEY)
+    return raw ? (JSON.parse(raw) as AppUser) : null
+  } catch (error) {
+    return null
   }
 }
 
@@ -27,8 +52,20 @@ export const authService = {
   },
 
   async getCurrentUser(): Promise<AppUser | null> {
-    const { user } = await FirebaseAuthentication.getCurrentUser()
-    return mapUser(user)
+    try {
+      const { user } = await FirebaseAuthentication.getCurrentUser()
+      const mapped = mapUser(user)
+      if (mapped) {
+        saveCachedUser(mapped)
+        return mapped
+      }
+      const cached = loadCachedUser()
+      return cached
+    } catch (error) {
+      const cached = loadCachedUser()
+      if (cached) return cached
+      throw error
+    }
   },
 
   onAuthStateChange(cb: (user: AppUser | null) => void): () => void {
@@ -38,7 +75,9 @@ export const authService = {
       'authStateChange',
       (event) => {
         if (cancelled) return
-        cb(mapUser(event.user))
+        const mapped = mapUser(event.user)
+        saveCachedUser(mapped)
+        cb(mapped)
       }
     )
 
@@ -60,6 +99,7 @@ export const authService = {
     await FirebaseAuthentication.sendEmailVerification()
     const mapped = mapUser(user)
     if (!mapped) throw new Error('Falha ao criar usuario')
+    saveCachedUser(mapped)
     return mapped
   },
 
@@ -70,11 +110,13 @@ export const authService = {
     })
     const mapped = mapUser(user)
     if (!mapped) throw new Error('Credenciais invalidas')
+    saveCachedUser(mapped)
     return mapped
   },
 
   async signOut(): Promise<void> {
     await FirebaseAuthentication.signOut()
+    saveCachedUser(null)
   },
 
   async sendPasswordReset(email: string): Promise<void> {
@@ -87,7 +129,9 @@ export const authService = {
 
   async reloadUser(): Promise<AppUser | null> {
     await FirebaseAuthentication.reload()
-    return authService.getCurrentUser()
+    const current = await authService.getCurrentUser()
+    saveCachedUser(current)
+    return current
   },
 
   async reauthWithPassword(email: string, password: string): Promise<void> {
@@ -104,5 +148,6 @@ export const authService = {
 
   async deleteUser(): Promise<void> {
     await FirebaseAuthentication.deleteUser()
+    saveCachedUser(null)
   }
 }

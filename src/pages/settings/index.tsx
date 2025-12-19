@@ -3,6 +3,9 @@ import { DollarSign, Tag } from 'lucide-react'
 import type { PriceSettings } from '@/types'
 import { authService } from '@/services/auth'
 import { firestoreService } from '@/services/firestore'
+import { SyncStatusPill } from '@/components/SyncStatusPill'
+import { PendingChangesPill } from '@/components/PendingChangesPill'
+import { useSyncStatus } from '@/hooks/useSyncStatus'
 
 type SettingsPageProps = {
   priceSettings: PriceSettings
@@ -11,6 +14,7 @@ type SettingsPageProps = {
   currentUserEmail?: string
   currentUserId?: string
   onSignOut?: () => void | Promise<void>
+  onOpenPendingModal?: () => void
 }
 
 export function SettingsPage({
@@ -19,7 +23,8 @@ export function SettingsPage({
   versionLabel = 'Nottai',
   currentUserEmail,
   currentUserId,
-  onSignOut
+  onSignOut,
+  onOpenPendingModal
 }: SettingsPageProps) {
   const [standardPriceInput, setStandardPriceInput] = useState('0')
   const [customPriceInput, setCustomPriceInput] = useState('0')
@@ -33,6 +38,8 @@ export function SettingsPage({
     setStandardPriceInput(String(priceSettings?.standard ?? 0))
     setCustomPriceInput(String(priceSettings?.custom ?? 0))
   }, [priceSettings])
+
+  const { isOnline, lastSyncAt } = useSyncStatus()
 
   const parsePrice = (v: string) => {
     const n = Number(String(v).replace(',', '.'))
@@ -477,6 +484,26 @@ export function SettingsPage({
             actionLabel='Excluir'
             onClick={() => setShowDeleteModal(true)}
           />
+        </div>
+      </div>
+
+      <div className='bg-slate-800 rounded-xl p-6 border border-slate-700 space-y-3'>
+        <div className='flex items-center justify-between'>
+          <div>
+            <h2 className='text-lg font-bold text-white'>Sincronizacao</h2>
+            <p className='text-slate-400 text-sm'>Status e pendencias offline.</p>
+          </div>
+          <SyncStatusPill />
+        </div>
+        <div className='flex justify-end'>
+          <PendingChangesPill onClick={() => onOpenPendingModal?.()} />
+        </div>
+        <div className='text-xs text-slate-400'>
+          {isOnline
+            ? lastSyncAt
+              ? 'Online - sincronizando automaticamente'
+              : 'Online - aguardando sincronizacao'
+            : 'Offline - suas alteracoes serao sincronizadas quando voltar a internet.'}
         </div>
       </div>
 
