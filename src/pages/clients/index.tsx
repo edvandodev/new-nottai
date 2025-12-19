@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react'
+﻿import React, { useEffect, useMemo, useState } from 'react'
 import {
   CheckCircle,
   ChevronLeft,
   ChevronRight,
+  MoreVertical,
   AlertTriangle,
   DollarSign,
   MessageCircle,
@@ -56,6 +57,7 @@ type DayGroup = {
 }
 
 type ClientFilter = 'ALL' | 'BALANCE' | 'ZERO' | 'AZ'
+type HistoryFilter = 'ALL' | 'PAYMENTS' | 'SALES'
 
 const TYPE_PRIORITY: Record<HistoryEvent['type'], number> = {
   payment: 2,
@@ -239,6 +241,8 @@ export function ClientsPage({
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [filterMode, setFilterMode] = useState<ClientFilter>('ALL')
   const [showPaymentPicker, setShowPaymentPicker] = useState(false)
+  const [historyFilter, setHistoryFilter] = useState<HistoryFilter>('ALL')
+  const [showClientMenu, setShowClientMenu] = useState(false)
   const [isDebtOpen, setIsDebtOpen] = useState(false)
 
   useEffect(() => {
@@ -257,6 +261,10 @@ export function ClientsPage({
   useEffect(() => {
     setIsDebtOpen(false)
   }, [selectedClientId])
+
+  useEffect(() => {
+    setShowClientMenu(false)
+  }, [selectedClientId, view])
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -439,6 +447,19 @@ export function ClientsPage({
     return { events: sorted, groups, balance, lastPaymentTs, bannerBalance }
   }, [sales, payments, selectedClientId])
 
+  const filteredHistoryGroups = useMemo(() => {
+    const events = selectedClientHistory.events
+    if (!events.length) return [] as DayGroup[]
+    let filtered = events
+    if (historyFilter === 'PAYMENTS') {
+      filtered = events.filter((e) => e.type === 'payment')
+    }
+    if (historyFilter === 'SALES') {
+      filtered = events.filter((e) => e.type === 'sale')
+    }
+    return groupHistoryEventsByDay(filtered)
+  }, [selectedClientHistory.events, historyFilter])
+
   const getClientPrice = (client: Client) =>
     client.priceType === 'CUSTOM'
       ? priceSettings.custom
@@ -515,7 +536,7 @@ export function ClientsPage({
               type='button'
               onClick={() => setShowPaymentPicker(false)}
               className='text-slate-500 hover:text-slate-200 transition-colors'
-              aria-label='Fechar seleção'
+              aria-label='Fechar seleÃ§Ã£o'
             >
               <X size={16} />
             </button>
@@ -582,7 +603,7 @@ export function ClientsPage({
               { label: 'Todos', value: 'ALL' as const },
               { label: 'Com saldo', value: 'BALANCE' as const },
               { label: 'Zerados', value: 'ZERO' as const },
-              { label: 'A–Z', value: 'AZ' as const }
+              { label: 'A-Z', value: 'AZ' as const }
             ].map((chip) => {
               const isActive = filterMode === chip.value
               return (
@@ -699,67 +720,81 @@ export function ClientsPage({
       0,
       selectedClientHistory.bannerBalance + lastPaymentAmount
     )
+    const initials = getInitials(selectedClient.name)
+    const avatarColors = getAvatarColors(selectedClient.name)
 
     return (
-      <div className='animate-fade-in relative min-h-screen pb-24 bg-slate-950'>
-        <div className='fixed top-0 left-0 right-0 p-4 flex justify-between items-center z-50 max-w-2xl mx-auto pointer-events-none'>
+      <div
+        className='animate-fade-in relative min-h-screen bg-slate-950'
+        style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <div className='fixed top-0 left-0 right-0 z-50 max-w-2xl mx-auto px-4 pt-4 flex items-center justify-between pointer-events-none'>
           <button
             onClick={handleBackToList}
-            className='pointer-events-auto p-2 bg-slate-900/40 hover:bg-slate-800/60 backdrop-blur-md rounded-full text-white transition-all border border-white/10 shadow-lg'
+            className='pointer-events-auto h-10 w-10 rounded-full bg-slate-900/60 border border-white/10 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95'
             aria-label='Voltar'
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft size={20} />
           </button>
 
-          <div className='flex gap-2 pointer-events-auto'>
+          <div className='flex items-center gap-2 pointer-events-auto relative'>
             <button
               type='button'
               onClick={() => onEditClient(selectedClient)}
-              className='pointer-events-auto p-2 bg-slate-900/40 hover:bg-slate-800/60 backdrop-blur-md rounded-full text-white transition-all border border-white/10 shadow-lg'
+              className='h-10 w-10 rounded-full bg-slate-900/60 border border-white/10 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95'
               aria-label='Editar cliente'
             >
-              <Pencil size={20} />
+              <Pencil size={18} />
             </button>
             <button
               type='button'
-              onClick={() => onDeleteClient(selectedClient.id)}
-              className='pointer-events-auto p-2 bg-red-500/20 hover:bg-red-500/40 backdrop-blur-md rounded-full text-red-200 transition-all border border-red-500/20 shadow-lg'
-              aria-label='Excluir cliente'
+              onClick={() => setShowClientMenu((prev) => !prev)}
+              className='h-10 w-10 rounded-full bg-slate-900/60 border border-white/10 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95'
+              aria-label='Menu'
             >
-              <Trash2 size={20} />
+              <MoreVertical size={18} />
             </button>
-          </div>
-        </div>
-
-        <div className='relative h-48 bg-gradient-to-br from-blue-700 to-blue-900 rounded-b-[2.5rem] shadow-xl overflow-hidden'>
-          <div className='absolute top-[-20%] left-[-10%] w-60 h-60 rounded-full bg-white/5 blur-3xl' />
-          <div className='absolute bottom-[-20%] right-[-10%] w-60 h-60 rounded-full bg-blue-400/10 blur-3xl' />
-        </div>
-
-        <div className='px-6 -mt-16 relative z-10 flex flex-col items-center'>
-          <div className='h-32 w-32 rounded-full bg-slate-800 border-4 border-slate-950 shadow-2xl overflow-hidden flex items-center justify-center'>
-            {selectedClient.avatar ? (
-              <img
-                src={selectedClient.avatar}
-                alt={selectedClient.name}
-                className='h-full w-full object-cover'
-              />
-            ) : (
-              <UserIcon size={64} className='text-slate-600' />
+            {showClientMenu && (
+              <div className='absolute right-0 top-12 w-44 rounded-xl border border-slate-800 bg-slate-900/95 shadow-lg overflow-hidden'>
+                <button
+                  type='button'
+                  onClick={() => {
+                    setShowClientMenu(false)
+                    onDeleteClient(selectedClient.id)
+                  }}
+                  className='w-full px-3 py-2 text-left text-sm text-red-200 hover:bg-red-500/10 transition-colors'
+                >
+                  Excluir cliente
+                </button>
+              </div>
             )}
           </div>
+        </div>
 
-          <div className='mt-4 text-center'>
+        <div className='relative h-32 bg-gradient-to-br from-blue-700 to-blue-900/90 rounded-b-[2rem] shadow-md overflow-hidden'>
+          <div className='absolute top-[-30%] left-[-10%] w-44 h-44 rounded-full bg-white/5 blur-3xl' />
+          <div className='absolute bottom-[-35%] right-[-10%] w-44 h-44 rounded-full bg-blue-400/10 blur-3xl' />
+        </div>
+
+        <div className='px-6 -mt-12 relative z-10 flex flex-col items-center'>
+          <div
+            className='h-24 w-24 rounded-full border-4 border-slate-950 shadow-xl flex items-center justify-center text-2xl font-bold'
+            style={{ backgroundColor: avatarColors.bg, color: avatarColors.text }}
+          >
+            {initials}
+          </div>
+
+          <div className='mt-3 text-center'>
             <h2 className='text-2xl font-bold text-white'>
               {selectedClient.name}
             </h2>
-            <div className='flex justify-center gap-2 mt-2 flex-wrap'>
-              <span className='px-3 py-1 bg-slate-800 border border-slate-700 rounded-full text-xs font-medium text-slate-300 uppercase tracking-wide'>
+            <div className='flex justify-center gap-2 mt-2 flex-wrap overflow-x-auto no-scrollbar'>
+              <span className='px-3 py-1 bg-slate-900/60 border border-slate-800 rounded-full text-xs font-semibold text-slate-400 uppercase tracking-wide'>
                 {selectedClient.priceType === 'STANDARD'
-                  ? 'Preço Padrão'
-                  : 'Personalizado'}
+                  ? 'Preço padrão'
+                  : 'Preço personalizado'}
               </span>
-              <span className='px-3 py-1 bg-blue-900/30 border border-blue-500/30 rounded-full text-xs font-bold text-blue-400'>
+              <span className='px-3 py-1 bg-blue-600/20 border border-blue-500/30 rounded-full text-xs font-semibold text-blue-200'>
                 {formatCurrency(clientPrice)}/L
               </span>
             </div>
@@ -768,23 +803,22 @@ export function ClientsPage({
           {selectedClient.phone && (
             <button
               onClick={() => openWhatsApp(selectedClient.phone)}
-              className='mt-4 flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl shadow-lg shadow-green-900/40 hover:bg-green-500 transition-all active:scale-95 font-medium text-sm'
+              className='mt-3 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow-sm hover:bg-green-500 transition-all active:scale-95 font-medium text-sm'
             >
-              <MessageCircle size={18} />
+              <MessageCircle size={16} />
               WhatsApp
             </button>
           )}
         </div>
 
-        <div className='px-4 mt-8 space-y-6'>
-          <div className='bg-slate-900/80 rounded-2xl p-6 border border-slate-800 flex justify-between items-center relative overflow-hidden'>
-            <div className='absolute right-0 top-0 h-full w-1 bg-gradient-to-b from-transparent via-blue-500/50 to-transparent' />
+        <div className='px-4 mt-6 space-y-5'>
+          <div className='bg-slate-900/70 rounded-2xl p-5 border border-slate-800 shadow-sm flex justify-between items-center'>
             <div>
-              <p className='text-sm text-slate-400 font-medium mb-1'>
-                Total a Receber
+              <p className='text-xs text-slate-400 font-semibold uppercase tracking-wide mb-1'>
+                Total a receber
               </p>
               <p
-                className={`text-4xl font-bold tracking-tight ${
+                className={`text-3xl font-bold tracking-tight ${
                   balance > 0 ? 'text-white' : 'text-slate-500'
                 }`}
               >
@@ -793,44 +827,68 @@ export function ClientsPage({
             </div>
 
             <div
-              className={`h-12 w-12 rounded-xl flex items-center justify-center ${
+              className={`h-11 w-11 rounded-xl flex items-center justify-center border ${
                 balance > 0
-                  ? 'bg-blue-600/20 text-blue-400'
-                  : 'bg-green-500/20 text-green-400'
+                  ? 'border-blue-500/30 bg-blue-600/15 text-blue-300'
+                  : 'border-emerald-500/30 bg-emerald-600/15 text-emerald-300'
               }`}
             >
-              {balance > 0 ? <Wallet size={24} /> : <CheckCircle size={24} />}
+              {balance > 0 ? <Wallet size={20} /> : <CheckCircle size={20} />}
             </div>
           </div>
 
-          <div className='flex gap-3 pt-2'>
+          <div className='flex gap-3'>
             <button
               onClick={() => onAddSale(selectedClient.id)}
-              className='flex-1 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 transition-all active:scale-95'
+              className='flex-1 h-11 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95'
             >
-              <Plus size={20} />
+              <Plus size={18} />
               Nova Venda
             </button>
 
             <button
               onClick={() => onPayDebt(selectedClient.id)}
               disabled={balance <= 0}
-              className={`flex-1 py-3.5 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 ${
+              className={`flex-1 h-11 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
                 balance > 0
-                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none'
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
               }`}
             >
-              <DollarSign size={20} />
+              <DollarSign size={18} />
               Receber
             </button>
           </div>
 
           <div>
-            <div className='flex items-center justify-between mb-4 px-1'>
-              <h3 className='text-sm font-bold text-slate-400 uppercase tracking-wider'>
+            <div className='flex items-center justify-between mb-3 px-1'>
+              <h3 className='text-xs font-semibold text-slate-500 uppercase tracking-wider'>
                 Histórico
               </h3>
+            </div>
+
+            <div className='flex gap-2 overflow-x-auto no-scrollbar pb-2'>
+              {[
+                { label: 'Todos', value: 'ALL' as const },
+                { label: 'Recebidos', value: 'PAYMENTS' as const },
+                { label: 'Vendas', value: 'SALES' as const }
+              ].map((chip) => {
+                const isActive = historyFilter === chip.value
+                return (
+                  <button
+                    key={chip.value}
+                    type='button'
+                    onClick={() => setHistoryFilter(chip.value)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
+                      isActive
+                        ? 'bg-blue-600/20 text-blue-200 border-blue-500/30'
+                        : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:text-slate-200'
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                )
+              })}
             </div>
 
             {selectedClientHistory.bannerBalance > 0 ? (
@@ -894,69 +952,64 @@ export function ClientsPage({
               </div>
             ) : null}
 
-            {selectedClientHistory.groups.length === 0 ? (
-              <div className='text-center py-10 rounded-2xl border border-slate-800 border-dashed bg-slate-900/30'>
+            {filteredHistoryGroups.length === 0 ? (
+              <div className='text-center py-8 rounded-2xl border border-slate-800 border-dashed bg-slate-900/30'>
                 <p className='text-slate-500'>Nenhuma movimentação registrada.</p>
               </div>
             ) : (
-              <div className='space-y-5'>
-                {selectedClientHistory.groups.map((group) => (
-                  <div key={group.key} className='space-y-3'>
-                    <p className='text-xs font-semibold text-slate-500 px-1 uppercase tracking-wide'>
+              <div className='space-y-4'>
+                {filteredHistoryGroups.map((group) => (
+                  <div key={group.key} className='space-y-2'>
+                    <span className='inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-slate-900/60 border border-slate-800 text-slate-400'>
                       {group.label}
-                    </p>
-                    <div className='space-y-3'>
+                    </span>
+                    <div className='space-y-2'>
                       {group.items.map((item) => {
                         const isSale = item.type === 'sale'
                         const isPayment = item.type === 'payment'
-                        const title = isSale
-                          ? `${item.liters} ${item.liters === 1 ? 'Litro' : 'Litros'}`
-                          : 'Pag. recebido'
+                        const title = isSale ? 'Venda' : 'Pagamento recebido'
 
                         const amount = item.amount
                         const ts = normalizeTimestamp(item.createdAt)
                         const dateObj = new Date(ts)
                         const timeLabel = formatTimeLabel(dateObj)
+                        const dateLabel = formatDateShort(ts)
 
                         return (
                           <div
                             key={`${item.type}-${item.id}`}
-                            className='bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between group hover:border-slate-700 transition-colors'
+                            className='bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-3 flex items-center justify-between gap-3 transition-all active:scale-[0.98] active:opacity-90'
                           >
-                            <div className='flex items-center gap-4 min-w-0'>
+                            <div className='flex items-center gap-3 min-w-0'>
                               <div
-                                className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${
+                                className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 border ${
                                   isSale
-                                    ? 'bg-blue-600/20 text-blue-400'
-                                    : isPayment
-                                    ? 'bg-emerald-600/20 text-emerald-400'
-                                    : 'bg-amber-600/20 text-amber-400'
+                                    ? 'border-blue-500/30 bg-blue-600/15 text-blue-300'
+                                    : 'border-emerald-500/30 bg-emerald-600/15 text-emerald-300'
                                 }`}
                               >
                                 {isSale ? (
-                                  <ShoppingCart size={20} />
-                                ) : isPayment ? (
-                                  <DollarSign size={20} />
+                                  <ShoppingCart size={16} />
                                 ) : (
-                                  <Wallet size={20} />
+                                  <CheckCircle size={16} />
                                 )}
                               </div>
 
                               <div className='min-w-0'>
-                                <p className='text-white font-medium whitespace-nowrap'>
+                                <p className='text-white font-semibold truncate'>
                                   {title}
                                 </p>
                                 <p className='text-slate-500 text-xs'>
-                                  {timeLabel}
+                                  {dateLabel} • {timeLabel}
                                 </p>
                               </div>
                             </div>
 
                             <div className='flex items-center gap-2 shrink-0'>
                               <span
-                                className={`text-base font-bold ${
-                                  isPayment ? 'text-emerald-400' : 'text-red-400'
-                                } shrink-0 tabular-nums`}
+                                className={`text-sm font-bold tabular-nums ${
+                                  isPayment ? 'text-emerald-400' : 'text-blue-300'
+                                }`}
                               >
                                 {formatCurrency(amount)}
                               </span>
@@ -969,7 +1022,7 @@ export function ClientsPage({
                                 className='p-2 text-slate-600 hover:text-red-400 transition-colors'
                                 aria-label='Excluir'
                               >
-                                <Trash2 size={16} />
+                                <Trash2 size={14} />
                               </button>
                             </div>
                           </div>
@@ -985,6 +1038,12 @@ export function ClientsPage({
       </div>
     )
   }
-
   return view === 'LIST' ? renderClientList() : renderClientDetails()
 }
+
+
+
+
+
+
+
