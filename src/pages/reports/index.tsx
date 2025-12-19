@@ -3,8 +3,8 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
+  CalendarDays,
   ChevronRight,
-  Clock,
   DollarSign,
   Droplets,
   Users,
@@ -388,65 +388,71 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
 
   return (
     <div className='space-y-6 animate-fade-in'>
-      <div className='flex items-center justify-end relative'>
-        <MonthYearToggle
-          monthLabel={MONTHS_SHORT[reportMonth]}
-          yearLabel={String(reportYear)}
-          onPressMonth={() => {
-            setShowYearPicker(false)
-            setShowMonthPicker((prev) => !prev)
-          }}
-          onPressYear={() => {
-            setShowMonthPicker(false)
-            setShowYearPicker((prev) => !prev)
-          }}
-        />
-        {showMonthPicker && (
-          <div className='absolute right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-lg p-2 z-30 w-40'>
-            <div className='max-h-64 overflow-y-auto custom-scrollbar space-y-1'>
-              {MONTHS_FULL.map((label, idx) => (
-                <button
-                  key={label}
-                  type='button'
-                  onClick={() => {
-                    setReportMonth(idx)
-                    setShowMonthPicker(false)
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
-                    idx === reportMonth
-                      ? 'bg-blue-600/20 text-white'
-                      : 'text-slate-200 hover:bg-slate-800'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+      <div className='flex items-center justify-between gap-4'>
+        <div className='flex items-center gap-2 text-slate-200 text-sm font-bold uppercase tracking-wider'>
+          <CalendarDays size={16} className='text-slate-400' />
+          <span>Resumo do período</span>
+        </div>
+        <div className='relative'>
+          <MonthYearToggle
+            monthLabel={MONTHS_SHORT[reportMonth]}
+            yearLabel={String(reportYear)}
+            onPressMonth={() => {
+              setShowYearPicker(false)
+              setShowMonthPicker((prev) => !prev)
+            }}
+            onPressYear={() => {
+              setShowMonthPicker(false)
+              setShowYearPicker((prev) => !prev)
+            }}
+          />
+          {showMonthPicker && (
+            <div className='absolute right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-lg p-2 z-30 w-40'>
+              <div className='max-h-64 overflow-y-auto custom-scrollbar space-y-1'>
+                {MONTHS_FULL.map((label, idx) => (
+                  <button
+                    key={label}
+                    type='button'
+                    onClick={() => {
+                      setReportMonth(idx)
+                      setShowMonthPicker(false)
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+                      idx === reportMonth
+                        ? 'bg-blue-600/20 text-white'
+                        : 'text-slate-200 hover:bg-slate-800'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-        {showYearPicker && (
-          <div className='absolute right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-lg p-2 z-30 w-28'>
-            <div className='max-h-64 overflow-y-auto custom-scrollbar space-y-1'>
-              {Array.from({ length: 9 }, (_, i) => reportYear - 4 + i).map((year) => (
-                <button
-                  key={year}
-                  type='button'
-                  onClick={() => {
-                    setReportYear(year)
-                    setShowYearPicker(false)
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
-                    year === reportYear
-                      ? 'bg-blue-600/20 text-white'
-                      : 'text-slate-200 hover:bg-slate-800'
-                  }`}
-                >
-                  {year}
-                </button>
-              ))}
+          )}
+          {showYearPicker && (
+            <div className='absolute right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-lg p-2 z-30 w-28'>
+              <div className='max-h-64 overflow-y-auto custom-scrollbar space-y-1'>
+                {Array.from({ length: 9 }, (_, i) => reportYear - 4 + i).map((year) => (
+                  <button
+                    key={year}
+                    type='button'
+                    onClick={() => {
+                      setReportYear(year)
+                      setShowYearPicker(false)
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+                      year === reportYear
+                        ? 'bg-blue-600/20 text-white'
+                        : 'text-slate-200 hover:bg-slate-800'
+                    }`}
+                  >
+                    {year}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className='grid grid-cols-2 gap-4'>
@@ -560,13 +566,13 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
             </div>
           ) : (
             <div className='bg-slate-900/50 rounded-xl p-8 text-center border border-slate-800 border-dashed'>
-              <p className='text-slate-500'>Nenhuma venda registrada neste periodo.</p>
+              <p className='text-slate-500'>Nenhuma venda registrada neste período.</p>
             </div>
           )
         ) : reportData.weeks.length === 0 ? (
           <div className='bg-slate-900/50 rounded-xl p-8 text-center border border-slate-800 border-dashed'>
             <p className='text-slate-500'>
-              Nenhuma venda registrada neste periodo.
+              Nenhuma venda registrada neste período.
             </p>
           </div>
         ) : (
@@ -616,7 +622,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
 
         {topClients.length === 0 ? (
           <div className='bg-slate-900 rounded-lg border border-slate-800 px-4 py-6 text-center text-slate-500 text-sm'>
-            Nenhuma venda registrada neste periodo.
+            Nenhuma venda registrada neste período.
           </div>
         ) : (
           <div className='flex gap-3 overflow-x-auto no-scrollbar pb-1'>
@@ -707,7 +713,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
             <div className='max-h-[70vh] overflow-y-auto custom-scrollbar p-4 space-y-2'>
               {monthlyRanking.length === 0 ? (
                 <div className='text-center text-slate-500 py-8'>
-                  Nenhuma venda registrada neste periodo.
+                  Nenhuma venda registrada neste período.
                 </div>
               ) : (
                 monthlyRanking.map((client, idx) => {
@@ -765,7 +771,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                         </div>
                         {idx === 0 && (
                           <span className='text-lg mr-1' role='img' aria-label='Top 1'>
-                            🏆
+            🏆
                           </span>
                         )}
                       </div>
@@ -797,6 +803,5 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
     </div>
   )
 }
-
 
 
