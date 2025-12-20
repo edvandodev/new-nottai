@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { App as CapacitorApp } from '@capacitor/app'
 import { firestoreService } from './services/firestore'
 import { authService, type AppUser } from './services/auth'
@@ -33,6 +34,7 @@ import { ReportsPage } from './pages/reports'
 import { SettingsPage } from './pages/settings'
 import { PaymentsPage } from './pages/payments'
 import { AuthPage } from './pages/auth'
+import { NewClientPage } from './NewClientPage'
 
 const DEFAULT_SETTINGS: PriceSettings = {
   standard: 0,
@@ -63,6 +65,8 @@ const CustomPaymentIcon = ({
 )
 
 function App() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [authReady, setAuthReady] = useState(false)
   const [user, setUser] = useState<AppUser | null>(null)
   const [dataReady, setDataReady] = useState(false)
@@ -392,6 +396,11 @@ function App() {
     const register = async () => {
       if (!CapacitorApp?.addListener) return
       backHandler = await CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+        if (location.pathname !== '/') {
+          navigate(-1)
+          return
+        }
+
         if (isClientModalOpen) {
           setIsClientModalOpen(false)
           return
@@ -469,7 +478,9 @@ function App() {
     isReceiptModalOpen,
     isSaleModalOpen,
     isPdfViewerOpen,
-    lastBackTime,
+    location.pathname,
+    navigate,
+    lastBackTime, 
     paymentToDeleteId,
     saleToDeleteId
   ])
@@ -536,8 +547,8 @@ function App() {
 
   // --- Modal & Action Handlers ---
   const handleAddClient = () => {
-    setEditingClient(null)
-    setIsClientModalOpen(true)
+    setEditingClient(null);
+    navigate('/clientes/novo');
   }
 
   const handleEditClient = (client: Client) => {
@@ -1057,14 +1068,9 @@ function App() {
     )
   }
 
-  return (
-    <div
-      className='min-h-screen font-sans pb-32'
-      style={{
-        backgroundColor: 'var(--bg)',
-        color: 'var(--text)'
-      }}
-    >
+  // Main content renderer (Tabs)
+  const MainContent = () => (
+    <>
       {renderHeader()}
       {renderVerificationBanner()}
       <main
@@ -1149,9 +1155,23 @@ function App() {
         open={isPendingModalOpen}
         onClose={() => setIsPendingModalOpen(false)}
       />
+    </>
+  );
+
+  return (
+    <div
+      className='min-h-screen font-sans pb-32'
+      style={{
+        backgroundColor: 'var(--bg)',
+        color: 'var(--text)'
+      }}
+    >
+      <Routes>
+        <Route path="/" element={<MainContent />} />
+        <Route path="/clientes/novo" element={<NewClientPage onSave={handleSaveClient} priceSettings={priceSettings} />} />
+      </Routes>
     </div>
   )
 }
 
 export default App
-
