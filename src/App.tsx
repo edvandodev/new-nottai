@@ -1069,7 +1069,7 @@ function App() {
   }
 
   // Main content renderer (Tabs)
-  const MainContent = () => (
+  const mainContent = (
     <>
       {renderHeader()}
       {renderVerificationBanner()}
@@ -1156,19 +1156,22 @@ function App() {
         onClose={() => setIsPendingModalOpen(false)}
       />
     </>
-  );
+  )
 
   const showNewClientSheet = location.pathname === '/clientes/novo'
+  const appTheme =
+    activeTab === 'CLIENTS' || activeTab === 'PAYMENTS' ? 'flat-lime' : undefined
 
   return (
     <div
+      data-theme={appTheme}
       className='min-h-screen font-sans pb-32'
       style={{
         backgroundColor: 'var(--bg)',
         color: 'var(--text)'
       }}
     >
-      <MainContent />
+      {mainContent}
       {showNewClientSheet && (
         <NewClientPage
           onSave={handleSaveClient}
