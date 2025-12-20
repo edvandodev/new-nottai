@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { FileText, Plus, Search, Trash2, Wallet, X } from 'lucide-react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Eye, EyeOff, FileText, Plus, Search, SlidersHorizontal, Trash2, Wallet, X } from 'lucide-react'
 import type { Client, Payment } from '@/types'
 import { StatCard } from '@/components/payments/StatCard'
 import { FilterChips } from '@/components/payments/FilterChips'
@@ -67,6 +67,7 @@ const formatDayWithTime = (ts: number) => {
 }
 
 type FilterMode = 'ALL' | 'TODAY' | 'WEEK' | 'MONTH' | 'MAX'
+type TotalFilter = 'TOTAL' | 'DAY' | 'WEEK' | 'MONTH'
 
 type PaymentsPageProps = {
   payments: Payment[]
@@ -97,8 +98,13 @@ export function PaymentsPage({
 }: PaymentsPageProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterMode, setFilterMode] = useState<FilterMode>('ALL')
+  const [totalFilter, setTotalFilter] = useState<TotalFilter>('TOTAL')
+  const [showTotalFilter, setShowTotalFilter] = useState(false)
+  const [showTotalAmount, setShowTotalAmount] = useState(true)
   const [showPaymentPicker, setShowPaymentPicker] = useState(false)
   const [expandedPaymentId, setExpandedPaymentId] = useState<string | null>(null)
+  const [showFloatingHeader, setShowFloatingHeader] = useState(false)
+  const totalFilterRef = useRef<HTMLDivElement | null>(null)
 
   const paymentCandidates = useMemo(
     () =>
@@ -114,6 +120,36 @@ export function PaymentsPage({
     }
   }, [paymentCandidates.length])
 
+  useEffect(() => {
+    if (!showTotalFilter) return
+    const handlePointer = (event: MouseEvent | TouchEvent) => {
+      if (!totalFilterRef.current) return
+      if (!totalFilterRef.current.contains(event.target as Node)) {
+        setShowTotalFilter(false)
+      }
+    }
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowTotalFilter(false)
+    }
+    document.addEventListener('mousedown', handlePointer)
+    document.addEventListener('touchstart', handlePointer)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handlePointer)
+      document.removeEventListener('touchstart', handlePointer)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [showTotalFilter])
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowFloatingHeader(window.scrollY > 20)
+    }
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   const currencyFormatter = useMemo(
     () => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }),
     []
@@ -121,27 +157,44 @@ export function PaymentsPage({
 
   const formatCurrency = (val: number) => currencyFormatter.format(val || 0)
 
-  const today = new Date()
-  const currentMonth = today.getMonth()
-  const currentYear = today.getFullYear()
+  const totalReceived = useMemo(() => {
+    const now = new Date()
+    const todayStart = startOfDay(now)
+    const weekStart = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6))
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
 
-  const receivedThisMonth = useMemo(
-    () =>
-      payments.reduce((acc, payment) => {
-        const d = parseDate(payment.date as any)
-        if (!d) return acc
-        if (d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
-          acc += payment.amount || 0
-        }
-        return acc
-      }, 0),
-    [payments, currentMonth, currentYear]
-  )
+    return payments.reduce((acc, payment) => {
+      const d = parseDate(payment.date as any)
+      if (!d) return acc
+      const ts = d.getTime()
 
-  const totalReceived = useMemo(
-    () => payments.reduce((acc, payment) => acc + (payment.amount || 0), 0),
-    [payments]
-  )
+      if (totalFilter === 'DAY') {
+        if (startOfDay(d) !== todayStart) return acc
+      } else if (totalFilter === 'WEEK') {
+        if (ts < weekStart || ts > now.getTime()) return acc
+      } else if (totalFilter === 'MONTH') {
+        if (d.getFullYear() !== currentYear || d.getMonth() !== currentMonth) return acc
+      }
+
+      return acc + (payment.amount || 0)
+    }, 0)
+  }, [payments, totalFilter])
+
+  const totalFilterLabel =
+    totalFilter === 'DAY'
+      ? 'Hoje'
+      : totalFilter === 'WEEK'
+        ? 'Semana'
+        : totalFilter === 'MONTH'
+          ? 'Mês'
+          : 'Total'
+  const totalFilterOptions: Array<{ value: TotalFilter; label: string }> = [
+    { value: 'DAY', label: 'Hoje' },
+    { value: 'WEEK', label: 'Semana' },
+    { value: 'MONTH', label: 'Mês' },
+    { value: 'TOTAL', label: 'Total' }
+  ]
 
   const filteredItems = useMemo<ListItem[]>(() => {
     const now = new Date()
@@ -219,24 +272,125 @@ export function PaymentsPage({
         paddingRight: 16
       }}
     >
+      {showFloatingHeader && (
+        <div
+          className='fixed top-0 left-0 right-0 z-30 flex items-center pointer-events-none'
+          style={{
+            paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))',
+            paddingBottom: 10,
+            paddingLeft: 16,
+            paddingRight: 16,
+            background: 'rgba(11, 15, 20, 0.6)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderBottom: '1px solid rgba(30, 42, 56, 0.6)'
+          }}
+        >
+          <h2 className='text-[24px] font-semibold leading-none' style={{ color: 'var(--text)' }}>
+            Pagamentos
+          </h2>
+        </div>
+      )}
+
       <div className='flex items-center justify-between mb-6'>
         <h1 className='text-[24px] font-semibold leading-none'>Pagamentos</h1>
         <IconButton
           aria-label='Novo pagamento'
           onClick={handleAddPayment}
           disabled={paymentCandidates.length === 0}
-          icon={<Plus size={22} />}
+          icon={<Plus size={16} />}
+          className='h-9 w-9'
           style={{
             backgroundColor: 'var(--accent)',
             color: 'var(--accent-ink)',
-            boxShadow: '0 10px 28px -16px var(--shadow)'
+            boxShadow: '0 8px 20px -14px var(--shadow)',
+            width: 38,
+            height: 38
           }}
         />
       </div>
 
-      <div className='grid grid-cols-2 gap-3 mb-4'>
-        <StatCard label='Recebido no mes' value={formatCurrency(receivedThisMonth)} variant='accent' />
-        <StatCard label='Total recebido' value={formatCurrency(totalReceived)} variant='neutral' />
+      <div className='grid grid-cols-1 gap-3 mb-4'>
+        <StatCard
+          label='Total recebido'
+          value={showTotalAmount ? formatCurrency(totalReceived) : 'R$ ••••'}
+          valueTone='accent'
+          headerAction={
+            <div className='flex flex-col gap-2'>
+              <div ref={totalFilterRef} className='relative'>
+                <button
+                  type='button'
+                  onClick={() => setShowTotalFilter((prev) => !prev)}
+                  aria-label='Filtrar total recebido'
+                  className='h-8 w-8 rounded-full flex items-center justify-center transition-transform active:scale-[0.98]'
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)'
+                  }}
+                  title={`Filtro: ${totalFilterLabel}`}
+                >
+                  <SlidersHorizontal size={14} />
+                </button>
+                {showTotalFilter && (
+                  <div
+                    className='absolute right-0 mt-2 w-36 p-2 space-y-1 z-20 rounded-xl'
+                    style={{
+                      background: 'rgba(18, 24, 33, 0.78)',
+                      border: '1px solid rgba(30, 42, 56, 0.75)',
+                      backdropFilter: 'blur(10px)',
+                      boxShadow: '0 16px 32px -24px var(--shadow)'
+                    }}
+                  >
+                    {totalFilterOptions.map((option) => {
+                      const isActive = totalFilter === option.value
+                      return (
+                        <button
+                          key={option.value}
+                          type='button'
+                          onClick={() => {
+                            setTotalFilter(option.value)
+                            setShowTotalFilter(false)
+                          }}
+                          className='w-full text-left px-3 py-2 rounded-xl text-sm font-semibold transition-colors'
+                          style={
+                            isActive
+                              ? {
+                                  background: 'var(--accent)',
+                                  color: 'var(--accent-ink)',
+                                  border: '1px solid var(--accent)'
+                                }
+                              : {
+                                  background: 'var(--surface-2)',
+                                  color: 'var(--text)',
+                                  border: '1px solid var(--border)'
+                                }
+                          }
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+              <button
+                type='button'
+                onClick={() => setShowTotalAmount((prev) => !prev)}
+                aria-label={showTotalAmount ? 'Ocultar saldo' : 'Mostrar saldo'}
+                className='h-8 w-8 flex items-center justify-center transition-transform active:scale-[0.98]'
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--muted)'
+                }}
+                title={showTotalAmount ? 'Ocultar saldo' : 'Mostrar saldo'}
+              >
+                {showTotalAmount ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          }
+        />
       </div>
 
       <div className='relative mb-3'>
@@ -278,7 +432,7 @@ export function PaymentsPage({
           { label: 'Todos', value: 'ALL' },
           { label: 'Hoje', value: 'TODAY' },
           { label: 'Semana', value: 'WEEK' },
-          { label: 'Mes', value: 'MONTH' },
+          { label: 'Mês', value: 'MONTH' },
           { label: 'Maior valor', value: 'MAX' }
         ]}
       />
@@ -323,11 +477,8 @@ export function PaymentsPage({
 
       <div className='mt-6 mb-3 flex items-center justify-between'>
         <h3 className='text-sm font-semibold uppercase tracking-wide' style={{ color: 'var(--muted)' }}>
-          Lancamentos Recentes
+          Lançamentos Recentes
         </h3>
-        <span className='text-xs' style={{ color: 'var(--muted)' }}>
-          {filteredItems.length} itens
-        </span>
       </div>
 
       {payments.length === 0 ? (
