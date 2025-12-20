@@ -33,20 +33,24 @@ export function SettingsItem({
           ? 'active:scale-[0.995] hover:bg-slate-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60'
           : 'cursor-default'
       } ${isDisabled ? 'opacity-70' : ''}`}
+      style={{ color: danger ? 'var(--danger)' : 'var(--text)' }}
     >
-      <div className='h-11 w-11 rounded-2xl bg-slate-800/70 border border-slate-700/60 flex items-center justify-center text-slate-200 shrink-0'>
+      <div
+        className='h-11 w-11 rounded-2xl bg-slate-800/70 border border-slate-700/60 flex items-center justify-center text-slate-200 shrink-0'
+        style={{
+          backgroundColor: 'var(--surface-2)',
+          borderColor: 'var(--border)',
+          color: danger ? 'var(--danger)' : 'var(--text)'
+        }}
+      >
         {icon}
       </div>
       <div className='flex-1 min-w-0'>
-        <p
-          className={`text-sm font-semibold truncate ${
-            danger ? 'text-red-200' : 'text-white'
-          }`}
-        >
+        <p className='text-sm font-semibold truncate' style={{ color: danger ? 'var(--danger)' : 'var(--text)' }}>
           {title}
         </p>
         {subtitle && (
-          <p className='text-xs text-slate-400 leading-tight truncate'>
+          <p className='text-xs text-slate-400 leading-tight truncate' style={{ color: 'var(--muted)' }}>
             {subtitle}
           </p>
         )}

@@ -11,6 +11,7 @@ import { SettingsSection } from '@/components/settings/SettingsSection'
 import { SettingsItem } from '@/components/settings/SettingsItem'
 import { PriceHeroCard } from '@/components/settings/PriceHeroCard'
 import { EditPriceSheet } from '@/components/settings/EditPriceSheet'
+import { useTheme, themeDefinitions } from '@/context/ThemeContext'
 
 type SettingsPageProps = {
   priceSettings: PriceSettings
@@ -39,6 +40,9 @@ export function SettingsPage({
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showPriceSheet, setShowPriceSheet] = useState(false)
+  const [showThemeSheet, setShowThemeSheet] = useState(false)
+
+  const { themeId, setThemeId, themes } = useTheme()
 
   useEffect(() => {
     setCurrentPrice(priceSettings.standard ?? 0)
@@ -425,6 +429,9 @@ export function SettingsPage({
   const accountLabel = currentUserIsAnonymous
     ? 'Convidado (Teste)'
     : currentUserEmail || 'Sem email'
+  const enabledThemes = themes.filter((t) => t.enabled)
+  const currentThemeName =
+    themes.find((t) => t.id === themeId)?.name || 'Tema 01 (Atual)'
 
   return (
     <div
@@ -529,6 +536,20 @@ export function SettingsPage({
         />
       </SettingsSection>
 
+      <SettingsSection title='Aparencia'>
+        <SettingsItem
+          icon={<div className='h-5 w-5 rounded-full bg-gradient-to-br from-blue-500 to-emerald-400' />}
+          title='Tema'
+          subtitle={currentThemeName}
+          onClick={() => setShowThemeSheet(true)}
+          rightSlot={
+            <span className='px-3 py-1 rounded-full bg-slate-800/70 border border-slate-700 text-xs font-semibold text-slate-100'>
+              Alterar
+            </span>
+          }
+        />
+      </SettingsSection>
+
       <SettingsSection title='Sincronizacao'>
         <SettingsItem
           icon={<Wifi size={18} />}
@@ -569,6 +590,67 @@ export function SettingsPage({
         onClose={() => setShowPriceSheet(false)}
         onSave={handleSavePrice}
       />
+      {showThemeSheet && (
+        <div className='fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 backdrop-blur-sm px-3 pb-3'>
+          <div
+            className='w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl shadow-black/40 overflow-hidden animate-slide-up'
+            style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' }}
+          >
+            <div className='px-5 pt-4 pb-3 flex items-center justify-between'>
+              <div>
+                <p className='text-[11px] uppercase tracking-[0.08em] text-slate-500 font-semibold'>
+                  Aparencia
+                </p>
+                <h2 className='text-lg font-semibold text-white'>Escolher tema</h2>
+              </div>
+              <button
+                onClick={() => setShowThemeSheet(false)}
+                className='text-slate-400 hover:text-white text-sm font-semibold'
+              >
+                Fechar
+              </button>
+            </div>
+            <div className='px-5 pb-5 space-y-2'>
+              {themeDefinitions.map((theme) => {
+                const isEnabled = theme.enabled
+                const isActive = theme.id === themeId
+                const label = theme.name + (!isEnabled ? ' (Em breve)' : '')
+                return (
+                  <button
+                    key={theme.id}
+                    type='button'
+                    disabled={!isEnabled}
+                    onClick={() => {
+                      if (!isEnabled) return
+                      setThemeId(theme.id)
+                      setShowThemeSheet(false)
+                    }}
+                    className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
+                      isActive
+                        ? 'border-blue-500/70 bg-blue-500/10 text-white'
+                        : 'border-slate-800 bg-slate-800/40 text-slate-100'
+                    } ${!isEnabled ? 'opacity-60 cursor-not-allowed' : 'active:scale-[0.99] hover:border-slate-600'}`}
+                  >
+                    <div className='min-w-0'>
+                      <p className='text-sm font-semibold truncate'>{label}</p>
+                      {!isEnabled && (
+                        <p className='text-xs text-slate-400'>Disponivel futuramente</p>
+                      )}
+                    </div>
+                    <span
+                      className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                        isActive ? 'border-blue-400' : 'border-slate-500'
+                      } ${isEnabled ? '' : 'opacity-60'}`}
+                    >
+                      {isActive && <span className='h-2.5 w-2.5 rounded-full bg-blue-400' />}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

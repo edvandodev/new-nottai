@@ -49,7 +49,14 @@ export function EditPriceSheet({ open, initialValue, onClose, onSave }: EditPric
 
   return (
     <div className='fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 backdrop-blur-sm px-3 pb-3'>
-      <div className='w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl shadow-black/40 overflow-hidden animate-slide-up'>
+      <div
+        className='w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl shadow-black/40 overflow-hidden animate-slide-up'
+        style={{
+          backgroundColor: 'var(--surface)',
+          borderColor: 'var(--border)',
+          boxShadow: 'var(--shadow)'
+        }}
+      >
         <div className='px-5 pt-4 pb-3 flex items-center justify-between'>
           <div>
             <p className='text-[11px] uppercase tracking-[0.08em] text-slate-500 font-semibold'>

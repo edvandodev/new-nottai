@@ -1012,7 +1012,13 @@ function App() {
   }
 
   return (
-    <div className='min-h-screen bg-slate-950 text-slate-100 font-sans pb-32'>
+    <div
+      className='min-h-screen font-sans pb-32'
+      style={{
+        backgroundColor: 'var(--bg)',
+        color: 'var(--text)'
+      }}
+    >
       {renderHeader()}
       {renderVerificationBanner()}
       <main

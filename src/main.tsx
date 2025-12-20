@@ -2,6 +2,8 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { initFirebase } from './firebase'
+import { ThemeProvider } from './context/ThemeContext'
+import './styles/themes.css'
 
 initFirebase()
 
@@ -13,6 +15,8 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement)
 root.render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
   </React.StrictMode>
 )

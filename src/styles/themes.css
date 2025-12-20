@@ -1,0 +1,22 @@
+[data-theme='theme-01'] {
+  /* Mantive a base bem próxima do visual anterior (bg-slate-950 + cards slate-900) */
+  --bg: #020617; /* slate-950 */
+  --surface: #0b1221; /* equivalente ao slate-900 com leve transparência visual */
+  --surface-2: #111827; /* slate-900 */
+  --text: #e2e8f0; /* slate-200 */
+  --muted: #94a3b8; /* slate-400 */
+  --primary: #2563eb; /* blue-600 (mais fechado que o anterior) */
+  --primary-2: #1d4ed8; /* blue-700 para hovers/destaques */
+  --border: #1f2937; /* slate-800 */
+  --danger: #ef4444; /* red-500 */
+  --shadow: 0 20px 60px -40px rgba(0, 0, 0, 0.8);
+}
+
+[data-theme] {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+/* Espaço para futuros temas (preencha os tokens quando for ativar) */
+/* [data-theme='theme-02'] { ... } */
+/* [data-theme='theme-03'] { ... } */
