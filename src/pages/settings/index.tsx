@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useState } from 'react'
-import { DollarSign, Tag } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { ChevronLeft, CloudOff, Clock3, Lock, Mail, ShieldOff, Wifi } from 'lucide-react'
 import type { PriceSettings } from '@/types'
 import { authService } from '@/services/auth'
 import { firestoreService } from '@/services/firestore'
@@ -7,6 +7,10 @@ import { SyncStatusPill } from '@/components/SyncStatusPill'
 import { PendingChangesPill } from '@/components/PendingChangesPill'
 import { useSyncStatus } from '@/hooks/useSyncStatus'
 import { usePendingQueue } from '@/hooks/usePendingQueue'
+import { SettingsSection } from '@/components/settings/SettingsSection'
+import { SettingsItem } from '@/components/settings/SettingsItem'
+import { PriceHeroCard } from '@/components/settings/PriceHeroCard'
+import { EditPriceSheet } from '@/components/settings/EditPriceSheet'
 
 type SettingsPageProps = {
   priceSettings: PriceSettings
@@ -29,26 +33,25 @@ export function SettingsPage({
   onOpenPendingModal,
   currentUserIsAnonymous
 }: SettingsPageProps) {
-  const [standardPriceInput, setStandardPriceInput] = useState('0')
-  const [customPriceInput, setCustomPriceInput] = useState('0')
-  const [isSaving, setIsSaving] = useState(false)
+  const [currentPrice, setCurrentPrice] = useState<number>(priceSettings.standard ?? 0)
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showPriceSheet, setShowPriceSheet] = useState(false)
 
   useEffect(() => {
-    setStandardPriceInput(String(priceSettings?.standard ?? 0))
-    setCustomPriceInput(String(priceSettings?.custom ?? 0))
+    setCurrentPrice(priceSettings.standard ?? 0)
   }, [priceSettings])
 
   const { isOnline, lastSyncAt } = useSyncStatus()
   const { pendingCount, failedCount } = usePendingQueue()
 
-  const parsePrice = (v: string) => {
-    const n = Number(String(v).replace(',', '.'))
-    return Number.isFinite(n) ? n : 0
-  }
+  const formatCurrency = (value: number) =>
+    `R$ ${value.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`
 
   const formatSyncAgo = (ts: number | null) => {
     if (!ts) return 'Aguardando primeira sincronizacao'
@@ -63,21 +66,17 @@ export function SettingsPage({
     return `Sincronizado ha ${hours}h`
   }
 
-  const handleSave = async () => {
-    const next: PriceSettings = {
-      standard: parsePrice(standardPriceInput),
-      custom: parsePrice(customPriceInput)
+  const handleSavePrice = async (nextValue: number) => {
+    const nextSettings: PriceSettings = {
+      standard: nextValue,
+      custom: priceSettings.custom ?? 0
     }
-
     try {
-      setIsSaving(true)
-      await onSavePriceSettings(next)
-      alert('Precos atualizados com sucesso!')
+      await onSavePriceSettings(nextSettings)
+      setCurrentPrice(nextValue)
     } catch (error) {
       console.error('Falha ao salvar precos', error)
-      alert('Nao foi possivel salvar os precos. Tente novamente.')
-    } finally {
-      setIsSaving(false)
+      throw error
     }
   }
 
@@ -96,38 +95,6 @@ export function SettingsPage({
     return 'Nao foi possivel concluir a acao. Tente novamente.'
   }
 
-  const SettingsRow = ({
-    title,
-    description,
-    actionLabel,
-    onClick,
-    danger = false
-  }: {
-    title: string
-    description: string
-    actionLabel: string
-    onClick: () => void
-    danger?: boolean
-  }) => (
-    <button
-      type='button'
-      onClick={onClick}
-      className='w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-900/60 transition-colors active:scale-[0.99]'
-    >
-      <div className='min-w-0'>
-        <p className='text-sm font-semibold text-white truncate'>{title}</p>
-        <p className='text-xs text-slate-400 truncate'>{description}</p>
-      </div>
-      <span
-        className={`text-sm font-semibold ${
-          danger ? 'text-red-300' : 'text-blue-200'
-        }`}
-      >
-        {actionLabel}
-      </span>
-    </button>
-  )
-
   const Modal = ({
     open,
     title,
@@ -140,8 +107,8 @@ export function SettingsPage({
     onClose: () => void
   }) =>
     !open ? null : (
-      <div className='fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center px-4 z-50'>
-        <div className='w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4'>
+      <div className='fixed inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center px-4 z-50'>
+        <div className='w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4'>
           <div className='flex items-center justify-between'>
             <h2 className='text-lg font-semibold text-white'>{title}</h2>
             <button
@@ -466,21 +433,35 @@ export function SettingsPage({
         paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))'
       }}
     >
+      <div className='flex items-center justify-between px-1'>
+        <button
+          type='button'
+          onClick={() => {
+            if (window.history.length > 1) window.history.back()
+          }}
+          className='h-10 w-10 rounded-full bg-slate-900/80 border border-slate-800 text-slate-200 flex items-center justify-center active:scale-[0.97] hover:border-slate-600'
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <h1 className='text-lg font-semibold text-white'>Ajustes</h1>
+        <span className='w-10' />
+      </div>
+
       {onSignOut && (
         <div className='bg-slate-900/70 border border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4'>
           <div className='flex items-center gap-3 min-w-0'>
-            <div className='h-11 w-11 rounded-full border border-blue-500/30 bg-blue-600/15 text-blue-200 font-bold flex items-center justify-center shadow-inner shadow-blue-900/30'>
+            <div className='h-12 w-12 rounded-full border border-blue-500/30 bg-blue-600/20 text-blue-100 font-bold flex items-center justify-center shadow-inner shadow-blue-900/30'>
               {userInitial}
             </div>
             <div className='min-w-0'>
               <p className='text-[11px] uppercase tracking-wide text-slate-500 font-semibold'>
-                Logado como
+                Conta
               </p>
               <p className='text-sm font-semibold text-white truncate'>
                 {accountLabel}
               </p>
               {currentUserIsAnonymous && (
-                <p className='text-[11px] text-slate-400'>Conta: Convidado (Teste)</p>
+                <p className='text-[11px] text-slate-400'>Sessao temporaria</p>
               )}
             </div>
           </div>
@@ -505,111 +486,75 @@ export function SettingsPage({
         </div>
       )}
 
-      <div className='bg-gradient-to-br from-slate-900 via-slate-900/80 to-slate-900/60 border border-slate-800 rounded-2xl shadow-lg shadow-black/30 p-5 space-y-5'>
-        <div className='flex items-start justify-between gap-3'>
-          <div>
-            <p className='text-[11px] uppercase tracking-wide text-slate-500 font-semibold'>
-              Precificacao
-            </p>
-            <h2 className='text-xl font-bold text-white'>Configuracao de precos</h2>
-            <p className='text-sm text-slate-400'>Valores que aparecem nas tabelas.</p>
-          </div>
-          <div className='h-10 w-10 rounded-xl bg-blue-600/15 border border-blue-500/30 text-blue-200 flex items-center justify-center shadow-inner shadow-blue-900/20'>
-            <DollarSign size={18} />
-          </div>
-        </div>
+      <PriceHeroCard
+        valueLabel={`${formatCurrency(currentPrice)} / L`}
+        subtitle='Aplicado por padrao'
+        onEdit={() => setShowPriceSheet(true)}
+      />
 
-        <div className='grid gap-4 sm:grid-cols-2'>
-          <div className='space-y-2'>
-            <label className='text-sm font-semibold text-slate-200'>
-              Preco padrao (R$/L)
-            </label>
-            <div className='rounded-2xl border border-slate-800 bg-slate-950/50 shadow-inner shadow-black/10'>
-              <input
-                type='number'
-                step='0.01'
-                className='w-full bg-transparent px-4 py-3 text-lg font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 rounded-2xl'
-                value={standardPriceInput}
-                onChange={(e) => setStandardPriceInput(e.target.value)}
-              />
-            </div>
-            <p className='text-xs text-slate-400'>Valor aplicado por padrao.</p>
-          </div>
+      <SettingsSection title='Conta & Seguranca'>
+        <SettingsItem
+          icon={<Mail size={18} />}
+          title='E-mail'
+          subtitle={accountLabel}
+          onClick={() => setShowEmailModal(true)}
+          rightSlot={
+            <span className='px-3 py-1 rounded-full bg-slate-800/70 border border-slate-700 text-xs font-semibold text-slate-100'>
+              Alterar
+            </span>
+          }
+        />
+        <SettingsItem
+          icon={<Lock size={18} />}
+          title='Senha'
+          subtitle={passwordMask}
+          onClick={() => setShowPasswordModal(true)}
+          rightSlot={
+            <span className='px-3 py-1 rounded-full bg-slate-800/70 border border-slate-700 text-xs font-semibold text-slate-100'>
+              Alterar
+            </span>
+          }
+        />
+        <SettingsItem
+          icon={<ShieldOff size={18} className='text-red-300' />}
+          title='Excluir conta'
+          subtitle='Remove seus dados e acesso'
+          danger
+          onClick={() => setShowDeleteModal(true)}
+          rightSlot={
+            <span className='px-3 py-1 rounded-full bg-red-500/15 border border-red-500/50 text-xs font-semibold text-red-200'>
+              Excluir
+            </span>
+          }
+        />
+      </SettingsSection>
 
-          <div className='space-y-2'>
-            <label className='text-sm font-semibold text-slate-200 flex items-center gap-2'>
-              <Tag size={16} className='text-purple-300' />
-              <span>Preco personalizado (R$/L)</span>
-            </label>
-            <div className='rounded-2xl border border-slate-800 bg-slate-950/50 shadow-inner shadow-black/10'>
-              <input
-                type='number'
-                step='0.01'
-                className='w-full bg-transparent px-4 py-3 text-lg font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/60 rounded-2xl'
-                value={customPriceInput}
-                onChange={(e) => setCustomPriceInput(e.target.value)}
-              />
-            </div>
-            <p className='text-xs text-slate-400'>Use quando precisar de excecao.</p>
-          </div>
-        </div>
-      </div>
-
-      <button
-        onClick={handleSave}
-        disabled={isSaving}
-        className='w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all shadow-lg shadow-blue-900/40 active:scale-[0.99]'
-      >
-        {isSaving ? 'Salvando...' : 'Salvar'}
-      </button>
-
-      <div className='bg-slate-900/70 border border-slate-800 rounded-2xl shadow-sm p-5 space-y-3'>
-        <div>
-          <h2 className='text-lg font-bold text-white'>Conta & Seguranca</h2>
-          <p className='text-slate-400 text-sm'>Dados de acesso.</p>
-        </div>
-        <div className='rounded-2xl border border-slate-900/80 bg-slate-950/40 divide-y divide-slate-900'>
-          <SettingsRow
-            title='E-mail'
-            description={accountLabel}
-            actionLabel='Alterar'
-            onClick={() => setShowEmailModal(true)}
-          />
-          <SettingsRow
-            title='Senha'
-            description={passwordMask}
-            actionLabel='Alterar'
-            onClick={() => setShowPasswordModal(true)}
-          />
-          <SettingsRow
-            title='Excluir conta'
-            description='Remove seus dados e acesso'
-            actionLabel='Excluir'
-            danger
-            onClick={() => setShowDeleteModal(true)}
-          />
-        </div>
-      </div>
-
-      <div className='bg-slate-900/70 border border-slate-800 rounded-2xl shadow-sm p-5 space-y-4'>
-        <div className='flex items-start justify-between gap-3'>
-          <div>
-            <h2 className='text-lg font-bold text-white'>Sincronizacao</h2>
-            <p className='text-sm text-slate-400'>{syncStatusLine}</p>
-          </div>
-          <SyncStatusPill />
-        </div>
-        <div className='flex items-center gap-2'>
-          <span className='inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/70 border border-slate-700 text-[11px] font-semibold text-slate-100'>
-            <span className='h-2 w-2 rounded-full bg-emerald-400' />
-            {formatSyncAgo(lastSyncAt)}
-          </span>
-        </div>
-        <div className='flex items-center justify-between text-sm text-slate-300'>
-          <span>{offlineLabel}</span>
-          <PendingChangesPill onClick={() => onOpenPendingModal?.()} />
-        </div>
-      </div>
+      <SettingsSection title='Sincronizacao'>
+        <SettingsItem
+          icon={<Wifi size={18} />}
+          title='Status'
+          subtitle={syncStatusLine}
+          rightSlot={<SyncStatusPill />}
+        />
+        <SettingsItem
+          icon={<Clock3 size={18} />}
+          title='Ultima sincronizacao'
+          subtitle={lastSyncAt ? 'Automatica' : 'Aguardando primeira sincronizacao'}
+          rightSlot={
+            <span className='inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/70 border border-slate-700 text-xs font-semibold text-slate-100'>
+              <span className='h-2 w-2 rounded-full bg-emerald-400' />
+              {formatSyncAgo(lastSyncAt ?? null)}
+            </span>
+          }
+        />
+        <SettingsItem
+          icon={<CloudOff size={18} />}
+          title='Pendencias offline'
+          subtitle={offlineLabel}
+          onClick={() => onOpenPendingModal?.()}
+          rightSlot={<PendingChangesPill onClick={() => onOpenPendingModal?.()} />}
+        />
+      </SettingsSection>
 
       <div className='text-center p-4'>
         <p className='text-slate-600 text-sm'>{versionLabel}</p>
@@ -618,8 +563,12 @@ export function SettingsPage({
       <EmailModal />
       <PasswordModal />
       <DeleteModal />
+      <EditPriceSheet
+        open={showPriceSheet}
+        initialValue={currentPrice}
+        onClose={() => setShowPriceSheet(false)}
+        onSave={handleSavePrice}
+      />
     </div>
   )
 }
-
-
