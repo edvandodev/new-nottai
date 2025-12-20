@@ -1010,12 +1010,10 @@ function App() {
   )
 
   const mainPaddingClass =
-    activeTab === 'CLIENTS' && isClientDetailsView
-      ? 'p-0'
-      : activeTab === 'PAYMENTS'
-        ? 'p-0'
-        : 'p-4'
-  const mainAdditionalTop = minimalHeaderActive ? 'pt-6' : ''
+    activeTab === 'CLIENTS' ? 'p-0' : activeTab === 'PAYMENTS' ? 'p-0' : 'p-4'
+  const mainAdditionalTop =
+    minimalHeaderActive && activeTab !== 'CLIENTS' ? 'pt-6' : ''
+  const isFullBleedPage = activeTab === 'CLIENTS' || activeTab === 'PAYMENTS'
 
   if (!authReady) {
     return (
@@ -1070,7 +1068,9 @@ function App() {
       {renderHeader()}
       {renderVerificationBanner()}
       <main
-        className={`max-w-2xl mx-auto ${mainPaddingClass} ${mainAdditionalTop}`}
+        className={`${
+          isFullBleedPage ? 'w-full' : 'max-w-2xl mx-auto'
+        } ${mainPaddingClass} ${mainAdditionalTop}`}
       >
         {renderActivePage()}
       </main>

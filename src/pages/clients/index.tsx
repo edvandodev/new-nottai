@@ -245,6 +245,7 @@ export function ClientsPage({
   const [historyFilter, setHistoryFilter] = useState<HistoryFilter>('ALL')
   const [showClientMenu, setShowClientMenu] = useState(false)
   const [isDebtOpen, setIsDebtOpen] = useState(false)
+  const [showFloatingHeader, setShowFloatingHeader] = useState(false)
 
   useEffect(() => {
     onDetailsViewChange(view === 'DETAILS')
@@ -400,6 +401,16 @@ export function ClientsPage({
     setIsDebtOpen(false)
   }, [resetToListSignal])
 
+  useEffect(() => {
+    if (view !== 'LIST') return
+    const handleScroll = () => {
+      setShowFloatingHeader(window.scrollY > 20)
+    }
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [view])
+
   const selectedClientHistory = useMemo(() => {
     if (!selectedClientId) {
       return {
@@ -500,20 +511,40 @@ export function ClientsPage({
   const renderClientList = () => (
     <div
       data-theme='flat-lime'
-      className='min-h-full space-y-4 animate-fade-in'
+      className='min-h-screen animate-fade-in'
       style={{
         background: 'var(--bg)',
         color: 'var(--text)',
+        minHeight: '100vh',
         paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))',
         paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
         paddingLeft: 16,
         paddingRight: 16
       }}
     >
-      <div className='flex items-center justify-between mb-2'>
+      {showFloatingHeader && (
+        <div
+          className='fixed top-0 left-0 right-0 z-30 flex items-center pointer-events-none'
+          style={{
+            paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))',
+            paddingBottom: 10,
+            paddingLeft: 16,
+            paddingRight: 16,
+            background: 'rgba(11, 15, 20, 0.6)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderBottom: '1px solid rgba(30, 42, 56, 0.6)'
+          }}
+        >
+          <h2 className='text-[24px] font-semibold leading-none' style={{ color: 'var(--text)' }}>
+            Meus Clientes
+          </h2>
+        </div>
+      )}
+      <div className='flex items-center justify-between mb-6 min-h-[38px]'>
         <h1 className='text-[24px] font-semibold leading-none'>Meus Clientes</h1>
       </div>
-      <div className='flat-card p-4 flex items-center justify-between'>
+      <div className='flat-card p-4 flex items-center justify-between mb-4'>
         <div>
           <span
             className='block text-xs font-medium tracking-wide uppercase mb-1'
@@ -611,7 +642,7 @@ export function ClientsPage({
 
       {clients.length > 0 && (
         <>
-          <div className='relative'>
+          <div className='relative mb-3'>
             <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
               <Search size={18} style={{ color: 'var(--muted)' }} />
             </div>
@@ -667,7 +698,7 @@ export function ClientsPage({
         </>
       )}
 
-      <div className='flex justify-between items-center pt-1 pb-1'>
+      <div className='mt-6 mb-3 flex items-center justify-between'>
         <h2 className='text-sm font-semibold uppercase tracking-wide' style={{ color: 'var(--muted)' }}>
           {searchQuery
             ? `Resultados (${filteredClients.length})`
@@ -675,14 +706,14 @@ export function ClientsPage({
         </h2>
         <button
           onClick={onAddClient}
-          className='flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-transform active:scale-95'
+          className='flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-transform active:scale-95'
           style={{
             background: 'var(--accent)',
             color: 'var(--accent-ink)',
             border: '1px solid var(--accent)'
           }}
         >
-          <Plus size={14} strokeWidth={3} />
+          <Plus size={12} strokeWidth={3} />
           NOVO CLIENTE
         </button>
       </div>
@@ -705,7 +736,7 @@ export function ClientsPage({
           </p>
         </div>
       ) : (
-        <div className='space-y-2'>
+        <div className='space-y-[11px] pb-4'>
           {filteredClients.map((client) => {
             const balance = clientBalances.get(client.id) || 0
             const initials = getInitials(client.name)
@@ -748,7 +779,7 @@ export function ClientsPage({
                         Saldo
                       </span>
                       <span
-                        className='text-base font-semibold tabular-nums'
+                        className='text-[19px] font-semibold tabular-nums'
                         style={{ color: balance > 0 ? 'var(--accent)' : 'var(--muted)' }}
                       >
                         {formatCurrency(balance)}
