@@ -43,6 +43,7 @@ export function AuthPage() {
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [guestLoading, setGuestLoading] = useState(false)
   const [reset, setReset] = useState<ResetState>({
     open: false,
     email: '',
@@ -87,6 +88,20 @@ export function AuthPage() {
       setError(translateError(err))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleGuestSignIn = async () => {
+    setError(null)
+    setInfo(null)
+    try {
+      setGuestLoading(true)
+      await authService.signInAnonymously()
+      setInfo('Entrou como convidado (teste).')
+    } catch (err) {
+      setError('Nao foi possivel entrar como convidado.')
+    } finally {
+      setGuestLoading(false)
     }
   }
 
@@ -274,6 +289,17 @@ export function AuthPage() {
                   </>
                 )}
               </button>
+
+              {mode === 'signin' && (
+                <button
+                  type='button'
+                  onClick={handleGuestSignIn}
+                  disabled={guestLoading || loading}
+                  className='w-full py-3 border border-slate-700 bg-slate-800/60 hover:bg-slate-800 disabled:opacity-60 text-white rounded-lg font-semibold transition-all active:scale-[0.99]'
+                >
+                  {guestLoading ? 'Entrando...' : 'Entrar como convidado (teste)'}
+                </button>
+              )}
             </form>
           </div>
         </div>

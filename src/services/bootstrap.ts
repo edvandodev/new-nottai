@@ -1,4 +1,5 @@
 import { firestoreService } from './firestore'
+import { getDeviceId } from './device'
 import type { PriceSettings } from '@/types'
 
 const PROFILE_PATH = (uid: string) => `users/${uid}/meta/profile`
@@ -9,21 +10,47 @@ const DEFAULT_PRICE_SETTINGS: PriceSettings = {
   custom: 0
 }
 
-export async function ensureUserInitialized(uid: string): Promise<void> {
+type EnsureOpts = {
+  isAnonymous?: boolean
+  displayName?: string | null
+}
+
+export async function ensureUserInitialized(
+  uid: string,
+  opts: EnsureOpts = {}
+): Promise<void> {
   try {
     const now = Date.now()
+    const deviceId = getDeviceId()
 
     const profileRef = PROFILE_PATH(uid)
     const existingProfile = await firestoreService.getDoc<any>(profileRef)
     if (!existingProfile) {
       await firestoreService.setDoc(profileRef, {
-        schemaVersion: 1,
+        schemaVersion: 2,
         createdAt: now,
-        lastLoginAt: now
+        updatedAt: now,
+        updatedBy: uid,
+        deviceId,
+        lastLoginAt: now,
+        displayName: opts.displayName ?? (opts.isAnonymous ? 'Teste' : null),
+        role: 'user',
+        isAnonymous: !!opts.isAnonymous
       })
     } else {
       await firestoreService.updateDoc(profileRef, {
-        lastLoginAt: now
+        lastLoginAt: now,
+        updatedAt: now,
+        updatedBy: uid,
+        deviceId,
+        ...(opts.isAnonymous
+          ? {
+              isAnonymous: true,
+              displayName:
+                existingProfile.displayName ?? opts.displayName ?? 'Teste',
+              role: existingProfile.role ?? 'user'
+            }
+          : {})
       })
     }
 

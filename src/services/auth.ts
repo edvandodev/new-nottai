@@ -5,6 +5,7 @@ export type AppUser = {
   email: string | null
   displayName: string | null
   emailVerified: boolean
+  isAnonymous: boolean
 }
 
 const CACHE_KEY = 'nottai_last_user'
@@ -15,7 +16,8 @@ const mapUser = (user: any): AppUser | null => {
     uid: user.uid,
     email: user.email ?? null,
     displayName: user.displayName ?? null,
-    emailVerified: !!user.emailVerified
+    emailVerified: !!user.emailVerified,
+    isAnonymous: !!user.isAnonymous
   }
 }
 
@@ -36,7 +38,12 @@ const loadCachedUser = (): AppUser | null => {
   if (typeof localStorage === 'undefined') return null
   try {
     const raw = localStorage.getItem(CACHE_KEY)
-    return raw ? (JSON.parse(raw) as AppUser) : null
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as AppUser
+    return {
+      ...parsed,
+      isAnonymous: !!(parsed as any).isAnonymous
+    }
   } catch (error) {
     return null
   }
@@ -117,6 +124,21 @@ export const authService = {
   async signOut(): Promise<void> {
     await FirebaseAuthentication.signOut()
     saveCachedUser(null)
+  },
+
+  async signInAnonymously(): Promise<AppUser> {
+    const { user } = await FirebaseAuthentication.signInAnonymously()
+    if (user && !user.displayName) {
+      try {
+        await FirebaseAuthentication.updateProfile({ displayName: 'Teste' })
+      } catch (error) {
+        console.warn('Nao foi possivel definir displayName para anonimo', error)
+      }
+    }
+    const mapped = mapUser(user)
+    if (!mapped) throw new Error('Falha ao entrar como convidado')
+    saveCachedUser(mapped)
+    return mapped
   },
 
   async sendPasswordReset(email: string): Promise<void> {

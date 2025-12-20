@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { DollarSign, Tag } from 'lucide-react'
 import type { PriceSettings } from '@/types'
 import { authService } from '@/services/auth'
@@ -6,6 +6,7 @@ import { firestoreService } from '@/services/firestore'
 import { SyncStatusPill } from '@/components/SyncStatusPill'
 import { PendingChangesPill } from '@/components/PendingChangesPill'
 import { useSyncStatus } from '@/hooks/useSyncStatus'
+import { usePendingQueue } from '@/hooks/usePendingQueue'
 
 type SettingsPageProps = {
   priceSettings: PriceSettings
@@ -15,6 +16,7 @@ type SettingsPageProps = {
   currentUserId?: string
   onSignOut?: () => void | Promise<void>
   onOpenPendingModal?: () => void
+  currentUserIsAnonymous?: boolean
 }
 
 export function SettingsPage({
@@ -24,7 +26,8 @@ export function SettingsPage({
   currentUserEmail,
   currentUserId,
   onSignOut,
-  onOpenPendingModal
+  onOpenPendingModal,
+  currentUserIsAnonymous
 }: SettingsPageProps) {
   const [standardPriceInput, setStandardPriceInput] = useState('0')
   const [customPriceInput, setCustomPriceInput] = useState('0')
@@ -40,10 +43,24 @@ export function SettingsPage({
   }, [priceSettings])
 
   const { isOnline, lastSyncAt } = useSyncStatus()
+  const { pendingCount, failedCount } = usePendingQueue()
 
   const parsePrice = (v: string) => {
     const n = Number(String(v).replace(',', '.'))
     return Number.isFinite(n) ? n : 0
+  }
+
+  const formatSyncAgo = (ts: number | null) => {
+    if (!ts) return 'Aguardando primeira sincronizacao'
+    const diffMinutes = Math.max(
+      0,
+      Math.floor((Date.now() - Number(ts)) / 1000 / 60)
+    )
+    if (diffMinutes === 0) return 'Sincronizado agora'
+    if (diffMinutes === 1) return 'Sincronizado ha 1 min'
+    if (diffMinutes < 60) return `Sincronizado ha ${diffMinutes} min`
+    const hours = Math.floor(diffMinutes / 60)
+    return `Sincronizado ha ${hours}h`
   }
 
   const handleSave = async () => {
@@ -79,29 +96,36 @@ export function SettingsPage({
     return 'Nao foi possivel concluir a acao. Tente novamente.'
   }
 
-  const AccountCard = ({
+  const SettingsRow = ({
     title,
     description,
     actionLabel,
-    onClick
+    onClick,
+    danger = false
   }: {
     title: string
     description: string
     actionLabel: string
     onClick: () => void
+    danger?: boolean
   }) => (
-    <div className='p-4 bg-slate-900/60 rounded-xl border border-slate-700/60 flex items-center justify-between'>
-      <div>
-        <p className='text-sm text-slate-200 font-semibold'>{title}</p>
-        <p className='text-xs text-slate-400'>{description}</p>
+    <button
+      type='button'
+      onClick={onClick}
+      className='w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-900/60 transition-colors active:scale-[0.99]'
+    >
+      <div className='min-w-0'>
+        <p className='text-sm font-semibold text-white truncate'>{title}</p>
+        <p className='text-xs text-slate-400 truncate'>{description}</p>
       </div>
-      <button
-        onClick={onClick}
-        className='text-sm font-semibold text-blue-300 hover:text-blue-200 underline'
+      <span
+        className={`text-sm font-semibold ${
+          danger ? 'text-red-300' : 'text-blue-200'
+        }`}
       >
         {actionLabel}
-      </button>
-    </div>
+      </span>
+    </button>
   )
 
   const Modal = ({
@@ -421,15 +445,44 @@ export function SettingsPage({
     )
   }
 
+  const userInitial = (currentUserEmail || '?').trim().charAt(0).toUpperCase() || '?'
+  const bullet = '\u2022'
+  const passwordMask = bullet.repeat(8)
+  const syncStatusLine = isOnline
+    ? `Online ${bullet} sincronizando automaticamente`
+    : `Offline ${bullet} suas alteracoes serao sincronizadas quando voltar a internet.`
+  const offlineLabel =
+    failedCount > 0
+      ? `Pendencias offline: ${pendingCount} (${failedCount} falharam)`
+      : `Pendencias offline: ${pendingCount}`
+  const accountLabel = currentUserIsAnonymous
+    ? 'Convidado (Teste)'
+    : currentUserEmail || 'Sem email'
+
   return (
-    <div className='space-y-6 animate-fade-in'>
+    <div
+      className='space-y-5 animate-fade-in'
+      style={{
+        paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))'
+      }}
+    >
       {onSignOut && (
-        <div className='bg-slate-800 rounded-xl p-6 border border-slate-700 flex items-center justify-between gap-4'>
-          <div>
-            <p className='text-sm text-slate-400'>Conta</p>
-            <p className='text-base text-white font-semibold'>
-              Logado como: {currentUserEmail || 'Sem email'}
-            </p>
+        <div className='bg-slate-900/70 border border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4'>
+          <div className='flex items-center gap-3 min-w-0'>
+            <div className='h-11 w-11 rounded-full border border-blue-500/30 bg-blue-600/15 text-blue-200 font-bold flex items-center justify-center shadow-inner shadow-blue-900/30'>
+              {userInitial}
+            </div>
+            <div className='min-w-0'>
+              <p className='text-[11px] uppercase tracking-wide text-slate-500 font-semibold'>
+                Logado como
+              </p>
+              <p className='text-sm font-semibold text-white truncate'>
+                {accountLabel}
+              </p>
+              {currentUserIsAnonymous && (
+                <p className='text-[11px] text-slate-400'>Conta: Convidado (Teste)</p>
+              )}
+            </div>
           </div>
           <button
             onClick={async () => {
@@ -445,126 +498,116 @@ export function SettingsPage({
               }
             }}
             disabled={isSigningOut}
-            className='px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg text-sm font-semibold transition-colors'
+            className='px-4 py-2 rounded-full border border-slate-700 bg-slate-800/60 hover:border-slate-500 hover:bg-slate-800 text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60'
           >
             {isSigningOut ? 'Saindo...' : 'Sair'}
           </button>
         </div>
       )}
 
-      <div className='bg-slate-800 rounded-xl p-6 border border-slate-700 space-y-4'>
+      <div className='bg-gradient-to-br from-slate-900 via-slate-900/80 to-slate-900/60 border border-slate-800 rounded-2xl shadow-lg shadow-black/30 p-5 space-y-5'>
+        <div className='flex items-start justify-between gap-3'>
+          <div>
+            <p className='text-[11px] uppercase tracking-wide text-slate-500 font-semibold'>
+              Precificacao
+            </p>
+            <h2 className='text-xl font-bold text-white'>Configuracao de precos</h2>
+            <p className='text-sm text-slate-400'>Valores que aparecem nas tabelas.</p>
+          </div>
+          <div className='h-10 w-10 rounded-xl bg-blue-600/15 border border-blue-500/30 text-blue-200 flex items-center justify-center shadow-inner shadow-blue-900/20'>
+            <DollarSign size={18} />
+          </div>
+        </div>
+
+        <div className='grid gap-4 sm:grid-cols-2'>
+          <div className='space-y-2'>
+            <label className='text-sm font-semibold text-slate-200'>
+              Preco padrao (R$/L)
+            </label>
+            <div className='rounded-2xl border border-slate-800 bg-slate-950/50 shadow-inner shadow-black/10'>
+              <input
+                type='number'
+                step='0.01'
+                className='w-full bg-transparent px-4 py-3 text-lg font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60 rounded-2xl'
+                value={standardPriceInput}
+                onChange={(e) => setStandardPriceInput(e.target.value)}
+              />
+            </div>
+            <p className='text-xs text-slate-400'>Valor aplicado por padrao.</p>
+          </div>
+
+          <div className='space-y-2'>
+            <label className='text-sm font-semibold text-slate-200 flex items-center gap-2'>
+              <Tag size={16} className='text-purple-300' />
+              <span>Preco personalizado (R$/L)</span>
+            </label>
+            <div className='rounded-2xl border border-slate-800 bg-slate-950/50 shadow-inner shadow-black/10'>
+              <input
+                type='number'
+                step='0.01'
+                className='w-full bg-transparent px-4 py-3 text-lg font-semibold text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/60 rounded-2xl'
+                value={customPriceInput}
+                onChange={(e) => setCustomPriceInput(e.target.value)}
+              />
+            </div>
+            <p className='text-xs text-slate-400'>Use quando precisar de excecao.</p>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={handleSave}
+        disabled={isSaving}
+        className='w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all shadow-lg shadow-blue-900/40 active:scale-[0.99]'
+      >
+        {isSaving ? 'Salvando...' : 'Salvar'}
+      </button>
+
+      <div className='bg-slate-900/70 border border-slate-800 rounded-2xl shadow-sm p-5 space-y-3'>
         <div>
           <h2 className='text-lg font-bold text-white'>Conta & Seguranca</h2>
-          <p className='text-slate-400 text-sm'>
-            Gerencie seu acesso e proteja seus dados.
-          </p>
+          <p className='text-slate-400 text-sm'>Dados de acesso.</p>
         </div>
-        <div className='text-sm text-slate-300'>
-          E-mail atual:{' '}
-          <span className='text-white font-semibold'>
-            {currentUserEmail || 'Sem email'}
-          </span>
-        </div>
-        <div className='space-y-3'>
-          <AccountCard
-            title='Alterar e-mail'
-            description='Atualize seu e-mail de login'
+        <div className='rounded-2xl border border-slate-900/80 bg-slate-950/40 divide-y divide-slate-900'>
+          <SettingsRow
+            title='E-mail'
+            description={accountLabel}
             actionLabel='Alterar'
             onClick={() => setShowEmailModal(true)}
           />
-          <AccountCard
-            title='Alterar senha'
-            description='Defina uma nova senha segura'
+          <SettingsRow
+            title='Senha'
+            description={passwordMask}
             actionLabel='Alterar'
             onClick={() => setShowPasswordModal(true)}
           />
-          <AccountCard
+          <SettingsRow
             title='Excluir conta'
-            description='Remova seus dados e acesso'
+            description='Remove seus dados e acesso'
             actionLabel='Excluir'
+            danger
             onClick={() => setShowDeleteModal(true)}
           />
         </div>
       </div>
 
-      <div className='bg-slate-800 rounded-xl p-6 border border-slate-700 space-y-3'>
-        <div className='flex items-center justify-between'>
+      <div className='bg-slate-900/70 border border-slate-800 rounded-2xl shadow-sm p-5 space-y-4'>
+        <div className='flex items-start justify-between gap-3'>
           <div>
             <h2 className='text-lg font-bold text-white'>Sincronizacao</h2>
-            <p className='text-slate-400 text-sm'>Status e pendencias offline.</p>
+            <p className='text-sm text-slate-400'>{syncStatusLine}</p>
           </div>
           <SyncStatusPill />
         </div>
-        <div className='flex justify-end'>
+        <div className='flex items-center gap-2'>
+          <span className='inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/70 border border-slate-700 text-[11px] font-semibold text-slate-100'>
+            <span className='h-2 w-2 rounded-full bg-emerald-400' />
+            {formatSyncAgo(lastSyncAt)}
+          </span>
+        </div>
+        <div className='flex items-center justify-between text-sm text-slate-300'>
+          <span>{offlineLabel}</span>
           <PendingChangesPill onClick={() => onOpenPendingModal?.()} />
-        </div>
-        <div className='text-xs text-slate-400'>
-          {isOnline
-            ? lastSyncAt
-              ? 'Online - sincronizando automaticamente'
-              : 'Online - aguardando sincronizacao'
-            : 'Offline - suas alteracoes serao sincronizadas quando voltar a internet.'}
-        </div>
-      </div>
-
-      <div className='bg-slate-800 rounded-xl p-6 border border-slate-700'>
-        <div className='flex items-center gap-3 mb-6'>
-          <div className='p-2 bg-blue-600/20 rounded-lg text-blue-400'>
-            <DollarSign size={24} />
-          </div>
-          <div>
-            <h2 className='text-lg font-bold text-white'>
-              Configuracao de Precos
-            </h2>
-            <p className='text-slate-400 text-sm'>
-              Defina os valores das tabelas
-            </p>
-          </div>
-        </div>
-
-        <div className='space-y-5'>
-          <div className='p-4 bg-slate-900/50 rounded-xl border border-slate-700/50'>
-            <label className='block text-sm font-medium text-blue-400 mb-2'>
-              Preco Padrao (R$)
-            </label>
-            <input
-              type='number'
-              step='0.01'
-              className='w-full p-4 bg-slate-800 border border-slate-600 rounded-lg text-white text-xl font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none'
-              value={standardPriceInput}
-              onChange={(e) => setStandardPriceInput(e.target.value)}
-            />
-            <p className='text-xs text-slate-500 mt-2'>
-              Usado pela maioria dos clientes.
-            </p>
-          </div>
-
-          <div className='p-4 bg-slate-900/50 rounded-xl border border-slate-700/50'>
-            <div className='flex items-center gap-2 mb-2'>
-              <Tag size={16} className='text-purple-400' />
-              <label className='block text-sm font-medium text-purple-400'>
-                Preco Personalizado (R$)
-              </label>
-            </div>
-            <input
-              type='number'
-              step='0.01'
-              className='w-full p-4 bg-slate-800 border border-slate-600 rounded-lg text-white text-xl font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none'
-              value={customPriceInput}
-              onChange={(e) => setCustomPriceInput(e.target.value)}
-            />
-            <p className='text-xs text-slate-500 mt-2'>
-              Valor alternativo selecionavel no cadastro do cliente.
-            </p>
-          </div>
-
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className='w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg font-semibold transition-colors shadow-lg shadow-blue-900/40 mt-2 active:scale-[0.99]'
-          >
-            {isSaving ? 'Salvando...' : 'Salvar Alteracoes'}
-          </button>
         </div>
       </div>
 
@@ -578,3 +621,5 @@ export function SettingsPage({
     </div>
   )
 }
+
+

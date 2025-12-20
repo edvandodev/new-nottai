@@ -190,7 +190,10 @@ function App() {
           setDataReady(true)
           return cleanupAuto
         }
-        await ensureUserInitialized(user.uid)
+        await ensureUserInitialized(user.uid, {
+          isAnonymous: user.isAnonymous,
+          displayName: user.displayName || (user.isAnonymous ? 'Teste' : null)
+        })
         if (!cancelled) setDataReady(true)
         return cleanupAuto
       } catch (error) {
@@ -700,7 +703,7 @@ function App() {
   }
 
   const renderVerificationBanner = () => {
-    if (!user || user.emailVerified) return null
+    if (!user || user.emailVerified || user.isAnonymous) return null
     return (
       <div className='mx-4 mt-3 mb-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-100 px-4 py-3 flex flex-col gap-2'>
         <div className='flex items-center justify-between gap-2'>
@@ -768,6 +771,7 @@ function App() {
             }}
             currentUserEmail={user?.email ?? undefined}
             currentUserId={user?.uid}
+            currentUserIsAnonymous={user?.isAnonymous}
             onSignOut={() => authService.signOut()}
             onOpenPendingModal={() => setIsPendingModalOpen(true)}
           />
@@ -806,7 +810,8 @@ function App() {
   const minimalHeaderActive =
     (activeTab === 'CLIENTS' && !isClientDetailsView) ||
     activeTab === 'PAYMENTS' ||
-    activeTab === 'REPORTS'
+    activeTab === 'REPORTS' ||
+    activeTab === 'SETTINGS'
 
   const renderHeader = () => {
     const renderMinimalHeader = (title: string) => {
@@ -843,6 +848,10 @@ function App() {
 
     if (activeTab === 'REPORTS') {
       return renderMinimalHeader('Relatorios')
+    }
+
+    if (activeTab === 'SETTINGS') {
+      return renderMinimalHeader('Ajustes')
     }
 
     return (
