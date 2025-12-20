@@ -12,6 +12,7 @@ import {
   Payment,
   PriceSettings,
   PriceType,
+  PaymentStatus,
   TabState
 } from './types'
 import {
@@ -598,7 +599,12 @@ function App() {
     setIsSaleModalOpen(true)
   }
 
-  const handleSaveSale = async (liters: number, date: string) => {
+  const handleSaveSale = async (
+    liters: number,
+    date: string,
+    pricePerLiter: number,
+    paymentStatus: PaymentStatus
+  ) => {
     if (!selectedClientId) return
 
     const toDateTime = (dateStr: string) => {
@@ -617,15 +623,38 @@ function App() {
       return dt.toISOString()
     }
 
+    const saleId = crypto.randomUUID()
+    const saleDate = toDateTime(date)
+    const totalValue = liters * pricePerLiter
+    const client = clients.find((c) => c.id === selectedClientId)
+
     const newSale: Sale = {
-      id: crypto.randomUUID(),
+      id: saleId,
       clientId: selectedClientId,
-      date: toDateTime(date),
+      date: saleDate,
       liters,
-      totalValue: liters * currentClientPrice,
-      isPaid: false
+      pricePerLiter,
+      totalValue,
+      paymentStatus,
+      isPaid: paymentStatus === 'AVISTA'
     }
+
     await offlineWrites.saveSale(newSale)
+
+    if (paymentStatus === 'AVISTA') {
+      const payment: Payment = {
+        id: crypto.randomUUID(),
+        clientId: selectedClientId,
+        clientName: client?.name || 'Cliente',
+        saleId,
+        amount: totalValue,
+        date: saleDate,
+        note: 'Pagamento automatico (a vista)',
+        salesSnapshot: [newSale]
+      }
+      await offlineWrites.savePayment(payment, [newSale])
+    }
+
     setIsSaleModalOpen(false)
     setSelectedClientId(null)
   }

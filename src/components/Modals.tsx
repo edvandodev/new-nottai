@@ -10,9 +10,15 @@ import {
   Trash2,
   FileText,
   Share2,
-  Tag
+  Tag,
+  Pencil
 } from 'lucide-react'
-import type { Client, PriceType, PriceSettings } from '@/types'
+import type {
+  Client,
+  PaymentStatus,
+  PriceType,
+  PriceSettings
+} from '@/types'
 
 type ModalProps = {
   isOpen: boolean
@@ -313,7 +319,12 @@ export const AddClientModal = ({
 type AddSaleModalProps = {
   isOpen: boolean
   onClose: () => void
-  onSave: (liters: number, date: string) => void
+  onSave: (
+    liters: number,
+    date: string,
+    pricePerLiter: number,
+    paymentStatus: PaymentStatus
+  ) => Promise<void> | void
   currentPrice: number
 }
 
@@ -324,7 +335,11 @@ export const AddSaleModal = ({
   currentPrice
 }: AddSaleModalProps) => {
   const [litersInput, setLitersInput] = useState('1')
+  const [priceInput, setPriceInput] = useState(String(currentPrice || 0))
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PRAZO')
+  const [isEditingPrice, setIsEditingPrice] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [translateY, setTranslateY] = useState(100)
   const [isDragging, setIsDragging] = useState(false)
   const [isAnimatingOut, setIsAnimatingOut] = useState(false)
@@ -332,23 +347,45 @@ export const AddSaleModal = ({
   const startYRef = useRef(0)
   const sheetRef = useRef<HTMLDivElement>(null)
   const dateInputRef = useRef<HTMLInputElement>(null)
+  const priceInputRef = useRef<HTMLInputElement>(null)
   const closingFromInsideRef = useRef(false)
 
   const parseLiters = (value: string) => {
     const parsed = parseFloat(value.replace(',', '.'))
-    if (Number.isNaN(parsed) || parsed <= 0) return 1
-    return Math.max(1, parsed)
+    if (Number.isNaN(parsed) || parsed <= 0) return 0
+    return Math.max(0, parsed)
+  }
+
+  const parsePrice = (value: string) => {
+    const parsed = parseFloat(value.replace(',', '.'))
+    if (Number.isNaN(parsed) || parsed <= 0) return 0
+    return Math.max(0, parsed)
   }
 
   const litersValue = parseLiters(litersInput)
+  const priceValue = parsePrice(priceInput)
+  const totalValue = litersValue * priceValue
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const formatCurrency = (val: number) =>
+    val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+  const formatNumberInput = (value: number) =>
+    Number.isNaN(value) ? '0' : value.toFixed(2)
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!Number.isNaN(litersValue) && litersValue > 0) {
-      onSave(litersValue, date)
+    if (litersValue <= 0 || priceValue <= 0 || isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      await onSave(litersValue, date, priceValue, paymentStatus)
       setLitersInput('1')
       setDate(new Date().toISOString().split('T')[0])
+      setPriceInput(formatNumberInput(currentPrice || 0))
+      setPaymentStatus('PRAZO')
+      setIsEditingPrice(false)
       handleClose()
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -366,11 +403,6 @@ export const AddSaleModal = ({
     })
   }
 
-  const calculatedTotal = (litersValue * currentPrice).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  })
-
   useEffect(() => {
     if (!isOpen) return
     closingFromInsideRef.current = false
@@ -380,6 +412,11 @@ export const AddSaleModal = ({
     const focusTimer = setTimeout(() => {
       dateInputRef.current?.focus()
     }, 120)
+    setLitersInput('1')
+    setDate(new Date().toISOString().split('T')[0])
+    setPriceInput(formatNumberInput(currentPrice || 0))
+    setPaymentStatus('PRAZO')
+    setIsEditingPrice(false)
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') handleClose()
     }
@@ -389,7 +426,7 @@ export const AddSaleModal = ({
       clearTimeout(focusTimer)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen])
+  }, [isOpen, currentPrice])
 
   useEffect(() => {
     if (!shouldRender) return
@@ -459,6 +496,30 @@ export const AddSaleModal = ({
     0.6 - Math.min(0.6, (translateY / (sheetRef.current?.offsetHeight || 1)) * 0.45)
   )
 
+  const formattedDate = (() => {
+    const [year, month, day] = date.split('-')
+    if (!year || !month || !day) return date
+    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`
+  })()
+
+  const validationMessage =
+    litersValue <= 0
+      ? 'Informe um valor de litros maior que zero.'
+      : priceValue <= 0
+        ? 'Preco por litro deve ser maior que zero.'
+        : ''
+
+  const openDatePicker = () => {
+    if (dateInputRef.current?.showPicker) {
+      dateInputRef.current.showPicker()
+    } else {
+      dateInputRef.current?.focus()
+      dateInputRef.current?.click()
+    }
+  }
+
+  const isValid = litersValue > 0 && priceValue > 0
+
   return (
     <div className='fixed inset-0 z-50 flex items-end justify-center'>
       <div
@@ -469,7 +530,7 @@ export const AddSaleModal = ({
       />
       <div
         ref={sheetRef}
-        className='relative w-full max-w-2xl mx-auto bg-slate-900/95 border border-slate-800 rounded-t-[28px] shadow-2xl flex flex-col'
+        className='relative w-full max-w-2xl mx-auto bg-slate-950/95 border border-slate-900 rounded-t-[28px] shadow-2xl shadow-black/50 backdrop-blur-xl flex flex-col'
         style={{
           maxHeight: '75vh',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
@@ -478,24 +539,27 @@ export const AddSaleModal = ({
         }}
       >
         <div
-          className='pt-4 pb-3 flex flex-col items-center gap-3 cursor-grab'
+          className='pt-4 pb-3 flex flex-col gap-3 cursor-grab'
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
           style={{ touchAction: 'none' }}
         >
-          <span className='h-1.5 w-12 rounded-full bg-slate-700/70' />
+          <span className='h-1.5 w-12 rounded-full bg-slate-700/70 self-center' />
           <div className='w-full flex items-center justify-between px-5'>
-            <h3 className='text-base font-semibold text-white'>Adicionar venda</h3>
             <button
               type='button'
               onClick={handleClose}
-              className='h-11 w-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors'
+              className='h-11 w-11 rounded-full flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors'
               aria-label='Fechar'
             >
               <X size={20} />
             </button>
+            <h3 className='text-lg font-semibold text-white tracking-tight'>
+              Nova Venda
+            </h3>
+            <span className='w-11' aria-hidden />
           </div>
         </div>
 
@@ -504,76 +568,168 @@ export const AddSaleModal = ({
           onSubmit={handleSubmit}
           className='flex-1 overflow-y-auto px-5 pb-5 space-y-5 custom-scrollbar'
         >
-          <div>
-            <label className='block text-sm font-medium text-slate-400 mb-1'>
-              Data
-            </label>
+          <div className='space-y-2'>
+            <p className='text-sm font-medium text-slate-400'>Data da venda</p>
             <div className='relative'>
-              <CalendarDays size={16} className='absolute left-3 top-3.5 text-slate-500' />
               <input
                 ref={dateInputRef}
                 type='date'
                 required
-                className='w-full pl-9 pr-3 py-3 rounded-2xl bg-slate-900 border border-slate-800 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none'
+                className='absolute inset-0 opacity-0 w-full h-full cursor-pointer'
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
+              <button
+                type='button'
+                onClick={openDatePicker}
+                className='w-full rounded-2xl bg-slate-900/85 border border-slate-800/80 px-4 py-4 flex items-center justify-between text-left hover:border-slate-700 transition-colors shadow-lg shadow-black/30'
+              >
+                <div>
+                  <p className='text-xs text-slate-400'>Data da venda</p>
+                  <p className='text-lg font-semibold text-white'>{formattedDate}</p>
+                </div>
+                <CalendarDays size={20} className='text-slate-400' />
+              </button>
             </div>
           </div>
 
-          <div>
-            <label className='block text-sm font-medium text-slate-400 mb-1'>
-              Litros
-            </label>
-            <div className='flex items-center gap-3'>
+          <div className='space-y-2'>
+            <p className='text-sm font-medium text-slate-400'>Quantidade</p>
+            <div className='rounded-[26px] bg-slate-900/90 border border-slate-800/80 flex items-center px-2 py-2 shadow-lg shadow-black/30'>
               <button
                 type='button'
                 onClick={handleDecrement}
                 disabled={litersValue <= 1}
-                className='h-12 w-12 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center'
+                className='h-12 w-12 rounded-2xl border border-slate-800 text-slate-900 font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center'
+                style={{
+                  background: 'var(--accent, var(--primary, #b8ff2c))',
+                  boxShadow: '0 6px 20px rgba(184,255,44,0.35)'
+                }}
               >
                 <Minus size={20} />
               </button>
-
-              <div className='flex-1 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center gap-2 text-white font-bold text-lg'>
-                <input
-                  type='number'
-                  inputMode='decimal'
-                  min='1'
-                  step='1'
-                  value={litersInput}
-                  onFocus={() => setLitersInput('')}
-                  onChange={(e) => setLitersInput(e.target.value)}
-                  onBlur={() => setLitersInput(String(parseLiters(litersInput)))}
-                  className='w-20 bg-transparent text-center text-white font-bold text-lg focus:outline-none tabular-nums'
-                  aria-label='Litros'
-                />
-                <span className='text-sm text-slate-400'>L</span>
+              <div className='flex-1 flex flex-col items-center justify-center gap-1'>
+                <div className='flex items-end gap-2 text-white font-bold'>
+                  <input
+                    type='number'
+                    inputMode='decimal'
+                    min='1'
+                    step='1'
+                    value={litersInput}
+                    onFocus={() => setLitersInput(litersValue ? String(litersValue) : '')}
+                    onChange={(e) => setLitersInput(e.target.value)}
+                    onBlur={() => setLitersInput(String(Math.max(1, parseLiters(litersInput))))}
+                    className='w-24 bg-transparent text-center text-3xl font-bold text-white focus:outline-none tabular-nums'
+                    aria-label='Litros'
+                  />
+                  <span className='text-base text-slate-400 font-semibold pb-1'>L</span>
+                </div>
+                <p className='text-xs text-slate-500'>Minimo 1 litro</p>
               </div>
-
               <button
                 type='button'
                 onClick={handleIncrement}
-                className='h-12 w-12 rounded-2xl bg-slate-900 border border-slate-800 text-blue-300 hover:bg-slate-800 hover:text-blue-200 transition-colors active:scale-95 flex items-center justify-center'
+                className='h-12 w-12 rounded-2xl border border-slate-800 text-slate-900 font-bold transition-all active:scale-95 flex items-center justify-center'
+                style={{
+                  background: 'var(--accent, var(--primary, #b8ff2c))',
+                  boxShadow: '0 6px 20px rgba(184,255,44,0.35)'
+                }}
               >
                 <Plus size={20} />
               </button>
             </div>
           </div>
 
-          <div className='bg-slate-900/60 p-4 rounded-2xl border border-slate-800 text-center'>
-            <p className='text-sm text-slate-400'>Total a pagar</p>
-            <p className='text-3xl font-bold text-emerald-400 mt-1'>
-              {calculatedTotal}
-            </p>
-            <p className='text-xs text-slate-500 mt-1'>
-              ({currentPrice.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              })}{' '}
-              por litro)
-            </p>
+          <div className='rounded-2xl bg-slate-900/85 border border-slate-800/80 p-4 flex items-center justify-between gap-3 shadow-lg shadow-black/30'>
+            <div className='flex flex-col'>
+              <span className='text-xs text-slate-400'>Preco aplicado</span>
+              {isEditingPrice ? (
+                <div className='flex items-center gap-2 mt-1'>
+                  <input
+                    ref={priceInputRef}
+                    type='number'
+                    inputMode='decimal'
+                    min='0'
+                    step='0.01'
+                    value={priceInput}
+                    onChange={(e) => setPriceInput(e.target.value)}
+                    onBlur={() => setIsEditingPrice(false)}
+                    className='w-28 rounded-lg bg-slate-900 border border-slate-700 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  />
+                  <span className='text-sm text-slate-500'>/ litro</span>
+                </div>
+              ) : (
+                <p className='text-lg font-semibold text-white mt-0.5'>
+                  {formatCurrency(priceValue || currentPrice || 0)} / litro
+                </p>
+              )}
+            </div>
+            <button
+              type='button'
+              onClick={() => {
+                setIsEditingPrice(true)
+                setTimeout(() => priceInputRef.current?.focus(), 50)
+              }}
+              className='h-10 w-10 rounded-full flex items-center justify-center bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors'
+              aria-label='Editar preco por litro'
+            >
+              <Pencil size={18} style={{ color: 'var(--accent, #b8ff2c)' }} />
+            </button>
           </div>
+
+          <div className='space-y-3'>
+            <p className='text-sm font-medium text-slate-400'>Status de Pagamento</p>
+            <div className='grid grid-cols-2 gap-3'>
+              <button
+                type='button'
+                onClick={() => setPaymentStatus('PRAZO')}
+                className={`rounded-full border px-4 py-3 text-center font-semibold transition-all ${
+                  paymentStatus === 'PRAZO'
+                    ? 'bg-amber-500/20 border-amber-400/60 text-amber-200 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)]'
+                    : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                A prazo
+              </button>
+              <button
+                type='button'
+                onClick={() => setPaymentStatus('AVISTA')}
+                className={`rounded-full border px-4 py-3 text-center font-semibold transition-all ${
+                  paymentStatus === 'AVISTA'
+                    ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-200 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)]'
+                    : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                A vista
+              </button>
+            </div>
+            {paymentStatus === 'AVISTA' && (
+              <p className='text-xs text-slate-500'>
+                Ao salvar, um pagamento sera registrado automaticamente.
+              </p>
+            )}
+          </div>
+
+          <div className='rounded-2xl bg-slate-900/80 border border-slate-800/80 p-4 flex items-center justify-between shadow-inner shadow-black/40'>
+            <div className='flex flex-col'>
+              <span className='text-xs text-slate-400'>Valor Total</span>
+              <span
+                className='text-3xl font-bold mt-1 tabular-nums'
+                style={{ color: 'var(--accent, #b8ff2c)' }}
+              >
+                {formatCurrency(totalValue || 0)}
+              </span>
+            </div>
+            <div className='text-right text-xs text-slate-500'>
+              {formatCurrency(priceValue || currentPrice || 0)} / litro
+            </div>
+          </div>
+
+          {validationMessage && (
+            <div className='bg-red-500/10 border border-red-500/25 text-red-200 text-sm px-3 py-2 rounded-xl'>
+              {validationMessage}
+            </div>
+          )}
         </form>
 
         <div
@@ -590,9 +746,15 @@ export const AddSaleModal = ({
           <button
             type='submit'
             form='add-sale-form'
-            className='flex-1 h-11 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-500 transition-colors active:scale-95'
+            disabled={!isValid || isSubmitting}
+            className='flex-1 h-11 rounded-xl font-semibold text-slate-950 transition-colors active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed'
+            style={{
+              background: 'var(--accent, var(--primary, #b8ff2c))',
+              boxShadow: '0 12px 28px -14px rgba(184,255,44,0.55)',
+              color: '#0f172a'
+            }}
           >
-            Salvar
+            {isSubmitting ? 'Salvando...' : 'Confirmar Venda'}
           </button>
         </div>
       </div>
