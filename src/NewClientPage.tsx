@@ -1,216 +1,415 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { PriceType, DEFAULT_SETTINGS } from '../types';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Camera, Phone, Tag, User, X } from 'lucide-react'
+import { PriceSettings, PriceType } from './types'
+import './styles/theme-flat.css'
 
-interface NewClientPageProps {
-  onSave: (name: string, phone: string, priceType: PriceType, avatar?: string) => Promise<void>;
+type NewClientPageProps = {
+  onSave: (
+    name: string,
+    phone: string,
+    priceType: PriceType,
+    avatar?: string
+  ) => Promise<void>
+  priceSettings: PriceSettings
+  existingNames: string[]
 }
 
-export const NewClientPage: React.FC<NewClientPageProps> = ({ onSave }) => {
-  const navigate = useNavigate();
-  
-  // Form State
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [priceType, setPriceType] = useState<PriceType>('STANDARD');
-  const [customPrice, setCustomPrice] = useState<string>(''); // Mantido para compatibilidade visual/futura, mas a lógica principal usa PriceType
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+export const NewClientPage: React.FC<NewClientPageProps> = ({
+  onSave,
+  priceSettings,
+  existingNames
+}) => {
+  const navigate = useNavigate()
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [priceType, setPriceType] = useState<PriceType>('STANDARD')
+  const [photo, setPhoto] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [translateY, setTranslateY] = useState(120)
+  const [isDragging, setIsDragging] = useState(false)
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false)
 
-  // Handlers
+  const startYRef = useRef(0)
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const closeTimerRef = useRef<number | null>(null)
+  const isAnimatingOutRef = useRef(false)
+
+  const currencyFormatter = useMemo(
+    () => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }),
+    []
+  )
+
+  const formatCurrency = (value: number) => currencyFormatter.format(value || 0)
+  const normalizedExistingNames = useMemo(() => {
+    return new Set(
+      existingNames
+        .map((clientName) => clientName.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  }, [existingNames])
+  const normalizedName = name.trim().toLowerCase()
+  const isDuplicateName =
+    normalizedName.length > 0 && normalizedExistingNames.has(normalizedName)
+
+  const handleClose = useCallback(() => {
+    if (isAnimatingOutRef.current) return
+    isAnimatingOutRef.current = true
+    setIsAnimatingOut(true)
+    const sheetHeight = sheetRef.current?.getBoundingClientRect().height || 260
+    setTranslateY(sheetHeight)
+    closeTimerRef.current = window.setTimeout(() => {
+      navigate('/', { replace: true })
+    }, 220)
+  }, [navigate])
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    const raf = requestAnimationFrame(() => setTranslateY(0))
+    const focusTimer = window.setTimeout(() => {
+      nameInputRef.current?.focus()
+    }, 160)
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') handleClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = ''
+      cancelAnimationFrame(raf)
+      clearTimeout(focusTimer)
+      window.removeEventListener('keydown', handleKeyDown)
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current)
+      }
+      isAnimatingOutRef.current = false
+    }
+  }, [handleClose])
+
   const handlePhotoClick = () => {
-    fileInputRef.current?.click();
-  };
+    fileInputRef.current?.click()
+  }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhoto(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const file = event.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setPhoto(reader.result as string)
     }
-  };
+    reader.readAsDataURL(file)
+  }
 
   const handleSaveClick = async () => {
-    if (!name.trim()) return;
-
-    setIsLoading(true);
-    try {
-      // Chama a função passada pelo App.tsx
-      await onSave(name, phone, priceType, photo || undefined);
-      // A navegação de volta é tratada aqui após o sucesso, ou pelo App.tsx. 
-      // Como o App.tsx gerenciava o modal, aqui nós navegamos explicitamente.
-      navigate(-1);
-    } catch (error) {
-      console.error('Error saving client', error);
-      alert('Erro ao salvar cliente. Tente novamente.');
-    } finally {
-      setIsLoading(false);
+    if (!name.trim()) return
+    if (isDuplicateName) {
+      setError('Ja existe um cliente com este nome.')
+      return
     }
-  };
 
-  const isSaveDisabled = !name.trim() || isLoading;
+    setIsLoading(true)
+    try {
+      await onSave(name.trim(), phone, priceType, photo || undefined)
+      handleClose()
+    } catch (error) {
+      console.error('Error saving client', error)
+      alert('Erro ao salvar cliente. Tente novamente.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return
+    const target = event.target as HTMLElement
+    if (target.closest('button')) return
+    setIsDragging(true)
+    startYRef.current = event.clientY
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return
+    const delta = Math.max(0, event.clientY - startYRef.current)
+    setTranslateY(delta)
+  }
+
+  const handlePointerUp = () => {
+    if (!isDragging) return
+    setIsDragging(false)
+    const sheetHeight = sheetRef.current?.getBoundingClientRect().height || 1
+    if (translateY > sheetHeight * 0.25) {
+      handleClose()
+      return
+    }
+    setTranslateY(0)
+  }
+
+  const backdropOpacity = Math.max(
+    0,
+    0.6 - Math.min(0.6, (translateY / (sheetRef.current?.offsetHeight || 1)) * 0.45)
+  )
+
+  const isSaveDisabled = !name.trim() || isLoading || isDuplicateName
+  const duplicateMessage = isDuplicateName
+    ? 'Ja existe um cliente com este nome.'
+    : null
+  const saveButtonStyle = isSaveDisabled
+    ? {
+        background: 'var(--surface-2)',
+        color: 'var(--muted)',
+        border: '1px solid var(--border)'
+      }
+    : {
+        background: 'var(--accent)',
+        color: 'var(--accent-ink)',
+        boxShadow: '0 12px 24px -18px var(--shadow)'
+      }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col pb-safe">
-      {/* 1. Header Clean */}
-      <header className="px-6 pt-12 pb-4 flex items-center justify-between bg-gray-900 z-10">
-        <button 
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 text-gray-400 hover:text-white transition-colors"
+    <div
+      data-theme='flat-lime'
+      className='fixed inset-0 z-50 flex items-end justify-center'
+    >
+      <div
+        className='absolute inset-0 transition-opacity'
+        style={{
+          background: 'rgba(11, 15, 20, 0.6)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          opacity: backdropOpacity
+        }}
+        onClick={handleClose}
+        aria-hidden='true'
+      />
+      <div
+        ref={sheetRef}
+        role='dialog'
+        aria-modal='true'
+        className='relative w-full max-w-2xl mx-auto rounded-t-[28px] border flex flex-col'
+        style={{
+          background: 'var(--bg)',
+          borderColor: 'var(--border)',
+          boxShadow: '0 -20px 40px -30px var(--shadow)',
+          maxHeight: '85vh',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          transform: `translateY(${translateY}px)`,
+          transition: isDragging ? 'none' : 'transform 220ms ease'
+        }}
+      >
+        <div
+          className='pt-4 pb-3 flex flex-col items-center gap-3 cursor-grab'
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          style={{ touchAction: 'none' }}
         >
-          {/* Icon Back/Close */}
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-        </button>
-        <h1 className="text-xl font-bold text-white flex-1 text-center mr-8">
-          Novo Cliente
-        </h1>
-      </header>
+          <span
+            className='h-1.5 w-12 rounded-full'
+            style={{ background: 'var(--border)' }}
+          />
+          <div className='w-full flex items-center justify-between px-5'>
+            <h3 className='text-base font-semibold' style={{ color: 'var(--text)' }}>
+              Novo cliente
+            </h3>
+            <button
+              type='button'
+              onClick={handleClose}
+              className='h-10 w-10 rounded-full flex items-center justify-center transition-colors'
+              style={{
+                background: 'var(--surface-2)',
+                color: 'var(--muted)',
+                border: '1px solid var(--border)'
+              }}
+              aria-label='Fechar'
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
 
-      <main className="flex-1 px-6 flex flex-col gap-6 overflow-y-auto">
-        
-        {/* 2. Área de Foto */}
-        <div className="flex flex-col items-center justify-center mt-2">
-          <div 
-            onClick={handlePhotoClick}
-            className={`
-              relative w-28 h-28 rounded-full border-2 flex items-center justify-center cursor-pointer overflow-hidden transition-all
-              ${photo ? 'border-green-500' : 'border-gray-700 bg-gray-800 hover:border-gray-500'}
-            `}
-          >
-            {photo ? (
-              <img src={photo} alt="Preview" className="w-full h-full object-cover" />
-            ) : (
-              <div className="flex flex-col items-center text-gray-500">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
-                </svg>
-                <span className="text-[10px] mt-1 font-medium">Adicionar</span>
+        <div className='flex-1 overflow-y-auto px-5 pb-5 space-y-5 custom-scrollbar'>
+          <div className='flat-card p-4 flex items-center gap-4'>
+            <button
+              type='button'
+              onClick={handlePhotoClick}
+              className='relative h-16 w-16 rounded-full flex items-center justify-center overflow-hidden transition-colors'
+              style={{
+                background: 'var(--surface-2)',
+                border: `1px solid ${photo ? 'var(--accent)' : 'var(--border)'}`
+              }}
+              aria-label='Adicionar foto do cliente'
+            >
+              {photo ? (
+                <img src={photo} alt='Preview' className='w-full h-full object-cover' />
+              ) : (
+                <Camera size={22} style={{ color: 'var(--muted)' }} />
+              )}
+              <input
+                type='file'
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept='image/*'
+                className='hidden'
+              />
+            </button>
+            <div className='flex-1'>
+              <p className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                Foto do cliente
+              </p>
+              <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                Toque para adicionar ou trocar
+              </p>
+            </div>
+          </div>
+
+          <div className='space-y-4'>
+            <div>
+              <label
+                className='block text-xs font-semibold uppercase tracking-wide mb-2'
+                style={{ color: 'var(--muted)' }}
+              >
+                Nome do cliente
+              </label>
+              <div className='relative'>
+                <User
+                  size={18}
+                  className='absolute left-3 top-1/2 -translate-y-1/2'
+                  style={{ color: 'var(--muted)' }}
+                />
+                <input
+                  ref={nameInputRef}
+                  type='text'
+                  value={name}
+                  onChange={(event) => {
+                    setName(event.target.value)
+                    if (error) setError(null)
+                  }}
+                  placeholder='Ex: Joao da Silva'
+                  className='flat-input w-full pl-10 pr-4 py-3 text-base outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)]'
+                  style={{ caretColor: 'var(--accent)' }}
+                />
               </div>
+              {(duplicateMessage || error) && (
+                <div
+                  className='mt-2 text-xs font-semibold px-3 py-2 rounded-xl'
+                  style={{
+                    background: 'rgba(255, 90, 106, 0.12)',
+                    border: '1px solid rgba(255, 90, 106, 0.4)',
+                    color: 'var(--danger)'
+                  }}
+                >
+                  {duplicateMessage || error}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label
+                className='block text-xs font-semibold uppercase tracking-wide mb-2'
+                style={{ color: 'var(--muted)' }}
+              >
+                Telefone / WhatsApp
+              </label>
+              <div className='relative'>
+                <Phone
+                  size={18}
+                  className='absolute left-3 top-1/2 -translate-y-1/2'
+                  style={{ color: 'var(--muted)' }}
+                />
+                <input
+                  type='tel'
+                  inputMode='tel'
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  placeholder='(00) 00000-0000'
+                  className='flat-input w-full pl-10 pr-4 py-3 text-base outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)]'
+                  style={{ caretColor: 'var(--accent)' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label
+              className='block text-xs font-semibold uppercase tracking-wide mb-2'
+              style={{ color: 'var(--muted)' }}
+            >
+              Tabela de preco
+            </label>
+            <div className='flat-card p-2 flex gap-2'>
+              <button
+                type='button'
+                onClick={() => setPriceType('STANDARD')}
+                className={`flex-1 rounded-2xl px-3 py-2 text-sm font-semibold transition-colors flat-chip ${
+                  priceType === 'STANDARD' ? 'is-active' : ''
+                }`}
+              >
+                <span className='block'>Padrao</span>
+                <span className='block text-xs font-semibold'>
+                  {formatCurrency(priceSettings.standard)}/L
+                </span>
+              </button>
+              <button
+                type='button'
+                onClick={() => setPriceType('CUSTOM')}
+                className={`flex-1 rounded-2xl px-3 py-2 text-sm font-semibold transition-colors flat-chip ${
+                  priceType === 'CUSTOM' ? 'is-active' : ''
+                }`}
+              >
+                <span className='flex items-center justify-center gap-1'>
+                  <Tag size={12} />
+                  Personalizado
+                </span>
+                <span className='block text-xs font-semibold'>
+                  {formatCurrency(priceSettings.custom)}/L
+                </span>
+              </button>
+            </div>
+            {priceType === 'CUSTOM' && (
+              <p className='text-xs mt-2' style={{ color: 'var(--muted)' }}>
+                O valor segue o preco personalizado definido nas configuracoes.
+              </p>
             )}
-            
-            {/* Hidden Input */}
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              accept="image/*" 
-              className="hidden" 
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-2">Toque para alterar a foto</p>
-        </div>
-
-        {/* 3. Inputs (Pills) */}
-        <div className="space-y-4">
-          {/* Nome */}
-          <div className="group">
-            <label className="block text-xs text-gray-500 ml-4 mb-1 uppercase tracking-wider">Nome do Cliente</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-500 group-focus-within:text-green-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-              </div>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoFocus
-                placeholder="Ex: João da Silva"
-                className="block w-full pl-12 pr-4 py-4 bg-gray-800 border border-gray-700 rounded-full text-white placeholder-gray-600 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
-              />
-            </div>
-          </div>
-
-          {/* WhatsApp */}
-          <div className="group">
-            <label className="block text-xs text-gray-500 ml-4 mb-1 uppercase tracking-wider">WhatsApp / Telefone</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-500 group-focus-within:text-green-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                </svg>
-              </div>
-              <input
-                type="tel"
-                inputMode="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="(00) 00000-0000"
-                className="block w-full pl-12 pr-4 py-4 bg-gray-800 border border-gray-700 rounded-full text-white placeholder-gray-600 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
-              />
-            </div>
           </div>
         </div>
 
-        {/* 4. Opções de Preço (Segmented Control) */}
-        <div className="mt-2">
-          <label className="block text-xs text-gray-500 ml-4 mb-2 uppercase tracking-wider">Tabela de Preço</label>
-          <div className="bg-gray-800 p-1 rounded-full flex relative">
-            <button
-              onClick={() => setPriceType('STANDARD')}
-              className={`flex-1 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
-                priceType === 'STANDARD' 
-                  ? 'bg-green-500 text-gray-900 shadow-lg' 
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Padrão
-            </button>
-            <button
-              onClick={() => setPriceType('CUSTOM')}
-              className={`flex-1 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
-                priceType === 'CUSTOM' 
-                  ? 'bg-green-500 text-gray-900 shadow-lg' 
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Personalizado
-            </button>
-          </div>
-          {priceType === 'CUSTOM' && (
-             <p className="text-xs text-gray-500 mt-2 ml-4">
-               O valor será definido nas configurações globais de preço personalizado.
-             </p>
-          )}
-        </div>
-
-      </main>
-
-      {/* 5. Footer Actions */}
-      <footer className="p-6 bg-gray-900 mt-auto">
-        <button
-          onClick={handleSaveClick}
-          disabled={isSaveDisabled}
-          className={`
-            w-full py-4 rounded-full font-bold text-lg tracking-wide transition-all transform active:scale-95
-            ${isSaveDisabled 
-              ? 'bg-gray-800 text-gray-600 cursor-not-allowed' 
-              : 'bg-green-500 text-gray-900 hover:bg-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)]'
-            }
-          `}
+        <div
+          className='sticky bottom-0 w-full border-t px-5 py-4 flex gap-3'
+          style={{
+            borderColor: 'var(--border)',
+            background: 'rgba(11, 15, 20, 0.92)'
+          }}
         >
-          {isLoading ? 'Salvando...' : 'Salvar Cliente'}
-        </button>
-        
-        <button
-          onClick={() => navigate(-1)}
-          className="w-full py-3 mt-3 text-sm text-gray-500 font-medium hover:text-white transition-colors"
-        >
-          Cancelar
-        </button>
-      </footer>
+          <button
+            type='button'
+            onClick={handleClose}
+            className='flex-1 h-11 rounded-xl font-semibold transition-transform active:scale-[0.98]'
+            style={{
+              background: 'var(--surface-2)',
+              color: 'var(--text)',
+              border: '1px solid var(--border)'
+            }}
+          >
+            Cancelar
+          </button>
+          <button
+            type='button'
+            onClick={handleSaveClick}
+            disabled={isSaveDisabled}
+            className='flex-1 h-11 rounded-xl font-semibold transition-transform active:scale-[0.98] disabled:cursor-not-allowed'
+            style={saveButtonStyle}
+          >
+            {isLoading ? 'Salvando...' : 'Salvar cliente'}
+          </button>
+        </div>
+      </div>
     </div>
-  );
-};
+  )
+}
 
-export default NewClientPage;
+export default NewClientPage

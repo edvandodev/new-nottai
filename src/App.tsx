@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { App as CapacitorApp } from '@capacitor/app'
 import { firestoreService } from './services/firestore'
 import { authService, type AppUser } from './services/auth'
@@ -1158,6 +1158,8 @@ function App() {
     </>
   );
 
+  const showNewClientSheet = location.pathname === '/clientes/novo'
+
   return (
     <div
       className='min-h-screen font-sans pb-32'
@@ -1166,10 +1168,14 @@ function App() {
         color: 'var(--text)'
       }}
     >
-      <Routes>
-        <Route path="/" element={<MainContent />} />
-        <Route path="/clientes/novo" element={<NewClientPage onSave={handleSaveClient} priceSettings={priceSettings} />} />
-      </Routes>
+      <MainContent />
+      {showNewClientSheet && (
+        <NewClientPage
+          onSave={handleSaveClient}
+          priceSettings={priceSettings}
+          existingNames={clients.map((client) => client.name)}
+        />
+      )}
     </div>
   )
 }
