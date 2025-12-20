@@ -280,10 +280,10 @@ export function PaymentsPage({
             paddingBottom: 10,
             paddingLeft: 16,
             paddingRight: 16,
-            background: 'rgba(11, 15, 20, 0.6)',
+            background:
+              'linear-gradient(180deg, rgba(11, 15, 20, 0.98) 0%, rgba(11, 15, 20, 0.7) 45%, rgba(11, 15, 20, 0) 100%)',
             backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            borderBottom: '1px solid rgba(30, 42, 56, 0.6)'
+            WebkitBackdropFilter: 'blur(10px)'
           }}
         >
           <h2 className='text-[24px] font-semibold leading-none' style={{ color: 'var(--text)' }}>

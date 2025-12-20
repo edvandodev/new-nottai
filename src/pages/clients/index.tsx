@@ -530,10 +530,10 @@ export function ClientsPage({
             paddingBottom: 10,
             paddingLeft: 16,
             paddingRight: 16,
-            background: 'rgba(11, 15, 20, 0.6)',
+            background:
+              'linear-gradient(180deg, rgba(11, 15, 20, 0.98) 0%, rgba(11, 15, 20, 0.7) 45%, rgba(11, 15, 20, 0) 100%)',
             backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            borderBottom: '1px solid rgba(30, 42, 56, 0.6)'
+            WebkitBackdropFilter: 'blur(10px)'
           }}
         >
           <h2 className='text-[24px] font-semibold leading-none' style={{ color: 'var(--text)' }}>
@@ -823,7 +823,12 @@ export function ClientsPage({
         <div className='fixed top-0 left-0 right-0 z-50 max-w-2xl mx-auto px-4 pt-4 flex items-center justify-between pointer-events-none'>
           <button
             onClick={handleBackToList}
-            className='pointer-events-auto h-10 w-10 rounded-full bg-slate-900/60 border border-white/10 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95'
+            className='pointer-events-auto h-10 w-10 rounded-full flex items-center justify-center transition-all active:scale-95'
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)'
+            }}
             aria-label='Voltar'
           >
             <ChevronLeft size={20} />
@@ -833,7 +838,12 @@ export function ClientsPage({
             <button
               type='button'
               onClick={() => onEditClient(selectedClient)}
-              className='h-10 w-10 rounded-full bg-slate-900/60 border border-white/10 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95'
+              className='h-10 w-10 rounded-full flex items-center justify-center transition-all active:scale-95'
+              style={{
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)'
+              }}
               aria-label='Editar cliente'
             >
               <Pencil size={18} />
@@ -841,20 +851,32 @@ export function ClientsPage({
             <button
               type='button'
               onClick={() => setShowClientMenu((prev) => !prev)}
-              className='h-10 w-10 rounded-full bg-slate-900/60 border border-white/10 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95'
+              className='h-10 w-10 rounded-full flex items-center justify-center transition-all active:scale-95'
+              style={{
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)'
+              }}
               aria-label='Menu'
             >
               <MoreVertical size={18} />
             </button>
             {showClientMenu && (
-              <div className='absolute right-0 top-12 w-44 rounded-xl border border-slate-800 bg-slate-900/95 shadow-lg overflow-hidden'>
+              <div
+                className='absolute right-0 top-12 w-44 rounded-xl shadow-lg overflow-hidden'
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)'
+                }}
+              >
                 <button
                   type='button'
                   onClick={() => {
                     setShowClientMenu(false)
                     onDeleteClient(selectedClient.id)
                   }}
-                  className='w-full px-3 py-2 text-left text-sm text-red-200 hover:bg-red-500/10 transition-colors'
+                  className='w-full px-3 py-2 text-left text-sm transition-colors'
+                  style={{ color: 'var(--danger)' }}
                 >
                   Excluir cliente
                 </button>
@@ -866,29 +888,33 @@ export function ClientsPage({
         <div
           className='relative h-32 rounded-b-[2rem] shadow-md overflow-hidden'
           style={{
-            background: 'linear-gradient(135deg, rgba(184, 255, 44, 0.18), rgba(18, 24, 33, 0.92))'
+            background: 'linear-gradient(135deg, rgba(184, 255, 44, 0.22), rgba(11, 15, 20, 0.96))'
           }}
         >
           <div
             className='absolute top-[-30%] left-[-10%] w-44 h-44 rounded-full blur-3xl'
-            style={{ background: 'rgba(184, 255, 44, 0.12)' }}
+            style={{ background: 'rgba(184, 255, 44, 0.14)' }}
           />
           <div
             className='absolute bottom-[-35%] right-[-10%] w-44 h-44 rounded-full blur-3xl'
-            style={{ background: 'rgba(184, 255, 44, 0.08)' }}
+            style={{ background: 'rgba(184, 255, 44, 0.1)' }}
           />
         </div>
 
         <div className='px-6 -mt-12 relative z-10 flex flex-col items-center'>
           <div
-            className='h-24 w-24 rounded-full border-4 border-slate-950 shadow-xl flex items-center justify-center text-2xl font-bold'
-            style={{ backgroundColor: avatarColors.bg, color: avatarColors.text }}
+            className='h-24 w-24 rounded-full border-4 shadow-xl flex items-center justify-center text-2xl font-bold'
+            style={{
+              backgroundColor: avatarColors.bg,
+              color: avatarColors.text,
+              borderColor: 'var(--bg)'
+            }}
           >
             {initials}
           </div>
 
           <div className='mt-3 text-center'>
-            <h2 className='text-2xl font-bold text-white'>
+            <h2 className='text-2xl font-bold' style={{ color: 'var(--text)' }}>
               {selectedClient.name}
             </h2>
             <div className='flex justify-center gap-2 mt-2 flex-wrap overflow-x-auto no-scrollbar'>
@@ -906,7 +932,12 @@ export function ClientsPage({
           {selectedClient.phone && (
             <button
               onClick={() => openWhatsApp(selectedClient.phone)}
-              className='mt-3 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow-sm hover:bg-green-500 transition-all active:scale-95 font-medium text-sm'
+              className='mt-3 flex items-center gap-2 px-4 py-2 rounded-xl shadow-sm transition-all active:scale-95 font-medium text-sm'
+              style={{
+                background: 'var(--accent)',
+                color: 'var(--accent-ink)',
+                border: '1px solid var(--accent)'
+              }}
             >
               <MessageCircle size={16} />
               WhatsApp
@@ -915,15 +946,17 @@ export function ClientsPage({
         </div>
 
         <div className='px-4 mt-6 space-y-5'>
-          <div className='bg-slate-900/70 rounded-2xl p-5 border border-slate-800 shadow-sm flex justify-between items-center'>
+          <div className='flat-card p-5 shadow-sm flex justify-between items-center'>
             <div>
-              <p className='text-xs text-slate-400 font-semibold uppercase tracking-wide mb-1'>
+              <p
+                className='text-xs font-semibold uppercase tracking-wide mb-1'
+                style={{ color: 'var(--muted)' }}
+              >
                 Total a receber
               </p>
               <p
-                className={`text-3xl font-bold tracking-tight ${
-                  balance > 0 ? 'text-white' : 'text-slate-500'
-                }`}
+                className='text-3xl font-bold tracking-tight'
+                style={{ color: balance > 0 ? 'var(--text)' : 'var(--muted)' }}
               >
                 {formatCurrency(balance)}
               </p>
@@ -989,7 +1022,10 @@ export function ClientsPage({
 
           <div>
             <div className='flex items-center justify-between mb-3 px-1'>
-              <h3 className='text-xs font-semibold text-slate-500 uppercase tracking-wider'>
+              <h3
+                className='text-xs font-semibold uppercase tracking-wider'
+                style={{ color: 'var(--muted)' }}
+              >
                 Histórico
               </h3>
             </div>
@@ -1006,10 +1042,8 @@ export function ClientsPage({
                     key={chip.value}
                     type='button'
                     onClick={() => setHistoryFilter(chip.value)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
-                      isActive
-                        ? 'bg-blue-600/20 text-blue-200 border-blue-500/30'
-                        : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:text-slate-200'
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 flat-chip ${
+                      isActive ? 'is-active' : ''
                     }`}
                   >
                     {chip.label}
@@ -1023,9 +1057,14 @@ export function ClientsPage({
                 <button
                   type='button'
                   onClick={() => setIsDebtOpen((prev) => !prev)}
-                  className={`w-full rounded-xl border border-slate-700 bg-slate-900/70 text-slate-100 shadow-sm text-left transition-all focus:outline-none ${
+                  className={`w-full rounded-xl text-left shadow-sm transition-all focus:outline-none ${
                     isDebtOpen ? 'ring-1 ring-amber-400/40' : ''
-                  } hover:border-slate-600 active:scale-[0.99]`}
+                  } active:scale-[0.99]`}
+                  style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)'
+                  }}
                   aria-expanded={isDebtOpen}
                 >
                   <div className='flex items-center gap-3 px-3 py-3'>
@@ -1080,14 +1119,24 @@ export function ClientsPage({
             ) : null}
 
             {filteredHistoryGroups.length === 0 ? (
-              <div className='text-center py-8 rounded-2xl border border-slate-800 border-dashed bg-slate-900/30'>
-                <p className='text-slate-500'>Nenhuma movimentação registrada.</p>
+              <div
+                className='text-center py-8 rounded-2xl border border-dashed'
+                style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
+              >
+                <p style={{ color: 'var(--muted)' }}>Nenhuma movimentação registrada.</p>
               </div>
             ) : (
               <div className='space-y-4'>
                 {filteredHistoryGroups.map((group) => (
                   <div key={group.key} className='space-y-2'>
-                    <span className='inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-slate-900/60 border border-slate-800 text-slate-400'>
+                    <span
+                      className='inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border'
+                      style={{
+                        background: 'var(--surface-2)',
+                        borderColor: 'var(--border)',
+                        color: 'var(--muted)'
+                      }}
+                    >
                       {group.label}
                     </span>
                     <div className='space-y-2'>
@@ -1105,15 +1154,22 @@ export function ClientsPage({
                         return (
                           <div
                             key={`${item.type}-${item.id}`}
-                            className='bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-3 flex items-center justify-between gap-3 transition-all active:scale-[0.98] active:opacity-90'
+                            className='rounded-xl px-3 py-3 flex items-center justify-between gap-3 transition-all active:scale-[0.98] active:opacity-90'
+                            style={{
+                              background: 'var(--surface)',
+                              border: '1px solid var(--border)'
+                            }}
                           >
                             <div className='flex items-center gap-3 min-w-0'>
                               <div
-                                className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 border ${
-                                  isSale
-                                    ? 'border-blue-500/30 bg-blue-600/15 text-blue-300'
-                                    : 'border-emerald-500/30 bg-emerald-600/15 text-emerald-300'
-                                }`}
+                                className='h-9 w-9 rounded-full flex items-center justify-center shrink-0 border'
+                                style={{
+                                  borderColor: isPayment ? 'var(--accent)' : 'var(--border)',
+                                  background: isPayment
+                                    ? 'rgba(184, 255, 44, 0.16)'
+                                    : 'var(--surface-2)',
+                                  color: isPayment ? 'var(--accent)' : 'var(--muted)'
+                                }}
                               >
                                 {isSale ? (
                                   <ShoppingCart size={16} />
@@ -1126,7 +1182,7 @@ export function ClientsPage({
                                 <p className='text-white font-semibold truncate'>
                                   {title}
                                 </p>
-                                <p className='text-slate-500 text-xs'>
+                                <p className='text-xs' style={{ color: 'var(--muted)' }}>
                                   {dateLabel} • {timeLabel}
                                 </p>
                               </div>
@@ -1134,9 +1190,8 @@ export function ClientsPage({
 
                             <div className='flex items-center gap-2 shrink-0'>
                               <span
-                                className={`text-sm font-bold tabular-nums ${
-                                  isPayment ? 'text-emerald-400' : 'text-blue-300'
-                                }`}
+                                className='text-sm font-bold tabular-nums'
+                                style={{ color: isPayment ? 'var(--accent)' : 'var(--text)' }}
                               >
                                 {formatCurrency(amount)}
                               </span>
@@ -1146,7 +1201,8 @@ export function ClientsPage({
                                     ? onDeleteSale(item.id)
                                     : onDeletePayment(item.id)
                                 }
-                                className='p-2 text-slate-600 hover:text-red-400 transition-colors'
+                                className='p-2 transition-colors'
+                                style={{ color: 'var(--muted)' }}
                                 aria-label='Excluir'
                               >
                                 <Trash2 size={14} />
