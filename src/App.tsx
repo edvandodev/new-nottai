@@ -838,7 +838,7 @@ function App() {
 
     if (activeTab === 'CLIENTS') {
       if (isClientDetailsView) return null
-      return renderMinimalHeader('Meus Clientes')
+      return null
     }
 
     if (activeTab === 'PAYMENTS') {

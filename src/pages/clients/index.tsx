@@ -20,6 +20,7 @@ import {
   X
 } from 'lucide-react'
 import type { Client, Payment, PriceSettings, Sale } from '@/types'
+import '../../styles/theme-flat.css'
 
 type ClientsPageProps = {
   clients: Client[]
@@ -498,16 +499,32 @@ export function ClientsPage({
 
   const renderClientList = () => (
     <div
-      className='space-y-4 animate-fade-in'
-      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+      data-theme='flat-lime'
+      className='min-h-full space-y-4 animate-fade-in'
+      style={{
+        background: 'var(--bg)',
+        color: 'var(--text)',
+        paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
+        paddingLeft: 16,
+        paddingRight: 16
+      }}
     >
-      <div className='bg-slate-900/60 p-5 rounded-2xl border border-slate-800 shadow-sm flex items-center justify-between relative overflow-hidden'>
-        <div className='absolute top-0 right-0 w-24 h-24 bg-green-500/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none' />
-        <div className='relative z-10'>
-          <span className='block text-slate-400 text-sm font-medium mb-1'>
+      <div className='flex items-center justify-between mb-2'>
+        <h1 className='text-[24px] font-semibold leading-none'>Meus Clientes</h1>
+      </div>
+      <div className='flat-card p-4 flex items-center justify-between'>
+        <div>
+          <span
+            className='block text-xs font-medium tracking-wide uppercase mb-1'
+            style={{ color: 'var(--muted)' }}
+          >
             Total a Receber
           </span>
-          <span className='text-3xl font-bold text-green-400 tracking-tight'>
+          <span
+            className='text-3xl font-semibold leading-tight'
+            style={{ color: 'var(--accent)' }}
+          >
             {formatCurrency(totalReceivable)}
           </span>
         </div>
@@ -515,11 +532,21 @@ export function ClientsPage({
           type='button'
           onClick={handlePaymentCTA}
           disabled={paymentCandidates.length === 0}
-          className={`relative z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 ${
+          className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-transform active:scale-95'
+          style={
             paymentCandidates.length > 0
-              ? 'bg-emerald-600/20 text-emerald-200 border border-emerald-500/30 hover:bg-emerald-600/30'
-              : 'bg-slate-800/60 text-slate-500 border border-slate-700 cursor-not-allowed'
-          }`}
+              ? {
+                  background: 'var(--accent)',
+                  color: 'var(--accent-ink)',
+                  border: '1px solid var(--accent)'
+                }
+              : {
+                  background: 'var(--surface-2)',
+                  color: 'var(--muted)',
+                  border: '1px solid var(--border)',
+                  cursor: 'not-allowed'
+                }
+          }
         >
           <DollarSign size={14} />
           Receber
@@ -527,21 +554,21 @@ export function ClientsPage({
       </div>
 
       {showPaymentPicker && paymentCandidates.length > 1 && (
-        <div className='bg-slate-900/70 border border-slate-800 rounded-2xl p-4 shadow-sm'>
-          <div className='flex items-center justify-between mb-3'>
-            <p className='text-sm font-semibold text-slate-200'>
+        <div className='flat-card p-4 space-y-3'>
+          <div className='flex items-center justify-between'>
+            <p className='text-sm font-semibold'>
               Selecione um cliente para receber
             </p>
             <button
               type='button'
               onClick={() => setShowPaymentPicker(false)}
-              className='text-slate-500 hover:text-slate-200 transition-colors'
+              style={{ color: 'var(--muted)' }}
               aria-label='Fechar seleÃ§Ã£o'
             >
               <X size={16} />
             </button>
           </div>
-          <div className='max-h-56 overflow-y-auto custom-scrollbar space-y-2'>
+          <div className='max-h-56 overflow-y-auto no-scrollbar space-y-2'>
             {paymentCandidates.map((client) => {
               const balance = clientBalances.get(client.id) || 0
               const initials = getInitials(client.name)
@@ -551,20 +578,28 @@ export function ClientsPage({
                   key={client.id}
                   type='button'
                   onClick={() => handleSelectPaymentClient(client.id)}
-                  className='w-full flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-left hover:border-slate-700 transition-all active:scale-[0.98]'
+                  className='w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl transition-colors text-left active:scale-[0.98]'
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)'
+                  }}
                 >
                   <div className='flex items-center gap-3 min-w-0'>
                     <div
                       className='h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0'
-                      style={{ backgroundColor: colors.bg, color: colors.text }}
+                      style={{
+                        backgroundColor: colors.bg,
+                        color: colors.text,
+                        boxShadow: '0 8px 20px -12px var(--shadow)'
+                      }}
                     >
                       {initials}
                     </div>
-                    <span className='text-sm text-slate-100 font-semibold truncate'>
+                    <span className='text-sm font-semibold truncate'>
                       {client.name}
                     </span>
                   </div>
-                  <span className='text-sm font-semibold text-emerald-300 tabular-nums'>
+                  <span className='text-sm font-semibold tabular-nums' style={{ color: 'var(--accent)' }}>
                     {formatCurrency(balance)}
                   </span>
                 </button>
@@ -578,27 +613,36 @@ export function ClientsPage({
         <>
           <div className='relative'>
             <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
-              <Search size={18} className='text-slate-500' />
+              <Search size={18} style={{ color: 'var(--muted)' }} />
             </div>
             <input
               type='text'
-              className='w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all'
+              className='w-full flat-input pl-10 pr-10 py-3 text-base outline-none focus:ring-2'
               placeholder='Buscar cliente por nome ou telefone...'
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                background: 'var(--surface-2)',
+                color: 'var(--text)',
+                borderColor: 'var(--border)',
+                boxShadow: 'none',
+                caretColor: 'var(--accent)',
+                borderRadius: 9999
+              }}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className='absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-white transition-colors active:scale-95'
+                className='absolute inset-y-0 right-0 pr-3 flex items-center active:scale-95'
                 aria-label='Limpar busca'
+                style={{ color: 'var(--muted)' }}
               >
                 <X size={16} />
               </button>
             )}
           </div>
 
-          <div className='flex gap-2 overflow-x-auto no-scrollbar pt-0.5'>
+          <div className='flex gap-2 overflow-x-auto no-scrollbar pb-0.5 px-1'>
             {[
               { label: 'Todos', value: 'ALL' as const },
               { label: 'Com saldo', value: 'BALANCE' as const },
@@ -611,10 +655,8 @@ export function ClientsPage({
                   key={chip.value}
                   type='button'
                   onClick={() => setFilterMode(chip.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
-                    isActive
-                      ? 'bg-blue-600/20 text-blue-200 border-blue-500/30'
-                      : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:text-slate-200'
+                  className={`px-3 py-1 text-sm font-semibold rounded-full transition-colors active:scale-95 flat-chip ${
+                    isActive ? 'is-active' : ''
                   }`}
                 >
                   {chip.label}
@@ -626,14 +668,19 @@ export function ClientsPage({
       )}
 
       <div className='flex justify-between items-center pt-1 pb-1'>
-        <h2 className='text-sm uppercase tracking-wider text-slate-500 font-semibold ml-1'>
+        <h2 className='text-sm font-semibold uppercase tracking-wide' style={{ color: 'var(--muted)' }}>
           {searchQuery
             ? `Resultados (${filteredClients.length})`
             : 'Lista de Clientes'}
         </h2>
         <button
           onClick={onAddClient}
-          className='flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-blue-900/20 transition-all active:scale-95'
+          className='flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-transform active:scale-95'
+          style={{
+            background: 'var(--accent)',
+            color: 'var(--accent-ink)',
+            border: '1px solid var(--accent)'
+          }}
         >
           <Plus size={14} strokeWidth={3} />
           NOVO CLIENTE
@@ -641,16 +688,21 @@ export function ClientsPage({
       </div>
 
       {clients.length === 0 ? (
-        <div className='text-center py-20 px-6 rounded-2xl bg-slate-900 border border-slate-800 border-dashed'>
-          <UserIcon size={48} className='mx-auto text-slate-700 mb-4' />
-          <p className='text-slate-400 text-lg'>Nenhum cliente cadastrado.</p>
-          <p className='text-slate-600 text-sm mt-1'>
+        <div
+          className='flat-card p-6 text-center'
+          style={{ borderStyle: 'dashed', borderColor: 'var(--border)' }}
+        >
+          <UserIcon size={48} className='mx-auto mb-3' style={{ color: 'var(--muted)' }} />
+          <p className='text-base font-semibold'>Nenhum cliente cadastrado.</p>
+          <p className='text-sm' style={{ color: 'var(--muted)' }}>
             Adicione um novo cliente acima.
           </p>
         </div>
       ) : filteredClients.length === 0 ? (
-        <div className='text-center py-16 px-6 rounded-2xl bg-slate-900/60 border border-slate-800'>
-          <p className='text-slate-400 text-base'>Nenhum cliente encontrado</p>
+        <div className='flat-card p-4 text-center'>
+          <p className='text-sm' style={{ color: 'var(--muted)' }}>
+            Nenhum cliente encontrado
+          </p>
         </div>
       ) : (
         <div className='space-y-2'>
@@ -662,23 +714,25 @@ export function ClientsPage({
               <button
                 key={client.id}
                 onClick={() => handleOpenClient(client.id)}
-                className='w-full bg-slate-900/60 rounded-xl border border-slate-800 shadow-[0_6px_18px_rgba(0,0,0,0.18)] transition-all hover:border-slate-700 active:scale-[0.98] active:opacity-90 text-left'
+                className='w-full flat-card text-left transition-transform active:scale-[0.99]'
               >
-                <div className='px-3.5 py-3 flex items-center justify-between gap-3'>
+                <div className='px-4 py-3 flex items-center justify-between gap-3'>
                   <div className='flex items-center gap-3 min-w-0'>
                     <div
-                      className='h-10 w-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0'
-                      style={{ backgroundColor: colors.bg, color: colors.text }}
+                      className='h-11 w-11 rounded-full flex items-center justify-center text-xs font-bold shrink-0'
+                      style={{
+                        backgroundColor: colors.bg,
+                        color: colors.text,
+                        boxShadow: '0 8px 20px -12px var(--shadow)'
+                      }}
                     >
                       {initials}
                     </div>
 
                     <div className='min-w-0'>
-                      <p className='text-white font-semibold truncate'>
-                        {client.name}
-                      </p>
+                      <p className='text-base font-semibold truncate'>{client.name}</p>
                       {client.phone ? (
-                        <p className='text-slate-500 text-xs truncate'>
+                        <p className='text-xs truncate' style={{ color: 'var(--muted)' }}>
                           {client.phone}
                         </p>
                       ) : null}
@@ -687,18 +741,20 @@ export function ClientsPage({
 
                   <div className='flex items-center gap-3 shrink-0'>
                     <div className='text-right'>
-                      <span className='block text-[10px] text-slate-500 font-semibold uppercase'>
+                      <span
+                        className='block text-[10px] font-semibold uppercase'
+                        style={{ color: 'var(--muted)' }}
+                      >
                         Saldo
                       </span>
                       <span
-                        className={`text-base font-bold tabular-nums ${
-                          balance > 0 ? 'text-emerald-400' : 'text-slate-400'
-                        }`}
+                        className='text-base font-semibold tabular-nums'
+                        style={{ color: balance > 0 ? 'var(--accent)' : 'var(--muted)' }}
                       >
                         {formatCurrency(balance)}
                       </span>
                     </div>
-                    <ChevronRight size={16} className='text-slate-600' />
+                    <ChevronRight size={16} style={{ color: 'var(--muted)' }} />
                   </div>
                 </div>
               </button>
@@ -725,8 +781,13 @@ export function ClientsPage({
 
     return (
       <div
-        className='animate-fade-in relative min-h-screen bg-slate-950'
-        style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}
+        data-theme='flat-lime'
+        className='animate-fade-in relative min-h-screen'
+        style={{
+          background: 'var(--bg)',
+          color: 'var(--text)',
+          paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))'
+        }}
       >
         <div className='fixed top-0 left-0 right-0 z-50 max-w-2xl mx-auto px-4 pt-4 flex items-center justify-between pointer-events-none'>
           <button
@@ -771,9 +832,20 @@ export function ClientsPage({
           </div>
         </div>
 
-        <div className='relative h-32 bg-gradient-to-br from-blue-700 to-blue-900/90 rounded-b-[2rem] shadow-md overflow-hidden'>
-          <div className='absolute top-[-30%] left-[-10%] w-44 h-44 rounded-full bg-white/5 blur-3xl' />
-          <div className='absolute bottom-[-35%] right-[-10%] w-44 h-44 rounded-full bg-blue-400/10 blur-3xl' />
+        <div
+          className='relative h-32 rounded-b-[2rem] shadow-md overflow-hidden'
+          style={{
+            background: 'linear-gradient(135deg, rgba(184, 255, 44, 0.18), rgba(18, 24, 33, 0.92))'
+          }}
+        >
+          <div
+            className='absolute top-[-30%] left-[-10%] w-44 h-44 rounded-full blur-3xl'
+            style={{ background: 'rgba(184, 255, 44, 0.12)' }}
+          />
+          <div
+            className='absolute bottom-[-35%] right-[-10%] w-44 h-44 rounded-full blur-3xl'
+            style={{ background: 'rgba(184, 255, 44, 0.08)' }}
+          />
         </div>
 
         <div className='px-6 -mt-12 relative z-10 flex flex-col items-center'>
@@ -789,12 +861,12 @@ export function ClientsPage({
               {selectedClient.name}
             </h2>
             <div className='flex justify-center gap-2 mt-2 flex-wrap overflow-x-auto no-scrollbar'>
-              <span className='px-3 py-1 bg-slate-900/60 border border-slate-800 rounded-full text-xs font-semibold text-slate-400 uppercase tracking-wide'>
+              <span className='flat-chip px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide'>
                 {selectedClient.priceType === 'STANDARD'
                   ? 'Preço padrão'
                   : 'Preço personalizado'}
               </span>
-              <span className='px-3 py-1 bg-blue-600/20 border border-blue-500/30 rounded-full text-xs font-semibold text-blue-200'>
+              <span className='flat-chip is-active px-3 py-1 rounded-full text-xs font-semibold'>
                 {formatCurrency(clientPrice)}/L
               </span>
             </div>
@@ -827,11 +899,20 @@ export function ClientsPage({
             </div>
 
             <div
-              className={`h-11 w-11 rounded-xl flex items-center justify-center border ${
+              className='h-11 w-11 rounded-xl flex items-center justify-center border'
+              style={
                 balance > 0
-                  ? 'border-blue-500/30 bg-blue-600/15 text-blue-300'
-                  : 'border-emerald-500/30 bg-emerald-600/15 text-emerald-300'
-              }`}
+                  ? {
+                      borderColor: 'var(--accent)',
+                      background: 'rgba(184, 255, 44, 0.14)',
+                      color: 'var(--accent)'
+                    }
+                  : {
+                      borderColor: 'var(--border)',
+                      background: 'var(--surface-2)',
+                      color: 'var(--muted)'
+                    }
+              }
             >
               {balance > 0 ? <Wallet size={20} /> : <CheckCircle size={20} />}
             </div>
@@ -840,7 +921,12 @@ export function ClientsPage({
           <div className='flex gap-3'>
             <button
               onClick={() => onAddSale(selectedClient.id)}
-              className='flex-1 h-11 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95'
+              className='flex-1 h-11 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95'
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)'
+              }}
             >
               <Plus size={18} />
               Nova Venda
@@ -849,11 +935,21 @@ export function ClientsPage({
             <button
               onClick={() => onPayDebt(selectedClient.id)}
               disabled={balance <= 0}
-              className={`flex-1 h-11 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
+              className='flex-1 h-11 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95'
+              style={
                 balance > 0
-                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-              }`}
+                  ? {
+                      background: 'var(--accent)',
+                      color: 'var(--accent-ink)',
+                      border: '1px solid var(--accent)'
+                    }
+                  : {
+                      background: 'var(--surface-2)',
+                      color: 'var(--muted)',
+                      border: '1px solid var(--border)',
+                      cursor: 'not-allowed'
+                    }
+              }
             >
               <DollarSign size={18} />
               Receber
