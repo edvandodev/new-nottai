@@ -1,16 +1,11 @@
-﻿import React, { useEffect, useMemo, useState } from 'react'
-import {
-  CheckCircle,
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  Plus,
-  Search,
-  Trash2,
-  Wallet,
-  X
-} from 'lucide-react'
-import type { Client, Payment, Sale } from '@/types'
+import React, { useEffect, useMemo, useState } from 'react'
+import { FileText, Plus, Search, Trash2, Wallet, X } from 'lucide-react'
+import type { Client, Payment } from '@/types'
+import { StatCard } from '@/components/payments/StatCard'
+import { FilterChips } from '@/components/payments/FilterChips'
+import { PaymentRow } from '@/components/payments/PaymentRow'
+import { IconButton } from '@/components/common/IconButton'
+import '../../styles/theme-flat.css'
 
 const parseDate = (
   value:
@@ -53,59 +48,22 @@ const normalizeTs = (value: Payment['date']) => {
   return d ? d.getTime() : 0
 }
 
-const MONTHS_SHORT = [
-  'jan',
-  'fev',
-  'mar',
-  'abr',
-  'mai',
-  'jun',
-  'jul',
-  'ago',
-  'set',
-  'out',
-  'nov',
-  'dez'
-]
+const startOfDay = (dt: Date) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime()
 
-const formatDayLabel = (ts: number) => {
+const formatDayWithTime = (ts: number) => {
+  if (!ts) return 'Data indisponivel'
   const d = new Date(ts)
   const now = new Date()
-  const startOfDay = (dt: Date) =>
-    new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime()
   const today = startOfDay(now)
   const target = startOfDay(d)
   const diff = today - target
 
-  if (diff === 0) return 'HOJE'
-  if (diff === 86_400_000) return 'ONTEM'
+  let prefix = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
+  if (diff === 0) prefix = 'Hoje'
+  else if (diff === 86_400_000) prefix = 'Ontem'
 
-  const day = String(d.getDate()).padStart(2, '0')
-  const month = MONTHS_SHORT[d.getMonth()]
-  return `${day} ${month}`.toUpperCase()
-}
-
-const getInitials = (name: string) => {
-  const parts = String(name || '')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-  if (parts.length === 0) return ''
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-}
-
-const getAvatarColors = (input: string) => {
-  let hash = 0
-  for (let i = 0; i < input.length; i++) {
-    hash = (hash << 5) - hash + input.charCodeAt(i)
-    hash |= 0
-  }
-  const hue = Math.abs(hash) % 360
-  return {
-    bg: `hsl(${hue}, 35%, 22%)`,
-    text: `hsl(${hue}, 70%, 80%)`
-  }
+  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return `${prefix}, ${time}`
 }
 
 type FilterMode = 'ALL' | 'TODAY' | 'WEEK' | 'MONTH' | 'MAX'
@@ -119,6 +77,16 @@ type PaymentsPageProps = {
   onPayDebt: (clientId: string) => void
 }
 
+type ListItem = {
+  id: string
+  clientId?: string
+  name: string
+  amount: number
+  date: number
+  subtitle: string
+  payment?: Payment
+}
+
 export function PaymentsPage({
   payments,
   clients,
@@ -127,32 +95,18 @@ export function PaymentsPage({
   onDeletePayment,
   onPayDebt
 }: PaymentsPageProps) {
-  const [expandedPaymentId, setExpandedPaymentId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [filterMode, setFilterMode] = useState<FilterMode>('ALL')
   const [showPaymentPicker, setShowPaymentPicker] = useState(false)
+  const [expandedPaymentId, setExpandedPaymentId] = useState<string | null>(null)
 
-  useEffect(() => {
-    const handle = setTimeout(() => {
-      setDebouncedQuery(searchQuery)
-    }, 300)
-    return () => clearTimeout(handle)
-  }, [searchQuery])
-
-  const formatCurrency = (val: number) =>
-    val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-
-  const totalReceived = useMemo(
-    () => payments.reduce((acc, p) => acc + (p.amount || 0), 0),
-    [payments]
+  const paymentCandidates = useMemo(
+    () =>
+      clients
+        .filter((client) => (clientBalances.get(client.id) || 0) > 0)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [clients, clientBalances]
   )
-
-  const paymentCandidates = useMemo(() => {
-    return clients
-      .filter((c) => (clientBalances.get(c.id) || 0) > 0)
-      .sort((a, b) => a.name.localeCompare(b.name))
-  }, [clients, clientBalances])
 
   useEffect(() => {
     if (paymentCandidates.length <= 1) {
@@ -160,92 +114,86 @@ export function PaymentsPage({
     }
   }, [paymentCandidates.length])
 
-  const filteredPayments = useMemo(() => {
-    const now = new Date()
-    const startOfDay = (dt: Date) =>
-      new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime()
-    const todayStart = startOfDay(now)
-    const weekStart = startOfDay(
-      new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6)
-    )
-    const q = debouncedQuery.trim().toLowerCase()
-    const qDigits = q.replace(/\D/g, '')
+  const currencyFormatter = useMemo(
+    () => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }),
+    []
+  )
 
-    let result = [...payments]
+  const formatCurrency = (val: number) => currencyFormatter.format(val || 0)
+
+  const today = new Date()
+  const currentMonth = today.getMonth()
+  const currentYear = today.getFullYear()
+
+  const receivedThisMonth = useMemo(
+    () =>
+      payments.reduce((acc, payment) => {
+        const d = parseDate(payment.date as any)
+        if (!d) return acc
+        if (d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
+          acc += payment.amount || 0
+        }
+        return acc
+      }, 0),
+    [payments, currentMonth, currentYear]
+  )
+
+  const totalReceived = useMemo(
+    () => payments.reduce((acc, payment) => acc + (payment.amount || 0), 0),
+    [payments]
+  )
+
+  const filteredItems = useMemo<ListItem[]>(() => {
+    const now = new Date()
+    const todayStart = startOfDay(now)
+    const weekStart = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6))
+    const query = searchQuery.trim().toLowerCase()
+
+    let list = payments.map((payment) => {
+      const ts = normalizeTs(payment.date)
+      return {
+        id: payment.id,
+        clientId: payment.clientId,
+        name: payment.clientName || 'Pagamento',
+        amount: payment.amount || 0,
+        date: ts,
+        subtitle: `${formatDayWithTime(ts)} • Recebido`,
+        payment
+      }
+    })
 
     if (filterMode === 'TODAY') {
-      result = result.filter((p) => {
-        const ts = normalizeTs(p.date)
-        if (!ts) return false
-        return startOfDay(new Date(ts)) === todayStart
-      })
-    }
-
-    if (filterMode === 'WEEK') {
-      result = result.filter((p) => {
-        const ts = normalizeTs(p.date)
-        if (!ts) return false
-        return ts >= weekStart && ts <= now.getTime()
-      })
-    }
-
-    if (filterMode === 'MONTH') {
-      result = result.filter((p) => {
-        const d = parseDate(p.date as any)
+      list = list.filter((item) => startOfDay(new Date(item.date)) === todayStart)
+    } else if (filterMode === 'WEEK') {
+      list = list.filter((item) => item.date >= weekStart && item.date <= now.getTime())
+    } else if (filterMode === 'MONTH') {
+      list = list.filter((item) => {
+        const d = parseDate(item.date)
         if (!d) return false
         return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
       })
     }
 
-    if (q) {
-      result = result.filter((p) => {
-        const paymentDate = parseDate(p.date as any)
-        const dateLabel =
-          paymentDate?.toLocaleDateString('pt-BR') || ''
-        const timeLabel =
-          paymentDate?.toLocaleTimeString('pt-BR', {
-            hour: '2-digit',
-            minute: '2-digit'
-          }) || ''
-        const amountText = formatCurrency(p.amount || 0).toLowerCase()
-        const amountDigits = amountText.replace(/\D/g, '')
-        const searchBlob = `${p.clientName || ''} ${dateLabel} ${timeLabel} ${amountText}`.toLowerCase()
-
-        if (qDigits && amountDigits.includes(qDigits)) return true
-        return searchBlob.includes(q)
-      })
+    if (query) {
+      list = list.filter((item) => item.name.toLowerCase().includes(query))
     }
 
     if (filterMode === 'MAX') {
-      return result.sort((a, b) => (b.amount || 0) - (a.amount || 0))
+      list = list.sort((a, b) => (b.amount || 0) - (a.amount || 0))
+    } else {
+      list = list.sort((a, b) => b.date - a.date)
     }
 
-    return result.sort((a, b) => normalizeTs(b.date) - normalizeTs(a.date))
-  }, [payments, debouncedQuery, filterMode])
+    return list
+  }, [payments, searchQuery, filterMode])
 
-  const groupedPayments = useMemo(() => {
-    const groups: { label: string; items: Payment[] }[] = []
-    filteredPayments.forEach((p) => {
-      const ts = normalizeTs(p.date)
-      const label = formatDayLabel(ts)
-      const existing = groups.find((g) => g.label === label)
-      if (existing) existing.items.push(p)
-      else groups.push({ label, items: [p] })
-    })
-    return groups
-  }, [filteredPayments])
-
-  const togglePaymentExpand = (id: string) => {
-    setExpandedPaymentId((prev) => (prev === id ? null : id))
-  }
-
-  const handlePaymentCTA = () => {
+  const handleAddPayment = () => {
     if (paymentCandidates.length === 0) return
     if (paymentCandidates.length === 1) {
       onPayDebt(paymentCandidates[0].id)
       return
     }
-    setShowPaymentPicker((prev) => !prev)
+    setShowPaymentPicker(true)
   }
 
   const handleSelectPaymentClient = (clientId: string) => {
@@ -253,79 +201,117 @@ export function PaymentsPage({
     onPayDebt(clientId)
   }
 
+  const handleRowClick = (item: ListItem) => {
+    setExpandedPaymentId((prev) => (prev === item.id ? null : item.id))
+    console.log('Abrir detalhes do pagamento', item.id)
+  }
+
   return (
     <div
-      className='space-y-4 animate-fade-in'
-      style={{ paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))' }}
+      data-theme='flat-lime'
+      className='min-h-full'
+      style={{
+        background: 'var(--bg)',
+        color: 'var(--text)',
+        paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0px))',
+        paddingLeft: 16,
+        paddingRight: 16
+      }}
     >
-      <h2 className='text-sm uppercase tracking-wider text-slate-500 font-semibold ml-1'>
-        Histórico
-      </h2>
-
-      <div className='bg-slate-900/60 p-5 rounded-2xl border border-slate-800 shadow-sm flex items-center justify-between relative overflow-hidden'>
-        <div className='absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none' />
-        <div className='relative z-10'>
-          <span className='block text-slate-400 text-sm font-medium mb-1'>
-            Total recebido (histórico)
-          </span>
-          <span className='text-3xl font-bold text-white tracking-tight'>
-            {formatCurrency(totalReceived)}
-          </span>
-        </div>
-        <button
-          type='button'
-          onClick={handlePaymentCTA}
+      <div className='flex items-center justify-between mb-6'>
+        <h1 className='text-[24px] font-semibold leading-none'>Pagamentos</h1>
+        <IconButton
+          aria-label='Novo pagamento'
+          onClick={handleAddPayment}
           disabled={paymentCandidates.length === 0}
-          className={`relative z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 ${
-            paymentCandidates.length > 0
-              ? 'bg-blue-600/20 text-blue-200 border border-blue-500/30 hover:bg-blue-600/30'
-              : 'bg-slate-800/60 text-slate-500 border border-slate-700 cursor-not-allowed'
-          }`}
-        >
-          <Plus size={14} />
-          Novo Pagamento
-        </button>
+          icon={<Plus size={22} />}
+          style={{
+            backgroundColor: 'var(--accent)',
+            color: 'var(--accent-ink)',
+            boxShadow: '0 10px 28px -16px var(--shadow)'
+          }}
+        />
       </div>
 
+      <div className='grid grid-cols-2 gap-3 mb-4'>
+        <StatCard label='Recebido no mes' value={formatCurrency(receivedThisMonth)} variant='accent' />
+        <StatCard label='Total recebido' value={formatCurrency(totalReceived)} variant='neutral' />
+      </div>
+
+      <div className='relative mb-3'>
+        <div className='absolute inset-y-0 left-3 flex items-center pointer-events-none'>
+          <Search size={18} style={{ color: 'var(--muted)' }} />
+        </div>
+        <input
+          type='text'
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder='Buscar cliente...'
+          className='w-full flat-input pl-10 pr-11 py-3 text-base outline-none focus:ring-2'
+          style={{
+            background: 'var(--surface-2)',
+            color: 'var(--text)',
+            borderColor: 'var(--border)',
+            boxShadow: 'none',
+            caretColor: 'var(--accent)',
+            borderRadius: 9999
+          }}
+        />
+        {searchQuery && (
+          <button
+            type='button'
+            onClick={() => setSearchQuery('')}
+            className='absolute inset-y-0 right-3 flex items-center'
+            style={{ color: 'var(--muted)' }}
+            aria-label='Limpar busca'
+          >
+            <X size={16} />
+          </button>
+        )}
+      </div>
+
+      <FilterChips
+        value={filterMode}
+        onChange={setFilterMode}
+        options={[
+          { label: 'Todos', value: 'ALL' },
+          { label: 'Hoje', value: 'TODAY' },
+          { label: 'Semana', value: 'WEEK' },
+          { label: 'Mes', value: 'MONTH' },
+          { label: 'Maior valor', value: 'MAX' }
+        ]}
+      />
+
       {showPaymentPicker && paymentCandidates.length > 1 && (
-        <div className='bg-slate-900/70 border border-slate-800 rounded-2xl p-4 shadow-sm'>
-          <div className='flex items-center justify-between mb-3'>
-            <p className='text-sm font-semibold text-slate-200'>
-              Selecione um cliente para receber
-            </p>
+        <div className='flat-card p-4 mt-4 space-y-3'>
+          <div className='flex items-center justify-between'>
+            <p className='text-sm font-semibold'>Selecione um cliente</p>
             <button
               type='button'
               onClick={() => setShowPaymentPicker(false)}
-              className='text-slate-500 hover:text-slate-200 transition-colors'
-              aria-label='Fechar seleção'
+              aria-label='Fechar selecao'
+              style={{ color: 'var(--muted)' }}
             >
               <X size={16} />
             </button>
           </div>
-          <div className='max-h-56 overflow-y-auto custom-scrollbar space-y-2'>
+          <div className='max-h-56 overflow-y-auto no-scrollbar space-y-2'>
             {paymentCandidates.map((client) => {
               const balance = clientBalances.get(client.id) || 0
-              const initials = getInitials(client.name)
-              const colors = getAvatarColors(client.name)
               return (
                 <button
                   key={client.id}
                   type='button'
                   onClick={() => handleSelectPaymentClient(client.id)}
-                  className='w-full flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 text-left hover:border-slate-700 transition-all active:scale-[0.98]'
+                  className='w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl transition-colors'
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: `1px solid var(--border)`
+                  }}
                 >
-                  <div className='flex items-center gap-3 min-w-0'>
-                    <div
-                      className='h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0'
-                      style={{ backgroundColor: colors.bg, color: colors.text }}
-                    >
-                      {initials}
-                    </div>
-                    <span className='text-sm text-slate-100 font-semibold truncate'>
-                      {client.name}
-                    </span>
-                  </div>
-                  <span className='text-sm font-semibold text-emerald-300 tabular-nums'>
+                  <span className='text-sm font-semibold'>{client.name}</span>
+                  <span className='text-sm font-semibold' style={{ color: 'var(--accent)' }}>
                     {formatCurrency(balance)}
                   </span>
                 </button>
@@ -335,204 +321,110 @@ export function PaymentsPage({
         </div>
       )}
 
-      <div className='relative'>
-        <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
-          <Search size={18} className='text-slate-500' />
-        </div>
-        <input
-          type='text'
-          className='w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all'
-          placeholder='Buscar por cliente, valor ou data...'
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className='absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-white transition-colors active:scale-95'
-            aria-label='Limpar busca'
-          >
-            <X size={16} />
-          </button>
-        )}
-      </div>
-
-      <div className='flex gap-2 overflow-x-auto no-scrollbar pt-0.5'>
-        {[
-          { label: 'Todos', value: 'ALL' as const },
-          { label: 'Hoje', value: 'TODAY' as const },
-          { label: 'Semana', value: 'WEEK' as const },
-          { label: 'Mês', value: 'MONTH' as const },
-          { label: 'Maior valor', value: 'MAX' as const }
-        ].map((chip) => {
-          const isActive = filterMode === chip.value
-          return (
-            <button
-              key={chip.value}
-              type='button'
-              onClick={() => setFilterMode(chip.value)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
-                isActive
-                  ? 'bg-blue-600/20 text-blue-200 border-blue-500/30'
-                  : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:text-slate-200'
-              }`}
-            >
-              {chip.label}
-            </button>
-          )
-        })}
+      <div className='mt-6 mb-3 flex items-center justify-between'>
+        <h3 className='text-sm font-semibold uppercase tracking-wide' style={{ color: 'var(--muted)' }}>
+          Lancamentos Recentes
+        </h3>
+        <span className='text-xs' style={{ color: 'var(--muted)' }}>
+          {filteredItems.length} itens
+        </span>
       </div>
 
       {payments.length === 0 ? (
-        <div className='text-center py-20 px-6 rounded-2xl bg-slate-900 border border-slate-800 border-dashed'>
-          <Wallet size={48} className='mx-auto text-slate-700 mb-4' />
-          <p className='text-slate-400 text-lg'>Nenhum pagamento registrado.</p>
-          <p className='text-slate-600 text-sm mt-1'>
-            Os pagamentos confirmados aparecerão aqui.
+        <div
+          className='flat-card p-6 text-center'
+          style={{
+            borderStyle: 'dashed',
+            borderColor: 'var(--border)'
+          }}
+        >
+          <Wallet size={48} className='mx-auto mb-3' style={{ color: 'var(--muted)' }} />
+          <p className='text-base font-semibold'>Nenhum pagamento registrado</p>
+          <p className='text-sm' style={{ color: 'var(--muted)' }}>
+            Os pagamentos aparecerão aqui.
           </p>
         </div>
-      ) : filteredPayments.length === 0 ? (
-        <div className='text-center py-16 px-6 rounded-2xl bg-slate-900/60 border border-slate-800'>
-          <p className='text-slate-400 text-base'>Nenhum pagamento encontrado</p>
+      ) : filteredItems.length === 0 ? (
+        <div className='flat-card p-4 text-center'>
+          <p className='text-sm' style={{ color: 'var(--muted)' }}>
+            Nenhum resultado para essa busca.
+          </p>
         </div>
       ) : (
-        <div className='space-y-4'>
-          {groupedPayments.map((group) => (
-            <div key={group.label} className='space-y-2'>
-              <span className='inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-slate-900/60 border border-slate-800 text-slate-400'>
-                {group.label}
-              </span>
-              <div className='space-y-2'>
-                {group.items.map((payment) => {
-                  const paymentDate = parseDate(payment.date as any)
-                  const dateLabel =
-                    paymentDate?.toLocaleDateString('pt-BR') || 'Data indisponível'
-                  const timeLabel =
-                    paymentDate?.toLocaleTimeString('pt-BR', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }) || '--:--'
-                  const isExpanded = expandedPaymentId === payment.id
-
-                  return (
-                    <div
-                      key={payment.id}
-                      className='bg-slate-900/60 rounded-xl border border-slate-800 overflow-hidden shadow-[0_6px_18px_rgba(0,0,0,0.18)] transition-all'
-                    >
-                      <button
-                        type='button'
-                        onClick={() => togglePaymentExpand(payment.id)}
-                        className='w-full px-3.5 py-3 flex items-center justify-between gap-3 text-left hover:border-slate-700 active:scale-[0.98] active:opacity-90 transition-all'
-                      >
-                        <div className='flex gap-3 items-center min-w-0'>
-                          <div className='h-10 w-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-500/15 border border-emerald-500/30 text-emerald-300'>
-                            <Wallet size={18} />
-                          </div>
-                          <div className='min-w-0'>
-                            <p className='text-white font-semibold truncate'>
-                              {payment.clientName}
-                            </p>
-                            <p className='text-xs text-slate-500'>
-                              {dateLabel} • {timeLabel}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className='text-right flex items-center gap-2 shrink-0'>
-                          <span className='text-emerald-400 font-bold text-base tabular-nums'>
-                            {formatCurrency(payment.amount)}
-                          </span>
-                          {isExpanded ? (
-                            <ChevronUp size={18} className='text-slate-500' />
-                          ) : (
-                            <ChevronDown size={18} className='text-slate-500' />
-                          )}
-                        </div>
-                      </button>
-
-                      {isExpanded && (
-                        <div className='px-3.5 pb-3 pt-2 border-t border-slate-800/70 bg-slate-900/40 animate-fade-in'>
-                          <div className='mt-2 mb-3 space-y-2'>
-                            <h4 className='text-[11px] font-semibold text-slate-500 uppercase tracking-wide'>
-                              Itens pagos
-                            </h4>
-
-                            {payment.salesSnapshot && payment.salesSnapshot.length > 0 ? (
-                              <div className='space-y-2'>
-                                {payment.salesSnapshot.map((sale: Sale) => {
-                                  const saleDate = parseDate(sale.date as any)
-                                  const saleLabel =
-                                    saleDate?.toLocaleDateString('pt-BR') || 'Data'
-                                  return (
-                                    <div
-                                      key={sale.id}
-                                      className='flex justify-between text-sm text-slate-300 border-b border-slate-800/70 pb-1.5 last:border-0'
-                                    >
-                                      <span>
-                                        {saleLabel} - {sale.liters}{' '}
-                                        {sale.liters === 1 ? 'Litro' : 'Litros'}
-                                      </span>
-                                      <span>{formatCurrency(sale.totalValue)}</span>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            ) : (
-                              <p className='text-sm text-slate-500 italic'>
-                                Detalhes não disponíveis para este registro.
-                              </p>
-                            )}
-                          </div>
-
-                          <div className='flex gap-2'>
-                            {payment.salesSnapshot && (
-                              <button
-                                onClick={() => void onGenerateReceipt(payment)}
-                                className='flex-1 py-2 bg-blue-600/10 text-blue-300 hover:bg-blue-600/20 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 border border-blue-600/30 transition-colors active:scale-95'
-                              >
-                                <FileText size={16} />
-                                Ver comprovante PDF
-                              </button>
-                            )}
-
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onDeletePayment(payment.id)
-                              }}
-                              className='px-3 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors border border-red-500/30 active:scale-95'
-                              title='Apagar registro'
+        <div className='space-y-3 pb-4'>
+          {filteredItems.map((item) => (
+            <PaymentRow
+              key={item.id}
+              name={item.name}
+              subtitle={item.subtitle}
+              amount={formatCurrency(item.amount)}
+              status='received'
+              onClick={() => handleRowClick(item)}
+              isExpanded={expandedPaymentId === item.id}
+            >
+              {item.payment && (
+                <div className='space-y-3'>
+                  {item.payment.salesSnapshot && item.payment.salesSnapshot.length > 0 && (
+                    <div className='space-y-2'>
+                      <p className='text-xs font-semibold uppercase' style={{ color: 'var(--muted)' }}>
+                        Itens pagos
+                      </p>
+                      <div className='space-y-2'>
+                        {item.payment.salesSnapshot.map((sale, idx) => {
+                          const saleDate = parseDate(sale.date as any)
+                          const saleLabel = saleDate
+                            ? saleDate.toLocaleDateString('pt-BR')
+                            : 'Data'
+                          return (
+                            <div
+                              key={sale.id || idx}
+                              className='flex items-center justify-between text-sm'
+                              style={{ color: 'var(--text)' }}
                             >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                              <span>
+                                {saleLabel} • {sale.liters} {sale.liters === 1 ? 'litro' : 'litros'}
+                              </span>
+                              <span className='font-semibold'>{formatCurrency(sale.totalValue)}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
-                  )
-                })}
-              </div>
-            </div>
+                  )}
+
+                  <div className='flex gap-2'>
+                    <button
+                      type='button'
+                      onClick={() => onGenerateReceipt(item.payment!)}
+                      className='flex-1 px-3 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-transform active:scale-[0.99]'
+                      style={{
+                        background: 'var(--surface)',
+                        border: `1px solid var(--border)`
+                      }}
+                    >
+                      <FileText size={16} />
+                      Ver comprovante
+                    </button>
+                    <button
+                      type='button'
+                      onClick={() => onDeletePayment(item.payment.id)}
+                      className='px-3 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-transform active:scale-[0.99]'
+                      style={{
+                        background: 'var(--surface)',
+                        border: `1px solid var(--border)`,
+                        color: 'var(--danger)'
+                      }}
+                    >
+                      <Trash2 size={16} />
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              )}
+            </PaymentRow>
           ))}
         </div>
       )}
-
-      <button
-        type='button'
-        onClick={handlePaymentCTA}
-        disabled={paymentCandidates.length === 0}
-        className={`fixed right-5 rounded-full h-12 w-12 flex items-center justify-center shadow-lg transition-all active:scale-95 ${
-          paymentCandidates.length > 0
-            ? 'bg-blue-600 text-white hover:bg-blue-500'
-            : 'bg-slate-800 text-slate-600 cursor-not-allowed'
-        }`}
-        style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom, 0px))' }}
-        aria-label='Novo pagamento'
-      >
-        <Plus size={20} />
-      </button>
     </div>
   )
 }
-
-

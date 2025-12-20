@@ -809,7 +809,6 @@ function App() {
 
   const minimalHeaderActive =
     (activeTab === 'CLIENTS' && !isClientDetailsView) ||
-    activeTab === 'PAYMENTS' ||
     activeTab === 'REPORTS' ||
     activeTab === 'SETTINGS'
 
@@ -843,7 +842,7 @@ function App() {
     }
 
     if (activeTab === 'PAYMENTS') {
-      return renderMinimalHeader('Meus Pagamentos')
+      return null
     }
 
     if (activeTab === 'REPORTS') {
@@ -876,12 +875,21 @@ function App() {
   const navItemBase =
     'relative flex flex-col items-center justify-center w-16 h-16 transition-all duration-300 group'
   const navIndicator =
-    'absolute -top-2 w-8 h-1 bg-blue-500 rounded-b-full shadow-[0_2px_10px_rgba(59,130,246,0.6)] animate-fade-in'
-  const navActive = 'text-blue-400'
-  const navInactive = 'text-slate-500 hover:text-slate-300'
+    'absolute -top-2 w-8 h-1 rounded-b-full animate-fade-in'
+  const navActive = 'font-semibold'
+  const navInactive = 'opacity-80 hover:opacity-100'
+  const navActiveStyle = { color: 'var(--accent, var(--primary, #b8ff2c))' }
+  const navInactiveStyle = { color: 'var(--muted, #94a3b8)' }
 
   const renderBottomNav = () => (
-    <div className='fixed bottom-0 left-0 right-0 z-40 bg-slate-900 border-t border-slate-800 rounded-t-[2.5rem] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.5)] px-2 pb-6 pt-2'>
+    <div
+      className='fixed bottom-0 left-0 right-0 z-40 rounded-t-[2.2rem] px-3 pb-6 pt-3'
+      style={{
+        background: 'var(--surface, #0b1221)',
+        borderTop: '1px solid var(--border, #1e293b)',
+        boxShadow: '0 -12px 30px -22px rgba(0, 0, 0, 0.55)'
+      }}
+    >
       <div className='flex items-center justify-between gap-2 max-w-lg mx-auto w-full px-4'>
         <button
           onClick={() => {
@@ -893,8 +901,17 @@ function App() {
           className={`${navItemBase} ${
             activeTab === 'CLIENTS' ? navActive : navInactive
           }`}
+          style={activeTab === 'CLIENTS' ? navActiveStyle : navInactiveStyle}
         >
-          {activeTab === 'CLIENTS' && <span className={navIndicator} />}
+          {activeTab === 'CLIENTS' && (
+            <span
+              className={navIndicator}
+              style={{
+                background: 'var(--accent, var(--primary, #b8ff2c))',
+                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
+              }}
+            />
+          )}
           <Users
             size={24}
             strokeWidth={activeTab === 'CLIENTS' ? 2.5 : 1.5}
@@ -913,8 +930,17 @@ function App() {
           className={`${navItemBase} ${
             activeTab === 'PAYMENTS' ? navActive : navInactive
           }`}
+          style={activeTab === 'PAYMENTS' ? navActiveStyle : navInactiveStyle}
         >
-          {activeTab === 'PAYMENTS' && <span className={navIndicator} />}
+          {activeTab === 'PAYMENTS' && (
+            <span
+              className={navIndicator}
+              style={{
+                background: 'var(--accent, var(--primary, #b8ff2c))',
+                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
+              }}
+            />
+          )}
           <CustomPaymentIcon
             size={24}
             className='mb-1 transition-transform group-active:scale-90'
@@ -932,8 +958,17 @@ function App() {
           className={`${navItemBase} ${
             activeTab === 'REPORTS' ? navActive : navInactive
           }`}
+          style={activeTab === 'REPORTS' ? navActiveStyle : navInactiveStyle}
         >
-          {activeTab === 'REPORTS' && <span className={navIndicator} />}
+          {activeTab === 'REPORTS' && (
+            <span
+              className={navIndicator}
+              style={{
+                background: 'var(--accent, var(--primary, #b8ff2c))',
+                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
+              }}
+            />
+          )}
           <TrendingUp
             size={24}
             strokeWidth={activeTab === 'REPORTS' ? 2.5 : 1.5}
@@ -952,8 +987,17 @@ function App() {
           className={`${navItemBase} ${
             activeTab === 'SETTINGS' ? navActive : navInactive
           }`}
+          style={activeTab === 'SETTINGS' ? navActiveStyle : navInactiveStyle}
         >
-          {activeTab === 'SETTINGS' && <span className={navIndicator} />}
+          {activeTab === 'SETTINGS' && (
+            <span
+              className={navIndicator}
+              style={{
+                background: 'var(--accent, var(--primary, #b8ff2c))',
+                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
+              }}
+            />
+          )}
           <SettingsIcon
             size={24}
             strokeWidth={activeTab === 'SETTINGS' ? 2.5 : 1.5}
@@ -966,7 +1010,11 @@ function App() {
   )
 
   const mainPaddingClass =
-    activeTab === 'CLIENTS' && isClientDetailsView ? 'p-0' : 'p-4'
+    activeTab === 'CLIENTS' && isClientDetailsView
+      ? 'p-0'
+      : activeTab === 'PAYMENTS'
+        ? 'p-0'
+        : 'p-4'
   const mainAdditionalTop = minimalHeaderActive ? 'pt-6' : ''
 
   if (!authReady) {

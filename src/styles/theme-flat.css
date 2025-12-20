@@ -1,0 +1,63 @@
+[data-theme='flat-lime'] {
+  --bg: #0b0f14;
+  --surface: #121821;
+  --surface-2: #161f2a;
+  --border: #1e2a38;
+  --text: #eaf0f7;
+  --muted: #94a3b8;
+  --accent: #b8ff2c;
+  --accent-ink: #0b0f14;
+  --warning: #ffd84d;
+  --danger: #ff5a6a;
+  --shadow: rgba(0, 0, 0, 0.35);
+
+  color: var(--text);
+  background-color: var(--bg);
+}
+
+[data-theme='flat-lime'] .flat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 16px 40px -32px var(--shadow);
+}
+
+[data-theme='flat-lime'] .flat-card-muted {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+[data-theme='flat-lime'] .flat-chip {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+[data-theme='flat-lime'] .flat-chip.is-active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+[data-theme='flat-lime'] .flat-input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 14px;
+}
+
+[data-theme='flat-lime'] .flat-input::placeholder {
+  color: var(--muted);
+}
+
+[data-theme='flat-lime'] .flat-pill {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+[data-theme='flat-lime'] .flat-pill.warning {
+  background: var(--warning);
+  color: var(--accent-ink);
+  border-color: var(--warning);
+}
