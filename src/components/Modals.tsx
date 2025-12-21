@@ -10,8 +10,7 @@ import {
   Trash2,
   FileText,
   Share2,
-  Tag,
-  Pencil
+  Tag
 } from 'lucide-react'
 import type {
   Client,
@@ -338,17 +337,8 @@ export const AddSaleModal = ({
   const [priceInput, setPriceInput] = useState(String(currentPrice || 0))
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('PRAZO')
-  const [isEditingPrice, setIsEditingPrice] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [translateY, setTranslateY] = useState(100)
-  const [isDragging, setIsDragging] = useState(false)
-  const [isAnimatingOut, setIsAnimatingOut] = useState(false)
-  const [shouldRender, setShouldRender] = useState(false)
-  const startYRef = useRef(0)
-  const sheetRef = useRef<HTMLDivElement>(null)
   const dateInputRef = useRef<HTMLInputElement>(null)
-  const priceInputRef = useRef<HTMLInputElement>(null)
-  const closingFromInsideRef = useRef(false)
 
   const parseLiters = (value: string) => {
     const parsed = parseFloat(value.replace(',', '.'))
@@ -382,8 +372,7 @@ export const AddSaleModal = ({
       setDate(new Date().toISOString().split('T')[0])
       setPriceInput(formatNumberInput(currentPrice || 0))
       setPaymentStatus('PRAZO')
-      setIsEditingPrice(false)
-      handleClose()
+      onClose()
     } finally {
       setIsSubmitting(false)
     }
@@ -405,96 +394,26 @@ export const AddSaleModal = ({
 
   useEffect(() => {
     if (!isOpen) return
-    closingFromInsideRef.current = false
-    setShouldRender(true)
-    setTranslateY(100)
-    const raf = requestAnimationFrame(() => setTranslateY(0))
-    const focusTimer = setTimeout(() => {
-      dateInputRef.current?.focus()
-    }, 120)
     setLitersInput('1')
     setDate(new Date().toISOString().split('T')[0])
     setPriceInput(formatNumberInput(currentPrice || 0))
     setPaymentStatus('PRAZO')
-    setIsEditingPrice(false)
+    const focusTimer = setTimeout(() => {
+      dateInputRef.current?.focus()
+    }, 120)
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') handleClose()
+      if (event.key === 'Escape') onClose()
     }
+    document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleKeyDown)
     return () => {
-      cancelAnimationFrame(raf)
       clearTimeout(focusTimer)
       window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen, currentPrice])
-
-  useEffect(() => {
-    if (!shouldRender) return
-    document.body.style.overflow = 'hidden'
-    return () => {
       document.body.style.overflow = ''
     }
-  }, [shouldRender])
+  }, [isOpen, currentPrice, onClose])
 
-  useEffect(() => {
-    if (isOpen || !shouldRender) return
-    if (closingFromInsideRef.current) {
-      closingFromInsideRef.current = false
-      const timer = setTimeout(() => setShouldRender(false), 0)
-      return () => clearTimeout(timer)
-    }
-    setIsAnimatingOut(true)
-    setTranslateY(100)
-    const timer = setTimeout(() => {
-      setIsAnimatingOut(false)
-      setShouldRender(false)
-    }, 220)
-    return () => clearTimeout(timer)
-  }, [isOpen, shouldRender])
-
-  const handleClose = () => {
-    if (isAnimatingOut) return
-    closingFromInsideRef.current = true
-    setIsAnimatingOut(true)
-    setTranslateY(100)
-    setTimeout(() => {
-      setIsAnimatingOut(false)
-      onClose()
-    }, 220)
-  }
-
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return
-    const target = e.target as HTMLElement
-    if (target.closest('button')) return
-    setIsDragging(true)
-    startYRef.current = e.clientY
-    e.currentTarget.setPointerCapture(e.pointerId)
-  }
-
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging) return
-    const delta = Math.max(0, e.clientY - startYRef.current)
-    setTranslateY(delta)
-  }
-
-  const handlePointerUp = () => {
-    if (!isDragging) return
-    setIsDragging(false)
-    const sheetHeight = sheetRef.current?.getBoundingClientRect().height || 1
-    if (translateY > sheetHeight * 0.25) {
-      handleClose()
-      return
-    }
-    setTranslateY(0)
-  }
-
-  if (!shouldRender) return null
-
-  const backdropOpacity = Math.max(
-    0,
-    0.6 - Math.min(0.6, (translateY / (sheetRef.current?.offsetHeight || 1)) * 0.45)
-  )
+  if (!isOpen) return null
 
   const formattedDate = (() => {
     const [year, month, day] = date.split('-')
@@ -521,55 +440,44 @@ export const AddSaleModal = ({
   const isValid = litersValue > 0 && priceValue > 0
 
   return (
-    <div className='fixed inset-0 z-50 flex items-end justify-center'>
+    <div
+      className='fixed inset-0 z-50 flex items-center justify-center px-4 py-6 bg-black/70 backdrop-blur-lg'
+      onClick={onClose}
+    >
       <div
-        className='absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity'
-        style={{ opacity: backdropOpacity }}
-        onClick={handleClose}
-        aria-hidden='true'
-      />
-      <div
-        ref={sheetRef}
-        className='relative w-full max-w-2xl mx-auto bg-slate-950/95 border border-slate-900 rounded-t-[28px] shadow-2xl shadow-black/50 backdrop-blur-xl flex flex-col'
-        style={{
-          maxHeight: '75vh',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          transform: `translateY(${translateY}px)`,
-          transition: isDragging ? 'none' : 'transform 200ms ease'
-        }}
+        className='w-full max-w-xl rounded-2xl shadow-2xl shadow-black/50 overflow-hidden flex flex-col max-h-[90vh]'
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
       >
         <div
-          className='pt-4 pb-3 flex flex-col gap-3 cursor-grab'
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          style={{ touchAction: 'none' }}
+          className='flex items-center justify-between px-5 py-4 border-b'
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
         >
-          <span className='h-1.5 w-12 rounded-full bg-slate-700/70 self-center' />
-          <div className='w-full flex items-center justify-between px-5'>
-            <button
-              type='button'
-              onClick={handleClose}
-              className='h-11 w-11 rounded-full flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors'
-              aria-label='Fechar'
-            >
-              <X size={20} />
-            </button>
-            <h3 className='text-lg font-semibold text-white tracking-tight'>
-              Nova Venda
-            </h3>
-            <span className='w-11' aria-hidden />
-          </div>
+          <h3 className='text-lg font-semibold tracking-tight'>
+            Nova Venda
+          </h3>
+          <button
+            type='button'
+            onClick={onClose}
+            className='h-10 w-10 rounded-full flex items-center justify-center transition-colors'
+            aria-label='Fechar'
+            style={{
+              color: 'var(--muted)',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)'
+            }}
+          >
+            <X size={20} />
+          </button>
         </div>
 
         <form
           id='add-sale-form'
           onSubmit={handleSubmit}
           className='flex-1 overflow-y-auto px-5 pb-5 space-y-5 custom-scrollbar'
+          style={{ background: 'var(--surface)' }}
         >
-          <div className='space-y-2'>
-            <p className='text-sm font-medium text-slate-400'>Data da venda</p>
+          <div className='space-y-2 mt-2'>
             <div className='relative'>
               <input
                 ref={dateInputRef}
@@ -582,50 +490,90 @@ export const AddSaleModal = ({
               <button
                 type='button'
                 onClick={openDatePicker}
-                className='w-full rounded-2xl bg-slate-900/85 border border-slate-800/80 px-4 py-4 flex items-center justify-between text-left hover:border-slate-700 transition-colors shadow-lg shadow-black/30'
+                className='w-full rounded-2xl px-4 py-3 flex items-center justify-between text-left transition-colors shadow-lg shadow-black/30'
+                style={{
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)'
+                }}
               >
                 <div>
-                  <p className='text-xs text-slate-400'>Data da venda</p>
-                  <p className='text-lg font-semibold text-white'>{formattedDate}</p>
+                  <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                    Data da venda
+                  </p>
+                  <p className='text-lg font-semibold' style={{ color: 'var(--text)' }}>
+                    {formattedDate}
+                  </p>
                 </div>
-                <CalendarDays size={20} className='text-slate-400' />
+                <CalendarDays size={20} style={{ color: 'var(--muted)' }} />
               </button>
+            </div>
+            <div className='flex gap-2'>
+              {[
+                { label: 'Hoje', value: new Date() },
+                { label: 'Ontem', value: new Date(Date.now() - 86_400_000) }
+              ].map((opt) => {
+                const iso = opt.value.toISOString().split('T')[0]
+                const isActive = date === iso
+                return (
+                  <button
+                    key={opt.label}
+                    type='button'
+                    onClick={() => setDate(iso)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                      isActive ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)]' : ''
+                    }`}
+                    style={
+                      isActive
+                        ? undefined
+                        : { borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--surface-2)' }
+                    }
+                  >
+                    {opt.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           <div className='space-y-2'>
-            <p className='text-sm font-medium text-slate-400'>Quantidade</p>
-            <div className='rounded-[26px] bg-slate-900/90 border border-slate-800/80 flex items-center px-2 py-2 shadow-lg shadow-black/30'>
+            <p className='text-sm font-medium' style={{ color: 'var(--muted)' }}>
+              Quantidade
+            </p>
+            <div
+              className='rounded-[26px] flex items-center px-3 py-3 shadow-lg shadow-black/30'
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+            >
               <button
                 type='button'
                 onClick={handleDecrement}
                 disabled={litersValue <= 1}
-                className='h-12 w-12 rounded-2xl border border-slate-800 text-slate-900 font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center'
+                className='h-12 w-12 rounded-2xl border text-slate-900 font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center'
                 style={{
                   background: 'var(--accent, var(--primary, #b8ff2c))',
-                  boxShadow: '0 6px 20px rgba(184,255,44,0.35)'
+                  boxShadow: '0 6px 20px rgba(184,255,44,0.35)',
+                  borderColor: 'var(--accent, #b8ff2c)'
                 }}
               >
                 <Minus size={20} />
               </button>
-              <div className='flex-1 flex flex-col items-center justify-center gap-1'>
-                <div className='flex items-end gap-2 text-white font-bold'>
-                  <input
-                    type='number'
-                    inputMode='decimal'
-                    min='1'
-                    step='1'
-                    value={litersInput}
-                    onFocus={() => setLitersInput(litersValue ? String(litersValue) : '')}
-                    onChange={(e) => setLitersInput(e.target.value)}
-                    onBlur={() => setLitersInput(String(Math.max(1, parseLiters(litersInput))))}
-                    className='w-24 bg-transparent text-center text-3xl font-bold text-white focus:outline-none tabular-nums'
-                    aria-label='Litros'
-                  />
-                  <span className='text-base text-slate-400 font-semibold pb-1'>L</span>
+            <div className='flex-1 flex flex-col items-center justify-center gap-1'>
+                  <div className='flex items-end gap-2 text-white font-bold'>
+                    <input
+                      type='number'
+                      inputMode='decimal'
+                      min='1'
+                      step='1'
+                      value={litersInput}
+                      onFocus={() => setLitersInput('')}
+                      onChange={(e) => setLitersInput(e.target.value)}
+                      onBlur={() => setLitersInput(String(Math.max(1, parseLiters(litersInput))))}
+                      className='w-24 bg-transparent text-center text-3xl font-bold text-white focus:outline-none tabular-nums'
+                      aria-label='Litros'
+                    />
+                    <span className='text-base text-slate-400 font-semibold pb-1'>L</span>
+                  </div>
                 </div>
-                <p className='text-xs text-slate-500'>Minimo 1 litro</p>
-              </div>
               <button
                 type='button'
                 onClick={handleIncrement}
@@ -640,79 +588,14 @@ export const AddSaleModal = ({
             </div>
           </div>
 
-          <div className='rounded-2xl bg-slate-900/85 border border-slate-800/80 p-4 flex items-center justify-between gap-3 shadow-lg shadow-black/30'>
+          <div
+            className='rounded-2xl p-4 flex items-center justify-between shadow-inner shadow-black/40'
+            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+          >
             <div className='flex flex-col'>
-              <span className='text-xs text-slate-400'>Preco aplicado</span>
-              {isEditingPrice ? (
-                <div className='flex items-center gap-2 mt-1'>
-                  <input
-                    ref={priceInputRef}
-                    type='number'
-                    inputMode='decimal'
-                    min='0'
-                    step='0.01'
-                    value={priceInput}
-                    onChange={(e) => setPriceInput(e.target.value)}
-                    onBlur={() => setIsEditingPrice(false)}
-                    className='w-28 rounded-lg bg-slate-900 border border-slate-700 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  />
-                  <span className='text-sm text-slate-500'>/ litro</span>
-                </div>
-              ) : (
-                <p className='text-lg font-semibold text-white mt-0.5'>
-                  {formatCurrency(priceValue || currentPrice || 0)} / litro
-                </p>
-              )}
-            </div>
-            <button
-              type='button'
-              onClick={() => {
-                setIsEditingPrice(true)
-                setTimeout(() => priceInputRef.current?.focus(), 50)
-              }}
-              className='h-10 w-10 rounded-full flex items-center justify-center bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors'
-              aria-label='Editar preco por litro'
-            >
-              <Pencil size={18} style={{ color: 'var(--accent, #b8ff2c)' }} />
-            </button>
-          </div>
-
-          <div className='space-y-3'>
-            <p className='text-sm font-medium text-slate-400'>Status de Pagamento</p>
-            <div className='grid grid-cols-2 gap-3'>
-              <button
-                type='button'
-                onClick={() => setPaymentStatus('PRAZO')}
-                className={`rounded-full border px-4 py-3 text-center font-semibold transition-all ${
-                  paymentStatus === 'PRAZO'
-                    ? 'bg-amber-500/20 border-amber-400/60 text-amber-200 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)]'
-                    : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                A prazo
-              </button>
-              <button
-                type='button'
-                onClick={() => setPaymentStatus('AVISTA')}
-                className={`rounded-full border px-4 py-3 text-center font-semibold transition-all ${
-                  paymentStatus === 'AVISTA'
-                    ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-200 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)]'
-                    : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                A vista
-              </button>
-            </div>
-            {paymentStatus === 'AVISTA' && (
-              <p className='text-xs text-slate-500'>
-                Ao salvar, um pagamento sera registrado automaticamente.
-              </p>
-            )}
-          </div>
-
-          <div className='rounded-2xl bg-slate-900/80 border border-slate-800/80 p-4 flex items-center justify-between shadow-inner shadow-black/40'>
-            <div className='flex flex-col'>
-              <span className='text-xs text-slate-400'>Valor Total</span>
+              <span className='text-xs' style={{ color: 'var(--muted)' }}>
+                Valor Total
+              </span>
               <span
                 className='text-3xl font-bold mt-1 tabular-nums'
                 style={{ color: 'var(--accent, #b8ff2c)' }}
@@ -720,26 +603,73 @@ export const AddSaleModal = ({
                 {formatCurrency(totalValue || 0)}
               </span>
             </div>
-            <div className='text-right text-xs text-slate-500'>
-              {formatCurrency(priceValue || currentPrice || 0)} / litro
+            <div className='text-right text-xs flex flex-col items-end gap-1' style={{ color: 'var(--muted)' }}>
+              <span>Valor por litro</span>
+              <span className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                {formatCurrency(priceValue || currentPrice || 0)}
+              </span>
             </div>
           </div>
 
+          <div className='space-y-3'>
+            <p className='text-sm font-medium' style={{ color: 'var(--muted)' }}>
+              Status de Pagamento
+            </p>
+            <div className='grid grid-cols-2 gap-2'>
+              <button
+                type='button'
+                onClick={() => setPaymentStatus('PRAZO')}
+                className={`rounded-lg border px-3 py-2 text-center text-sm font-semibold transition-all ${
+                  paymentStatus === 'PRAZO'
+                    ? 'bg-amber-500/15 border-amber-400/60 text-amber-100'
+                    : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--muted)] hover:border-[var(--border)]'
+                }`}
+              >
+                A prazo
+              </button>
+              <button
+                type='button'
+                onClick={() => setPaymentStatus('AVISTA')}
+                className={`rounded-lg border px-3 py-2 text-center text-sm font-semibold transition-all ${
+                  paymentStatus === 'AVISTA'
+                    ? 'bg-emerald-500/15 border-emerald-400/60 text-emerald-100'
+                    : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--muted)] hover:border-[var(--border)]'
+                }`}
+              >
+                A vista
+              </button>
+            </div>
+            {paymentStatus === 'AVISTA' && (
+              <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                Ao salvar, um pagamento sera registrado automaticamente.
+              </p>
+            )}
+          </div>
+
           {validationMessage && (
-            <div className='bg-red-500/10 border border-red-500/25 text-red-200 text-sm px-3 py-2 rounded-xl'>
+            <div className='bg-red-500/10 border border-red-500/25 text-red-200 text-xs px-3 py-2 rounded-xl'>
               {validationMessage}
             </div>
           )}
         </form>
 
         <div
-          className='sticky bottom-0 w-full border-t border-slate-800 bg-slate-900/95 backdrop-blur px-5 py-4 flex gap-3'
-          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+          className='sticky bottom-0 w-full backdrop-blur px-5 py-4 flex gap-3'
+          style={{
+            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+            background: 'var(--surface)',
+            borderTop: '1px solid var(--border)'
+          }}
         >
           <button
             type='button'
-            onClick={handleClose}
-            className='flex-1 h-11 bg-slate-800 text-white rounded-xl font-semibold hover:bg-slate-700 transition-colors active:scale-95'
+            onClick={onClose}
+            className='flex-1 h-11 rounded-xl font-semibold hover:opacity-90 transition-colors active:scale-95'
+            style={{
+              background: 'var(--surface-2)',
+              color: 'var(--text)',
+              border: '1px solid var(--border)'
+            }}
           >
             Cancelar
           </button>
@@ -754,9 +684,19 @@ export const AddSaleModal = ({
               color: '#0f172a'
             }}
           >
-            {isSubmitting ? 'Salvando...' : 'Confirmar Venda'}
+            {isSubmitting ? (
+              <span className='inline-flex items-center gap-2'>
+                <span className='h-4 w-4 rounded-full border-2 border-[var(--accent-ink,#0b0f14)] border-t-transparent animate-spin' />
+                Salvando...
+              </span>
+            ) : (
+              'Confirmar'
+            )}
           </button>
         </div>
+        <p className='text-[11px] text-center pb-3' style={{ color: 'var(--muted)' }}>
+          Salva a venda e atualiza o histórico do cliente.
+        </p>
       </div>
     </div>
   )

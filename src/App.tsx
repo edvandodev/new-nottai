@@ -31,6 +31,7 @@ import { optimisticStore } from './services/optimisticStore'
 
 // Import Pages
 import { ClientsPage } from './pages/clients'
+import { CustomerNotePreviewPage } from './pages/clients/CustomerNotePreviewPage'
 import { ReportsPage } from './pages/reports'
 import { SettingsPage } from './pages/settings'
 import { PaymentsPage } from './pages/payments'
@@ -664,6 +665,11 @@ function App() {
     setIsPayModalOpen(true)
   }
 
+  const handleOpenNotePreview = (clientId: string) => {
+    setSelectedClientId(clientId)
+    navigate(`/clientes/${clientId}/nota`)
+  }
+
   const handleConfirmPayDebt = async (paidAmount: number) => {
     if (!selectedClientId) return
     const client = clients.find((c) => c.id === selectedClientId)
@@ -787,6 +793,7 @@ function App() {
             onEditClient={handleEditClient}
             onAddSale={handleAddSale}
             onPayDebt={handlePayDebt}
+            onGenerateNote={handleOpenNotePreview}
             onDeleteClient={setClientToDeleteId}
             onDeleteSale={setSaleToDeleteId}
             onDeletePayment={setPaymentToDeleteId}
@@ -1188,6 +1195,8 @@ function App() {
   )
 
   const showNewClientSheet = location.pathname === '/clientes/novo'
+  const notePreviewMatch = location.pathname.match(/^\/clientes\/([^/]+)\/nota/)
+  const notePreviewClientId = notePreviewMatch?.[1] || null
   const appTheme =
     activeTab === 'CLIENTS' || activeTab === 'PAYMENTS' ? 'flat-lime' : undefined
 
@@ -1206,6 +1215,19 @@ function App() {
           onSave={handleSaveClient}
           priceSettings={priceSettings}
           existingNames={clients.map((client) => client.name)}
+        />
+      )}
+      {notePreviewClientId && (
+        <CustomerNotePreviewPage
+          clientId={notePreviewClientId}
+          clients={clients}
+          sales={sales}
+          payments={payments}
+          onClose={() => navigate(-1)}
+          onPdfReady={(file) => {
+            setPdfFile(file)
+            setIsPdfViewerOpen(true)
+          }}
         />
       )}
     </div>

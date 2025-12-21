@@ -14,6 +14,7 @@ import {
   Search,
   ShoppingCart,
   Trash2,
+  FileText,
   User as UserIcon,
   Users,
   Wallet,
@@ -33,6 +34,7 @@ type ClientsPageProps = {
   onEditClient: (client: Client) => void
   onAddSale: (clientId: string) => void
   onPayDebt: (clientId: string) => void
+  onGenerateNote: (clientId: string) => void
   onDeleteClient: (clientId: string) => void
   onDeleteSale: (saleId: string) => void
   onDeletePayment: (paymentId: string) => void
@@ -231,6 +233,7 @@ export function ClientsPage({
   onEditClient,
   onAddSale,
   onPayDebt,
+  onGenerateNote,
   onDeleteClient,
   onDeleteSale,
   onDeletePayment,
@@ -1017,6 +1020,19 @@ export function ClientsPage({
             >
               <DollarSign size={18} />
               Receber
+            </button>
+
+            <button
+              onClick={() => onGenerateNote(selectedClient.id)}
+              className='flex-1 h-11 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95'
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)'
+              }}
+            >
+              <FileText size={18} />
+              Gerar Nota
             </button>
           </div>
 
