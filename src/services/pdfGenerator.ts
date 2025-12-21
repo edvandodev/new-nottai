@@ -19,7 +19,7 @@ const buildReceiptDoc = (
   salesPaid: Sale[],
   paymentDate: string
 ) => {
-  const doc = new jsPDF()
+  const doc = new jsPDF({ unit: 'mm', format: [148, 263] })
 
   const pageWidth = doc.internal.pageSize.getWidth()
   const margin = 20

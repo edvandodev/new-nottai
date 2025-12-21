@@ -142,7 +142,7 @@ export const generateCustomerNotePdf = async (
   options: PdfOptions
 ): Promise<ReceiptFileRef> => {
   const emittedAt = options.emittedAt || new Date()
-  const doc = new jsPDF()
+  const doc = new jsPDF({ unit: 'mm', format: [148, 263] })
   const pageWidth = doc.internal.pageSize.getWidth()
   const margin = 16
   let y = 18
