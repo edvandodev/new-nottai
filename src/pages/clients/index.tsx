@@ -14,13 +14,13 @@ import {
   Search,
   ShoppingCart,
   Trash2,
-  FileText,
   User as UserIcon,
   Users,
   Wallet,
   X
 } from 'lucide-react'
 import type { Client, Payment, PriceSettings, Sale } from '@/types'
+import { ClientActionBarInline } from '@/components/ClientActionBarInline'
 import '../../styles/theme-flat.css'
 
 type ClientsPageProps = {
@@ -812,6 +812,8 @@ export function ClientsPage({
     )
     const initials = getInitials(selectedClient.name)
     const avatarColors = getAvatarColors(selectedClient.name)
+    const hasSalesHistory = selectedClientHistory.events.some((e) => e.type === 'sale')
+    const disableGenerateNote = balance <= 0 || !hasSalesHistory
 
     return (
       <div
@@ -985,56 +987,14 @@ export function ClientsPage({
             </div>
           </div>
 
-          <div className='flex gap-3'>
-            <button
-              onClick={() => onAddSale(selectedClient.id)}
-              className='flex-1 h-11 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95'
-              style={{
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                color: 'var(--text)'
-              }}
-            >
-              <Plus size={18} />
-              Nova Venda
-            </button>
-
-            <button
-              onClick={() => onPayDebt(selectedClient.id)}
-              disabled={balance <= 0}
-              className='flex-1 h-11 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95'
-              style={
-                balance > 0
-                  ? {
-                      background: 'var(--accent)',
-                      color: 'var(--accent-ink)',
-                      border: '1px solid var(--accent)'
-                    }
-                  : {
-                      background: 'var(--surface-2)',
-                      color: 'var(--muted)',
-                      border: '1px solid var(--border)',
-                      cursor: 'not-allowed'
-                    }
-              }
-            >
-              <DollarSign size={18} />
-              Receber
-            </button>
-
-            <button
-              onClick={() => onGenerateNote(selectedClient.id)}
-              className='flex-1 h-11 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95'
-              style={{
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                color: 'var(--text)'
-              }}
-            >
-              <FileText size={18} />
-              Gerar Nota
-            </button>
-          </div>
+          <ClientActionBarInline
+            onAddSale={() => onAddSale(selectedClient.id)}
+            onReceive={() => onPayDebt(selectedClient.id)}
+            onGenerateNote={() => onGenerateNote(selectedClient.id)}
+            disableReceive={balance <= 0}
+            disableGenerateNote={disableGenerateNote}
+            className='w-full'
+          />
 
           <div>
             <div className='flex items-center justify-between mb-3 px-1'>
