@@ -1139,6 +1139,7 @@ function App() {
         onClose={() => setIsPayModalOpen(false)}
         onConfirm={handleConfirmPayDebt}
         clientName={clients.find((c) => c.id === selectedClientId)?.name || ''}
+        clientAvatar={clients.find((c) => c.id === selectedClientId)?.avatar}
         totalValue={
           selectedClientId ? clientBalances.get(selectedClientId) || 0 : 0
         }

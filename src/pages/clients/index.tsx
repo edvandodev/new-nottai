@@ -1119,7 +1119,21 @@ export function ClientsPage({
                       {group.items.map((item) => {
                         const isSale = item.type === 'sale'
                         const isPayment = item.type === 'payment'
-                        const title = isSale ? 'Venda' : 'Pagamento recebido'
+                        const litersValue =
+                          typeof item.liters === 'number' ? item.liters : null
+                        const litersLabel =
+                          litersValue !== null
+                            ? `${litersValue.toLocaleString('pt-BR', {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 2
+                              })} ${litersValue === 1 ? 'Litro' : 'Litros'}`
+                            : ''
+                        const title =
+                          isSale && litersLabel
+                            ? `Venda - ${litersLabel}`
+                            : isSale
+                              ? 'Venda'
+                              : 'Pagamento recebido'
 
                         const amount = item.amount
                         const ts = normalizeTimestamp(item.createdAt)
