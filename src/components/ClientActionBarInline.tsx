@@ -75,7 +75,7 @@ export function ClientActionBarInline({
         onClick={onGenerateNote}
         aria-label='Gerar nota'
         disabled={disableGenerateNote}
-        className={`${baseButton} flex-[0.45] min-w-[40px] px-2 ${
+        className={`${baseButton} flex-[0.35] min-w-[36px] px-1.5 ${
           disableGenerateNote ? disabledState : interactive
         } focus-visible:ring-[rgba(170,190,210,0.45)]`}
         style={{
@@ -84,7 +84,7 @@ export function ClientActionBarInline({
           color: 'rgba(170,190,210,0.85)'
         }}
       >
-        <FileText size={22} strokeWidth={2.2} className='shrink-0' />
+        <FileText size={26} strokeWidth={2.2} className='shrink-0' />
       </button>
     </div>
   )
