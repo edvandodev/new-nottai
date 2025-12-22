@@ -10,6 +10,7 @@ type PaymentRowProps = {
   onClick?: () => void
   isExpanded?: boolean
   children?: React.ReactNode
+  variant?: 'card' | 'list'
 }
 
 export function PaymentRow({
@@ -20,19 +21,24 @@ export function PaymentRow({
   pillLabel = 'Pendente',
   onClick,
   isExpanded = false,
-  children
+  children,
+  variant = 'card'
 }: PaymentRowProps) {
   const isPending = status === 'pending'
   const iconBg = isPending ? 'var(--warning)' : 'var(--accent)'
   const iconColor = isPending ? 'var(--accent-ink)' : 'var(--accent-ink)'
   const textColor = isPending ? 'var(--text)' : 'var(--accent)'
+  const containerClassName = variant === 'card' ? 'flat-card overflow-hidden' : ''
+  const rowPadding = variant === 'list' ? 'py-4' : 'py-3'
+  const dividerColor = variant === 'list' ? 'rgba(255, 255, 255, 0.06)' : 'var(--border)'
+  const expandedBg = variant === 'list' ? 'transparent' : 'var(--surface)'
 
   return (
-    <div className='flat-card overflow-hidden'>
+    <div className={containerClassName}>
       <button
         type='button'
         onClick={onClick}
-        className='w-full px-4 py-3 flex items-center justify-between gap-3 text-left active:scale-[0.99] transition-transform'
+        className={`w-full px-4 ${rowPadding} flex items-center justify-between gap-3 text-left active:scale-[0.99] transition-transform`}
       >
         <div className='flex items-center gap-3 min-w-0'>
           <div
@@ -74,8 +80,8 @@ export function PaymentRow({
         <div
           className='px-4 pb-4 pt-3'
           style={{
-            borderTop: `1px solid var(--border)`,
-            background: 'var(--surface)'
+            borderTop: `1px solid ${dividerColor}`,
+            background: expandedBg
           }}
         >
           {children}

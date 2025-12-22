@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Eye, EyeOff, FileText, Plus, Search, SlidersHorizontal, Trash2, Wallet, X } from 'lucide-react'
-import type { Client, Payment } from '@/types'
+import React, { useEffect, useMemo, useState } from 'react'
+import { CheckCircle, FileText, Plus, Search, Trash2, Wallet, X } from 'lucide-react'
+import type { Client, Payment, Sale } from '@/types'
 import { StatCard } from '@/components/payments/StatCard'
 import { FilterChips } from '@/components/payments/FilterChips'
 import { PaymentRow } from '@/components/payments/PaymentRow'
@@ -67,10 +67,10 @@ const formatDayWithTime = (ts: number) => {
 }
 
 type FilterMode = 'ALL' | 'TODAY' | 'WEEK' | 'MONTH' | 'MAX'
-type TotalFilter = 'TOTAL' | 'DAY' | 'WEEK' | 'MONTH'
 
 type PaymentsPageProps = {
   payments: Payment[]
+  sales: Sale[]
   clients: Client[]
   clientBalances: Map<string, number>
   onGenerateReceipt: (payment: Payment) => void
@@ -90,6 +90,7 @@ type ListItem = {
 
 export function PaymentsPage({
   payments,
+  sales,
   clients,
   clientBalances,
   onGenerateReceipt,
@@ -98,13 +99,10 @@ export function PaymentsPage({
 }: PaymentsPageProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterMode, setFilterMode] = useState<FilterMode>('ALL')
-  const [totalFilter, setTotalFilter] = useState<TotalFilter>('TOTAL')
-  const [showTotalFilter, setShowTotalFilter] = useState(false)
-  const [showTotalAmount, setShowTotalAmount] = useState(true)
+  const [receivedMode, setReceivedMode] = useState<'month' | 'total'>('month')
   const [showPaymentPicker, setShowPaymentPicker] = useState(false)
   const [expandedPaymentId, setExpandedPaymentId] = useState<string | null>(null)
   const [showFloatingHeader, setShowFloatingHeader] = useState(false)
-  const totalFilterRef = useRef<HTMLDivElement | null>(null)
 
   const paymentCandidates = useMemo(
     () =>
@@ -119,27 +117,6 @@ export function PaymentsPage({
       setShowPaymentPicker(false)
     }
   }, [paymentCandidates.length])
-
-  useEffect(() => {
-    if (!showTotalFilter) return
-    const handlePointer = (event: MouseEvent | TouchEvent) => {
-      if (!totalFilterRef.current) return
-      if (!totalFilterRef.current.contains(event.target as Node)) {
-        setShowTotalFilter(false)
-      }
-    }
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setShowTotalFilter(false)
-    }
-    document.addEventListener('mousedown', handlePointer)
-    document.addEventListener('touchstart', handlePointer)
-    document.addEventListener('keydown', handleKey)
-    return () => {
-      document.removeEventListener('mousedown', handlePointer)
-      document.removeEventListener('touchstart', handlePointer)
-      document.removeEventListener('keydown', handleKey)
-    }
-  }, [showTotalFilter])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -157,44 +134,36 @@ export function PaymentsPage({
 
   const formatCurrency = (val: number) => currencyFormatter.format(val || 0)
 
-  const totalReceived = useMemo(() => {
+  const totalReceived = useMemo(
+    () => payments.reduce((acc, payment) => acc + (payment.amount || 0), 0),
+    [payments]
+  )
+  const litersReceivable = useMemo(
+    () =>
+      sales.reduce((acc, sale) => {
+        if (sale.paymentStatus !== 'PRAZO' || sale.isPaid === true) return acc
+        return acc + (sale.liters || 0)
+      }, 0),
+    [sales]
+  )
+  const totalReceivedMonthly = useMemo(() => {
     const now = new Date()
-    const todayStart = startOfDay(now)
-    const weekStart = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6))
     const currentMonth = now.getMonth()
     const currentYear = now.getFullYear()
-
     return payments.reduce((acc, payment) => {
       const d = parseDate(payment.date as any)
       if (!d) return acc
-      const ts = d.getTime()
-
-      if (totalFilter === 'DAY') {
-        if (startOfDay(d) !== todayStart) return acc
-      } else if (totalFilter === 'WEEK') {
-        if (ts < weekStart || ts > now.getTime()) return acc
-      } else if (totalFilter === 'MONTH') {
-        if (d.getFullYear() !== currentYear || d.getMonth() !== currentMonth) return acc
-      }
-
+      if (d.getFullYear() !== currentYear || d.getMonth() !== currentMonth) return acc
       return acc + (payment.amount || 0)
     }, 0)
-  }, [payments, totalFilter])
+  }, [payments])
 
-  const totalFilterLabel =
-    totalFilter === 'DAY'
-      ? 'Hoje'
-      : totalFilter === 'WEEK'
-        ? 'Semana'
-        : totalFilter === 'MONTH'
-          ? 'Mês'
-          : 'Total'
-  const totalFilterOptions: Array<{ value: TotalFilter; label: string }> = [
-    { value: 'DAY', label: 'Hoje' },
-    { value: 'WEEK', label: 'Semana' },
-    { value: 'MONTH', label: 'Mês' },
-    { value: 'TOTAL', label: 'Total' }
-  ]
+  const totalReceivable = useMemo(() => {
+    return clients.reduce((acc, client) => {
+      const bal = clientBalances.get(client.id) || 0
+      return acc + Math.max(0, bal)
+    }, 0)
+  }, [clients, clientBalances])
 
   const filteredItems = useMemo<ListItem[]>(() => {
     const now = new Date()
@@ -210,7 +179,7 @@ export function PaymentsPage({
         name: payment.clientName || 'Pagamento',
         amount: payment.amount || 0,
         date: ts,
-        subtitle: `${formatDayWithTime(ts)} • Recebido`,
+        subtitle: `${formatDayWithTime(ts)} - Recebido`,
         payment
       }
     })
@@ -310,89 +279,58 @@ export function PaymentsPage({
         />
       </div>
 
-      <div className='grid grid-cols-1 gap-3 mb-4'>
+      <div className='grid grid-cols-2 gap-3 mb-4'>
         <StatCard
-          label='Total recebido'
-          value={showTotalAmount ? formatCurrency(totalReceived) : 'R$ ••••'}
-          valueTone='accent'
+          label='Recebido'
+          value={formatCurrency(receivedMode === 'month' ? totalReceivedMonthly : totalReceived)}
+          valueTone='neutral'
+          variant='accent'
+          helperText={receivedMode === 'month' ? 'Total mensal' : 'Total geral'}
           headerAction={
-            <div className='flex flex-col gap-2'>
-              <div ref={totalFilterRef} className='relative'>
-                <button
-                  type='button'
-                  onClick={() => setShowTotalFilter((prev) => !prev)}
-                  aria-label='Filtrar total recebido'
-                  className='h-8 w-8 rounded-full flex items-center justify-center transition-transform active:scale-[0.98]'
-                  style={{
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text)'
-                  }}
-                  title={`Filtro: ${totalFilterLabel}`}
-                >
-                  <SlidersHorizontal size={14} />
-                </button>
-                {showTotalFilter && (
-                  <div
-                    className='absolute right-0 mt-2 w-36 p-2 space-y-1 z-20 rounded-xl'
-                    style={{
-                      background: 'rgba(18, 24, 33, 0.78)',
-                      border: '1px solid rgba(30, 42, 56, 0.75)',
-                      backdropFilter: 'blur(10px)',
-                      boxShadow: '0 16px 32px -24px var(--shadow)'
-                    }}
-                  >
-                    {totalFilterOptions.map((option) => {
-                      const isActive = totalFilter === option.value
-                      return (
-                        <button
-                          key={option.value}
-                          type='button'
-                          onClick={() => {
-                            setTotalFilter(option.value)
-                            setShowTotalFilter(false)
-                          }}
-                          className='w-full text-left px-3 py-2 rounded-xl text-sm font-semibold transition-colors'
-                          style={
-                            isActive
-                              ? {
-                                  background: 'var(--accent)',
-                                  color: 'var(--accent-ink)',
-                                  border: '1px solid var(--accent)'
-                                }
-                              : {
-                                  background: 'var(--surface-2)',
-                                  color: 'var(--text)',
-                                  border: '1px solid var(--border)'
-                                }
-                          }
-                        >
-                          {option.label}
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-              <button
-                type='button'
-                onClick={() => setShowTotalAmount((prev) => !prev)}
-                aria-label={showTotalAmount ? 'Ocultar saldo' : 'Mostrar saldo'}
-                className='h-8 w-8 flex items-center justify-center transition-transform active:scale-[0.98]'
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--muted)'
-                }}
-                title={showTotalAmount ? 'Ocultar saldo' : 'Mostrar saldo'}
-              >
-                {showTotalAmount ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+            <button
+              type='button'
+              onClick={() =>
+                setReceivedMode((prev) => (prev === 'month' ? 'total' : 'month'))
+              }
+              className='h-7 w-7 rounded-full flex items-center justify-center border'
+              style={{
+                background: 'rgba(34, 197, 94, 0.18)',
+                borderColor: 'rgba(34, 197, 94, 0.45)',
+                color: '#4ade80'
+              }}
+              aria-label={
+                receivedMode === 'month' ? 'Mostrar total geral' : 'Mostrar total mensal'
+              }
+            >
+              <CheckCircle size={12} />
+            </button>
+          }
+        />
+        <StatCard
+          label='Total a receber'
+          value={formatCurrency(totalReceivable)}
+          valueTone='neutral'
+          variant='accent'
+          accentTone='lime'
+          helperText={`${litersReceivable.toLocaleString('pt-BR', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+          })} L`}
+          headerAction={
+            <div
+              className='h-7 w-7 rounded-full flex items-center justify-center border'
+              style={{
+                background: 'rgba(184, 255, 44, 0.18)',
+                borderColor: 'rgba(184, 255, 44, 0.45)',
+                color: 'var(--accent)'
+              }}
+              aria-hidden='true'
+            >
+              <Wallet size={12} />
             </div>
           }
         />
       </div>
-
       <div className='relative mb-3'>
         <div className='absolute inset-y-0 left-3 flex items-center pointer-events-none'>
           <Search size={18} style={{ color: 'var(--muted)' }} />
@@ -432,8 +370,7 @@ export function PaymentsPage({
           { label: 'Todos', value: 'ALL' },
           { label: 'Hoje', value: 'TODAY' },
           { label: 'Semana', value: 'WEEK' },
-          { label: 'Mês', value: 'MONTH' },
-          { label: 'Maior valor', value: 'MAX' }
+          { label: 'Mes', value: 'MONTH' }
         ]}
       />
 
@@ -477,7 +414,7 @@ export function PaymentsPage({
 
       <div className='mt-6 mb-3 flex items-center justify-between'>
         <h3 className='text-sm font-semibold uppercase tracking-wide' style={{ color: 'var(--muted)' }}>
-          Lançamentos Recentes
+          Lancamentos Recentes
         </h3>
       </div>
 
@@ -492,7 +429,7 @@ export function PaymentsPage({
           <Wallet size={48} className='mx-auto mb-3' style={{ color: 'var(--muted)' }} />
           <p className='text-base font-semibold'>Nenhum pagamento registrado</p>
           <p className='text-sm' style={{ color: 'var(--muted)' }}>
-            Os pagamentos aparecerão aqui.
+            Os pagamentos aparecerao aqui.
           </p>
         </div>
       ) : filteredItems.length === 0 ? (
@@ -502,20 +439,39 @@ export function PaymentsPage({
           </p>
         </div>
       ) : (
-        <div className='space-y-3 pb-4'>
-          {filteredItems.map((item) => (
-            <PaymentRow
-              key={item.id}
-              name={item.name}
-              subtitle={item.subtitle}
-              amount={formatCurrency(item.amount)}
-              status='received'
-              onClick={() => handleRowClick(item)}
-              isExpanded={expandedPaymentId === item.id}
-            >
-              {item.payment && (
-                <div className='space-y-3'>
-                  {item.payment.salesSnapshot && item.payment.salesSnapshot.length > 0 && (
+        <div
+          className='rounded-[22px] border overflow-hidden pb-1'
+          style={{
+            background:
+              'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(14, 19, 26, 0.92) 100%)',
+            borderColor: 'rgba(30, 42, 56, 0.9)',
+            boxShadow: '0 18px 36px -28px rgba(0, 0, 0, 0.7)'
+          }}
+        >
+          {filteredItems.map((item, index) => (
+            <div key={item.id}>
+              {index > 0 && (
+                <div
+                  className='h-px'
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    marginLeft: 16,
+                    marginRight: 16
+                  }}
+                />
+              )}
+              <PaymentRow
+                name={item.name}
+                subtitle={item.subtitle}
+                amount={formatCurrency(item.amount)}
+                status='received'
+                onClick={() => handleRowClick(item)}
+                isExpanded={expandedPaymentId === item.id}
+                variant='list'
+              >
+                {item.payment && (
+                  <div className='space-y-3'>
+                    {item.payment.salesSnapshot && item.payment.salesSnapshot.length > 0 && (
                     <div className='space-y-2'>
                       <p className='text-xs font-semibold uppercase' style={{ color: 'var(--muted)' }}>
                         Itens pagos
@@ -533,7 +489,7 @@ export function PaymentsPage({
                               style={{ color: 'var(--text)' }}
                             >
                               <span>
-                                {saleLabel} • {sale.liters} {sale.liters === 1 ? 'litro' : 'litros'}
+                                {saleLabel} - {sale.liters} {sale.liters === 1 ? 'litro' : 'litros'}
                               </span>
                               <span className='font-semibold'>{formatCurrency(sale.totalValue)}</span>
                             </div>
@@ -570,12 +526,14 @@ export function PaymentsPage({
                       Excluir
                     </button>
                   </div>
-                </div>
-              )}
+                  </div>
+                )}
             </PaymentRow>
+          </div>
           ))}
         </div>
       )}
     </div>
   )
 }
+

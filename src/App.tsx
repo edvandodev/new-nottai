@@ -827,6 +827,7 @@ function App() {
         return (
           <PaymentsPage
             payments={payments}
+            sales={sales}
             clients={clients}
             clientBalances={clientBalances}
             onGenerateReceipt={handleGenerateReceipt}

@@ -624,39 +624,8 @@ export const AddSaleModal = ({
             <div className='grid grid-cols-2 gap-3'>
               <button
                 type='button'
-                onClick={() => setPaymentStatus('AVISTA')}
-                className='rounded-2xl border px-4 py-3 text-left transition-all min-h-[72px] flex flex-col justify-center'
-                style={
-                  paymentStatus === 'AVISTA'
-                    ? {
-                        background: 'rgba(184, 255, 44, 0.18)',
-                        borderColor: 'rgba(184, 255, 44, 0.7)',
-                        color: 'var(--text)'
-                      }
-                    : {
-                        background: 'rgba(14, 20, 28, 0.7)',
-                        borderColor: 'rgba(42, 56, 72, 0.9)',
-                        color: 'var(--text)'
-                      }
-                }
-              >
-                <span className='text-base font-semibold'>À vista</span>
-                <span
-                  className='text-xs mt-1'
-                  style={{
-                    color:
-                      paymentStatus === 'AVISTA'
-                        ? 'rgba(224, 236, 196, 0.75)'
-                        : 'var(--muted)'
-                  }}
-                >
-                  Pago na hora
-                </span>
-              </button>
-              <button
-                type='button'
                 onClick={() => setPaymentStatus('PRAZO')}
-                className='rounded-2xl border px-4 py-3 text-left transition-all min-h-[72px] flex flex-col justify-center'
+                className='rounded-2xl border px-4 py-3 text-center transition-all min-h-[72px] flex flex-col justify-center items-center'
                 style={
                   paymentStatus === 'PRAZO'
                     ? {
@@ -682,6 +651,37 @@ export const AddSaleModal = ({
                   }}
                 >
                   Fica em aberto
+                </span>
+              </button>
+              <button
+                type='button'
+                onClick={() => setPaymentStatus('AVISTA')}
+                className='rounded-2xl border px-4 py-3 text-center transition-all min-h-[72px] flex flex-col justify-center items-center'
+                style={
+                  paymentStatus === 'AVISTA'
+                    ? {
+                        background: 'rgba(184, 255, 44, 0.18)',
+                        borderColor: 'rgba(184, 255, 44, 0.7)',
+                        color: 'var(--text)'
+                      }
+                    : {
+                        background: 'rgba(14, 20, 28, 0.7)',
+                        borderColor: 'rgba(42, 56, 72, 0.9)',
+                        color: 'var(--text)'
+                      }
+                }
+              >
+                <span className='text-base font-semibold'>À vista</span>
+                <span
+                  className='text-xs mt-1'
+                  style={{
+                    color:
+                      paymentStatus === 'AVISTA'
+                        ? 'rgba(224, 236, 196, 0.75)'
+                        : 'var(--muted)'
+                  }}
+                >
+                  Pago na hora
                 </span>
               </button>
             </div>

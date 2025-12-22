@@ -5,7 +5,6 @@ import {
   ChevronRight,
   MoreVertical,
   AlertTriangle,
-  DollarSign,
   MessageCircle,
   Pencil,
   Plus,
@@ -312,13 +311,6 @@ export function ClientsPage({
     return new Date(ts).toLocaleDateString('pt-BR')
   }
 
-  const totalReceivable = useMemo(() => {
-    return clients.reduce((acc, c) => {
-      const bal = clientBalances.get(c.id) || 0
-      return acc + Math.max(0, bal)
-    }, 0)
-  }, [clients, clientBalances])
-
   const paymentCandidates = useMemo(() => {
     return clients
       .filter((c) => (clientBalances.get(c.id) || 0) > 0)
@@ -544,49 +536,26 @@ export function ClientsPage({
           </h2>
         </div>
       )}
-      <div className='flex items-center justify-between mb-6 min-h-[38px]'>
-        <h1 className='text-[24px] font-semibold leading-none'>Meus Clientes</h1>
-      </div>
-      <div className='flat-card p-4 flex items-center justify-between mb-4'>
+      <div className='mt-6 flex items-start justify-between gap-4 mb-4'>
         <div>
-          <span
-            className='block text-xs font-medium tracking-wide uppercase mb-1'
-            style={{ color: 'var(--muted)' }}
-          >
-            Total a Receber
-          </span>
-          <span
-            className='text-3xl font-semibold leading-tight'
-            style={{ color: 'var(--accent)' }}
-          >
-            {formatCurrency(totalReceivable)}
-          </span>
+          <h1 className='text-[28px] font-semibold leading-none'>Meus Clientes</h1>
+          <p className='mt-2 text-xs' style={{ color: 'var(--muted)' }}>
+            {clients.length} cadastrados
+          </p>
         </div>
         <button
-          type='button'
-          onClick={handlePaymentCTA}
-          disabled={paymentCandidates.length === 0}
-          className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-transform active:scale-95'
-          style={
-            paymentCandidates.length > 0
-              ? {
-                  background: 'var(--accent)',
-                  color: 'var(--accent-ink)',
-                  border: '1px solid var(--accent)'
-                }
-              : {
-                  background: 'var(--surface-2)',
-                  color: 'var(--muted)',
-                  border: '1px solid var(--border)',
-                  cursor: 'not-allowed'
-                }
-          }
+          onClick={onAddClient}
+          className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-transform active:scale-95 mt-1'
+          style={{
+            background: 'var(--accent)',
+            color: 'var(--accent-ink)',
+            border: '1px solid var(--accent)'
+          }}
         >
-          <DollarSign size={14} />
-          Receber
+          <Plus size={12} strokeWidth={3} />
+          Novo
         </button>
       </div>
-
       {showPaymentPicker && paymentCandidates.length > 1 && (
         <div className='flat-card p-4 space-y-3'>
           <div className='flex items-center justify-between'>
@@ -645,7 +614,7 @@ export function ClientsPage({
 
       {clients.length > 0 && (
         <>
-          <div className='relative mb-3'>
+          <div className='relative mb-2'>
             <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
               <Search size={18} style={{ color: 'var(--muted)' }} />
             </div>
@@ -707,18 +676,6 @@ export function ClientsPage({
             ? `Resultados (${filteredClients.length})`
             : 'Lista de Clientes'}
         </h2>
-        <button
-          onClick={onAddClient}
-          className='flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-transform active:scale-95'
-          style={{
-            background: 'var(--accent)',
-            color: 'var(--accent-ink)',
-            border: '1px solid var(--accent)'
-          }}
-        >
-          <Plus size={12} strokeWidth={3} />
-          NOVO CLIENTE
-        </button>
       </div>
 
       {clients.length === 0 ? (
@@ -814,6 +771,13 @@ export function ClientsPage({
     const avatarColors = getAvatarColors(selectedClient.name)
     const hasSalesHistory = selectedClientHistory.events.some((e) => e.type === 'sale')
     const disableGenerateNote = balance <= 0 || !hasSalesHistory
+    const historyHeaderLabel =
+      historyFilter === 'SALES'
+        ? 'Historico de Vendas'
+        : historyFilter === 'PAYMENTS'
+          ? 'Historico de Pagamentos'
+          : 'Historico de Movimentacoes'
+    const flattenedHistoryItems = filteredHistoryGroups.flatMap((group) => group.items)
 
     return (
       <div
@@ -1006,7 +970,7 @@ export function ClientsPage({
               </h3>
             </div>
 
-            <div className='flex gap-2 overflow-x-auto no-scrollbar pb-2'>
+            <div className='flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-4'>
               {[
                 { label: 'Todos', value: 'ALL' as const },
                 { label: 'Recebidos', value: 'PAYMENTS' as const },
@@ -1018,9 +982,20 @@ export function ClientsPage({
                     key={chip.value}
                     type='button'
                     onClick={() => setHistoryFilter(chip.value)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95 flat-chip ${
-                      isActive ? 'is-active' : ''
-                    }`}
+                    className='px-3 py-1.5 rounded-full text-xs font-semibold border transition-all active:scale-95'
+                    style={
+                      isActive
+                        ? {
+                            background: 'rgba(184, 255, 44, 0.15)',
+                            borderColor: 'rgba(184, 255, 44, 0.7)',
+                            color: 'var(--text)'
+                          }
+                        : {
+                            background: 'rgba(14, 20, 28, 0.7)',
+                            borderColor: 'rgba(30, 42, 56, 0.9)',
+                            color: 'var(--muted)'
+                          }
+                    }
                   >
                     {chip.label}
                   </button>
@@ -1099,111 +1074,121 @@ export function ClientsPage({
                 className='text-center py-8 rounded-2xl border border-dashed'
                 style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
               >
-                <p style={{ color: 'var(--muted)' }}>Nenhuma movimentação registrada.</p>
+                <p style={{ color: 'var(--muted)' }}>Nenhuma movimentacao registrada.</p>
               </div>
             ) : (
-              <div className='space-y-4'>
-                {filteredHistoryGroups.map((group) => (
-                  <div key={group.key} className='space-y-2'>
-                    <span
-                      className='inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider border'
-                      style={{
-                        background: 'var(--surface-2)',
-                        borderColor: 'var(--border)',
-                        color: 'var(--muted)'
-                      }}
-                    >
-                      {group.label}
-                    </span>
-                    <div className='space-y-2'>
-                      {group.items.map((item) => {
-                        const isSale = item.type === 'sale'
-                        const isPayment = item.type === 'payment'
-                        const litersValue =
-                          typeof item.liters === 'number' ? item.liters : null
-                        const litersLabel =
-                          litersValue !== null
-                            ? `${litersValue.toLocaleString('pt-BR', {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 2
-                              })} ${litersValue === 1 ? 'Litro' : 'Litros'}`
-                            : ''
-                        const title =
-                          isSale && litersLabel
-                            ? `Venda - ${litersLabel}`
-                            : isSale
-                              ? 'Venda'
-                              : 'Pagamento recebido'
+              <div
+                className='rounded-[22px] border overflow-hidden'
+                style={{
+                  background:
+                    'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(14, 19, 26, 0.92) 100%)',
+                  borderColor: 'rgba(30, 42, 56, 0.9)',
+                  boxShadow: '0 18px 36px -28px rgba(0, 0, 0, 0.7)'
+                }}
+              >
+                <div
+                  className='flex items-center gap-3 px-4 py-3 border-b'
+                  style={{ borderColor: 'rgba(30, 42, 56, 0.9)' }}
+                >
+                  <ShoppingCart size={16} style={{ color: 'var(--text)' }} />
+                  <span className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                    {historyHeaderLabel}
+                  </span>
+                </div>
 
-                        const amount = item.amount
-                        const ts = normalizeTimestamp(item.createdAt)
-                        const dateObj = new Date(ts)
-                        const timeLabel = formatTimeLabel(dateObj)
-                        const dateLabel = formatDateShort(ts)
+                <div>
+                  {flattenedHistoryItems.map((item, index) => {
+                    const isSale = item.type === 'sale'
+                    const litersValue = typeof item.liters === 'number' ? item.liters : null
+                    const litersLabel =
+                      litersValue !== null
+                        ? `${litersValue.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2
+                          })} ${litersValue === 1 ? 'Litro' : 'Litros'}`
+                        : ''
+                    const title =
+                      isSale && litersLabel
+                        ? `Venda - ${litersLabel}`
+                        : isSale
+                          ? 'Venda'
+                          : 'Pagamento recebido'
 
-                        return (
+                    const amount = item.amount
+                    const ts = normalizeTimestamp(item.createdAt)
+                    const dateLabel = formatDateShort(ts)
+                    const isSinglePayment =
+                      flattenedHistoryItems.length === 1 && item.type === 'payment'
+
+                    return (
+                      <div key={`${item.type}-${item.id}`} className='px-4'>
+                        {index > 0 && (
                           <div
-                            key={`${item.type}-${item.id}`}
-                            className='rounded-xl px-3 py-3 flex items-center justify-between gap-3 transition-all active:scale-[0.98] active:opacity-90'
+                            className='h-px'
                             style={{
-                              background: 'var(--surface)',
-                              border: '1px solid var(--border)'
+                              background: 'rgba(255, 255, 255, 0.06)',
+                              marginLeft: 0,
+                              marginRight: 0
                             }}
-                          >
-                            <div className='flex items-center gap-3 min-w-0'>
-                              <div
-                                className='h-9 w-9 rounded-full flex items-center justify-center shrink-0 border'
-                                style={{
-                                  borderColor: isPayment ? 'var(--accent)' : 'var(--border)',
-                                  background: isPayment
-                                    ? 'rgba(184, 255, 44, 0.16)'
-                                    : 'var(--surface-2)',
-                                  color: isPayment ? 'var(--accent)' : 'var(--muted)'
-                                }}
-                              >
-                                {isSale ? (
-                                  <ShoppingCart size={16} />
-                                ) : (
-                                  <CheckCircle size={16} />
-                                )}
-                              </div>
-
-                              <div className='min-w-0'>
-                                <p className='text-white font-semibold truncate'>
-                                  {title}
-                                </p>
-                                <p className='text-xs' style={{ color: 'var(--muted)' }}>
-                                  {dateLabel} • {timeLabel}
-                                </p>
-                              </div>
+                          />
+                        )}
+                        <div className='flex items-center justify-between gap-6 py-4'>
+                          <div className='flex items-center gap-3 min-w-0'>
+                            <div
+                              className='h-10 w-10 rounded-full flex items-center justify-center border shrink-0'
+                              style={
+                                isSale
+                                  ? {
+                                      background: 'rgba(255, 193, 7, 0.18)',
+                                      borderColor: 'rgba(255, 193, 7, 0.45)',
+                                      color: '#fbbf24'
+                                    }
+                                  : {
+                                      background: 'rgba(34, 197, 94, 0.18)',
+                                      borderColor: 'rgba(34, 197, 94, 0.45)',
+                                      color: '#4ade80'
+                                    }
+                              }
+                            >
+                              {isSale ? <ShoppingCart size={16} /> : <CheckCircle size={16} />}
                             </div>
+                            <div className='min-w-0 space-y-1'>
+                              <p className='text-sm font-semibold truncate' style={{ color: 'var(--text)' }}>
+                                {title}
+                              </p>
+                              <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                                {dateLabel}
+                              </p>
+                            </div>
+                          </div>
 
-                            <div className='flex items-center gap-2 shrink-0'>
+                          <div className='flex items-center gap-3 shrink-0'>
+                            <div className='flex flex-col items-end'>
                               <span
-                                className='text-sm font-bold tabular-nums'
-                                style={{ color: isPayment ? 'var(--accent)' : 'var(--text)' }}
+                                className='text-sm font-semibold tabular-nums'
+                                style={{ color: isSinglePayment ? 'var(--accent)' : 'var(--text)' }}
                               >
                                 {formatCurrency(amount)}
                               </span>
-                              <button
-                                onClick={() =>
-                                  isSale
-                                    ? onDeleteSale(item.id)
-                                    : onDeletePayment(item.id)
-                                }
-                                className='p-2 transition-colors'
-                                style={{ color: 'var(--muted)' }}
-                                aria-label='Excluir'
-                              >
-                                <Trash2 size={14} />
-                              </button>
                             </div>
+                            <button
+                              onClick={() =>
+                                isSale
+                                  ? onDeleteSale(item.id)
+                                  : onDeletePayment(item.id)
+                              }
+                              className='p-1.5 rounded-full transition-colors opacity-70 hover:opacity-100'
+                              style={{ color: 'var(--muted)' }}
+                              aria-label='Excluir'
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -1213,6 +1198,8 @@ export function ClientsPage({
   }
   return view === 'LIST' ? renderClientList() : renderClientDetails()
 }
+
+
 
 
 
