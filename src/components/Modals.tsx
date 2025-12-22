@@ -441,17 +441,28 @@ export const AddSaleModal = ({
 
   return (
     <div
-      className='fixed inset-0 z-50 flex items-center justify-center px-4 py-6 bg-black/70 backdrop-blur-lg'
+      data-theme='flat-lime'
+      className='fixed inset-0 z-50 flex items-center justify-center px-4 py-6'
       onClick={onClose}
+      style={{
+        background: 'rgba(11, 15, 20, 0.72)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)'
+      }}
     >
       <div
-        className='w-full max-w-xl rounded-2xl shadow-2xl shadow-black/50 overflow-hidden flex flex-col max-h-[90vh]'
+        className='w-full max-w-xl rounded-[24px] overflow-hidden flex flex-col max-h-[90vh] border'
         onClick={(e) => e.stopPropagation()}
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        style={{
+          background: 'rgba(18, 24, 33, 0.9)',
+          borderColor: 'rgba(30, 42, 56, 0.85)',
+          backdropFilter: 'blur(12px)',
+          boxShadow: '0 28px 60px -36px rgba(0, 0, 0, 0.6)'
+        }}
       >
         <div
           className='flex items-center justify-between px-5 py-4 border-b'
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+          style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
         >
           <h3 className='text-lg font-semibold tracking-tight'>
             Nova Venda
@@ -475,7 +486,7 @@ export const AddSaleModal = ({
           id='add-sale-form'
           onSubmit={handleSubmit}
           className='flex-1 overflow-y-auto px-5 pb-5 space-y-5 custom-scrollbar'
-          style={{ background: 'var(--surface)' }}
+          style={{ background: 'transparent' }}
         >
           <div className='space-y-2 mt-2'>
             <div className='relative'>
@@ -490,7 +501,7 @@ export const AddSaleModal = ({
               <button
                 type='button'
                 onClick={openDatePicker}
-                className='w-full rounded-2xl px-4 py-3 flex items-center justify-between text-left transition-colors shadow-lg shadow-black/30'
+                className='w-full rounded-2xl px-4 py-3 flex items-center justify-between text-left transition-colors'
                 style={{
                   background: 'var(--surface-2)',
                   border: '1px solid var(--border)',
@@ -541,7 +552,7 @@ export const AddSaleModal = ({
               Quantidade
             </p>
             <div
-              className='rounded-[26px] flex items-center px-3 py-3 shadow-lg shadow-black/30'
+              className='rounded-[26px] flex items-center px-3 py-3'
               style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
             >
               <button
@@ -551,7 +562,6 @@ export const AddSaleModal = ({
                 className='h-12 w-12 rounded-2xl border text-slate-900 font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center'
                 style={{
                   background: 'var(--accent, var(--primary, #b8ff2c))',
-                  boxShadow: '0 6px 20px rgba(184,255,44,0.35)',
                   borderColor: 'var(--accent, #b8ff2c)'
                 }}
               >
@@ -577,10 +587,10 @@ export const AddSaleModal = ({
               <button
                 type='button'
                 onClick={handleIncrement}
-                className='h-12 w-12 rounded-2xl border border-slate-800 text-slate-900 font-bold transition-all active:scale-95 flex items-center justify-center'
+                className='h-12 w-12 rounded-2xl border text-slate-900 font-bold transition-all active:scale-95 flex items-center justify-center'
                 style={{
                   background: 'var(--accent, var(--primary, #b8ff2c))',
-                  boxShadow: '0 6px 20px rgba(184,255,44,0.35)'
+                  borderColor: 'var(--accent, #b8ff2c)'
                 }}
               >
                 <Plus size={20} />
@@ -589,61 +599,92 @@ export const AddSaleModal = ({
           </div>
 
           <div
-            className='rounded-2xl p-4 flex items-center justify-between shadow-inner shadow-black/40'
-            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+            className='rounded-2xl p-4 text-center border'
+            style={{
+              background:
+                'linear-gradient(135deg, rgba(120, 155, 32, 0.5) 0%, rgba(72, 96, 20, 0.55) 100%)',
+              borderColor: 'rgba(184, 255, 44, 0.35)'
+            }}
           >
-            <div className='flex flex-col'>
-              <span className='text-xs' style={{ color: 'var(--muted)' }}>
-                Valor Total
-              </span>
-              <span
-                className='text-3xl font-bold mt-1 tabular-nums'
-                style={{ color: 'var(--accent, #b8ff2c)' }}
-              >
-                {formatCurrency(totalValue || 0)}
-              </span>
-            </div>
-            <div className='text-right text-xs flex flex-col items-end gap-1' style={{ color: 'var(--muted)' }}>
-              <span>Valor por litro</span>
-              <span className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                {formatCurrency(priceValue || currentPrice || 0)}
-              </span>
-            </div>
+            <p className='text-xs' style={{ color: 'rgba(224, 236, 196, 0.7)' }}>
+              Total da venda
+            </p>
+            <p
+              className='text-3xl font-bold mt-1 tabular-nums'
+              style={{ color: 'var(--accent, #b8ff2c)' }}
+            >
+              {formatCurrency(totalValue || 0)}
+            </p>
           </div>
 
           <div className='space-y-3'>
             <p className='text-sm font-medium' style={{ color: 'var(--muted)' }}>
-              Status de Pagamento
+              Status do Pagamento
             </p>
-            <div className='grid grid-cols-2 gap-2'>
-              <button
-                type='button'
-                onClick={() => setPaymentStatus('PRAZO')}
-                className={`rounded-lg border px-3 py-2 text-center text-sm font-semibold transition-all ${
-                  paymentStatus === 'PRAZO'
-                    ? 'bg-amber-500/15 border-amber-400/60 text-amber-100'
-                    : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--muted)] hover:border-[var(--border)]'
-                }`}
-              >
-                A prazo
-              </button>
+            <div className='grid grid-cols-2 gap-3'>
               <button
                 type='button'
                 onClick={() => setPaymentStatus('AVISTA')}
-                className={`rounded-lg border px-3 py-2 text-center text-sm font-semibold transition-all ${
+                className='rounded-2xl border px-4 py-3 text-left transition-all min-h-[72px] flex flex-col justify-center'
+                style={
                   paymentStatus === 'AVISTA'
-                    ? 'bg-emerald-500/15 border-emerald-400/60 text-emerald-100'
-                    : 'bg-[var(--surface-2)] border-[var(--border)] text-[var(--muted)] hover:border-[var(--border)]'
-                }`}
+                    ? {
+                        background: 'rgba(184, 255, 44, 0.18)',
+                        borderColor: 'rgba(184, 255, 44, 0.7)',
+                        color: 'var(--text)'
+                      }
+                    : {
+                        background: 'rgba(14, 20, 28, 0.7)',
+                        borderColor: 'rgba(42, 56, 72, 0.9)',
+                        color: 'var(--text)'
+                      }
+                }
               >
-                A vista
+                <span className='text-base font-semibold'>À vista</span>
+                <span
+                  className='text-xs mt-1'
+                  style={{
+                    color:
+                      paymentStatus === 'AVISTA'
+                        ? 'rgba(224, 236, 196, 0.75)'
+                        : 'var(--muted)'
+                  }}
+                >
+                  Pago na hora
+                </span>
+              </button>
+              <button
+                type='button'
+                onClick={() => setPaymentStatus('PRAZO')}
+                className='rounded-2xl border px-4 py-3 text-left transition-all min-h-[72px] flex flex-col justify-center'
+                style={
+                  paymentStatus === 'PRAZO'
+                    ? {
+                        background: 'rgba(184, 255, 44, 0.18)',
+                        borderColor: 'rgba(184, 255, 44, 0.7)',
+                        color: 'var(--text)'
+                      }
+                    : {
+                        background: 'rgba(14, 20, 28, 0.7)',
+                        borderColor: 'rgba(42, 56, 72, 0.9)',
+                        color: 'var(--text)'
+                      }
+                }
+              >
+                <span className='text-base font-semibold'>A Prazo</span>
+                <span
+                  className='text-xs mt-1'
+                  style={{
+                    color:
+                      paymentStatus === 'PRAZO'
+                        ? 'rgba(224, 236, 196, 0.75)'
+                        : 'var(--muted)'
+                  }}
+                >
+                  Fica em aberto
+                </span>
               </button>
             </div>
-            {paymentStatus === 'AVISTA' && (
-              <p className='text-xs' style={{ color: 'var(--muted)' }}>
-                Ao salvar, um pagamento sera registrado automaticamente.
-              </p>
-            )}
           </div>
 
           {validationMessage && (
@@ -666,7 +707,7 @@ export const AddSaleModal = ({
             onClick={onClose}
             className='flex-1 h-11 rounded-xl font-semibold hover:opacity-90 transition-colors active:scale-95'
             style={{
-              background: 'var(--surface-2)',
+              background: 'transparent',
               color: 'var(--text)',
               border: '1px solid var(--border)'
             }}
@@ -677,11 +718,13 @@ export const AddSaleModal = ({
             type='submit'
             form='add-sale-form'
             disabled={!isValid || isSubmitting}
-            className='flex-1 h-11 rounded-xl font-semibold text-slate-950 transition-colors active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed'
+            className='flex-1 h-11 rounded-xl font-semibold transition-colors active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed'
             style={{
-              background: 'var(--accent, var(--primary, #b8ff2c))',
-              boxShadow: '0 12px 28px -14px rgba(184,255,44,0.55)',
-              color: '#0f172a'
+              background:
+                'linear-gradient(135deg, rgba(184, 255, 44, 1) 0%, rgba(154, 236, 38, 1) 100%)',
+              boxShadow:
+                '0 16px 30px -18px rgba(184, 255, 44, 0.55), 0 0 18px rgba(184, 255, 44, 0.2)',
+              color: 'var(--accent-ink, #0c1014)'
             }}
           >
             {isSubmitting ? (

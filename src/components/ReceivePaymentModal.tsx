@@ -148,10 +148,16 @@ export const ReceivePaymentModal = ({
     'Ao confirmar, registramos o pagamento e, se o valor for menor que o saldo, manteremos o restante em aberto no historico.'
 
   return createPortal(
-    <div className='fixed inset-0 z-50 flex items-center justify-center px-4 py-10'>
+    <div
+      data-theme='flat-lime'
+      className='fixed inset-0 z-50 flex items-center justify-center px-4 py-10'
+    >
       <div
-        className='absolute inset-0 bg-black/55 backdrop-blur-[10px] transition-opacity'
+        className='absolute inset-0 transition-opacity'
         style={{
+          background: 'rgba(11, 15, 20, 0.72)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
           opacity: isVisible ? 1 : 0,
           transitionDuration: `${ANIMATION_DURATION}ms`
         }}
@@ -163,28 +169,34 @@ export const ReceivePaymentModal = ({
         role='dialog'
         aria-modal='true'
         aria-labelledby={titleId}
-        className='relative w-[92vw] max-w-[420px] max-h-[80vh] overflow-hidden rounded-[24px] shadow-2xl border border-white/10 flex flex-col'
+        className='relative w-[92vw] max-w-[420px] max-h-[80vh] overflow-hidden rounded-[24px] shadow-2xl border flex flex-col'
         style={{
-          background: 'rgba(20, 22, 26, 0.78)',
+          background: 'rgba(18, 24, 33, 0.9)',
           backdropFilter: 'blur(12px)',
+          borderColor: 'rgba(30, 42, 56, 0.8)',
           opacity: isVisible ? 1 : 0,
           transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.98)',
-          transition: `opacity ${ANIMATION_DURATION}ms ease, transform ${ANIMATION_DURATION}ms ease`
+          transition: `opacity ${ANIMATION_DURATION}ms ease, transform ${ANIMATION_DURATION}ms ease`,
+          boxShadow: '0 28px 60px -36px rgba(0, 0, 0, 0.6)'
         }}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className='flex items-center justify-between px-5 py-4 border-b border-white/10'>
-          <h3 id={titleId} className='text-lg font-semibold text-white'>
+        <div
+          className='flex items-center justify-between px-5 py-4 border-b'
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <h3 id={titleId} className='text-lg font-semibold' style={{ color: 'var(--text)' }}>
             Receber
           </h3>
           <button
             type='button'
             onClick={onClose}
-            className='h-11 w-11 rounded-full flex items-center justify-center text-slate-300 transition-colors'
+            className='h-11 w-11 rounded-full flex items-center justify-center transition-colors'
             aria-label='Fechar'
             style={{
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.08)'
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--muted)'
             }}
           >
             <X size={20} />
@@ -192,38 +204,65 @@ export const ReceivePaymentModal = ({
         </div>
 
         <div className='flex-1 overflow-y-auto px-5 py-5 space-y-5 custom-scrollbar'>
-          <div className='flex flex-col items-center text-center gap-2'>
-            {client.avatarUrl ? (
-              <img
-                src={client.avatarUrl}
-                alt={client.name}
-                className='h-16 w-16 rounded-full object-cover border border-white/15'
-              />
-            ) : (
-              <div className='h-16 w-16 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-400 border border-emerald-500/30'>
-                <CheckCircle size={30} />
-              </div>
-            )}
-            <p className='text-xl font-semibold text-white'>{client.name}</p>
-            <p className='text-sm text-slate-400'>
-              Total a receber{' '}
+          <div
+            className='flex items-center gap-4 rounded-[18px] p-4 border'
+            style={{
+              background: 'var(--surface-2)',
+              borderColor: 'var(--border)'
+            }}
+          >
+            <div className='relative'>
+              {client.avatarUrl ? (
+                <img
+                  src={client.avatarUrl}
+                  alt={client.name}
+                  className='h-14 w-14 rounded-full object-cover border'
+                  style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
+                />
+              ) : (
+                <div
+                  className='h-14 w-14 rounded-full flex items-center justify-center text-sm font-semibold'
+                  style={{
+                    background: 'rgba(184, 255, 44, 0.12)',
+                    color: 'var(--accent)',
+                    border: '1px solid rgba(184, 255, 44, 0.3)'
+                  }}
+                >
+                  {(client.name || '?').trim().charAt(0).toUpperCase()}
+                </div>
+              )}
               <span
-                className='text-base font-semibold'
-                style={{ color: 'var(--accent, #bcff38)' }}
+                className='absolute -bottom-1 -right-1 h-6 w-6 rounded-full flex items-center justify-center border'
+                style={{
+                  background: 'var(--surface)',
+                  borderColor: 'var(--border)'
+                }}
+                aria-hidden='true'
               >
-                R$ {formattedTotal}
+                <CheckCircle size={14} style={{ color: 'var(--accent)' }} />
               </span>
-            </p>
+            </div>
+            <div className='flex-1 min-w-0'>
+              <p className='text-base font-semibold truncate' style={{ color: 'var(--text)' }}>
+                {client.name}
+              </p>
+              <p className='text-sm' style={{ color: 'var(--muted)' }}>
+                Total a receber{' '}
+                <span className='font-semibold' style={{ color: 'var(--accent)' }}>
+                  R$ {formattedTotal}
+                </span>
+              </p>
+            </div>
           </div>
 
           <div
             className='space-y-3 rounded-[18px] p-4 border'
             style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              borderColor: 'rgba(255, 255, 255, 0.08)'
+              background: 'var(--surface)',
+              borderColor: 'var(--border)'
             }}
           >
-            <label className='block text-sm font-medium text-slate-300'>
+            <label className='block text-sm font-medium' style={{ color: 'var(--muted)' }}>
               Valor a receber
             </label>
             <div className='relative'>
@@ -232,13 +271,15 @@ export const ReceivePaymentModal = ({
                   className='h-9 w-9 rounded-xl flex items-center justify-center'
                   style={{
                     background: 'rgba(188, 255, 56, 0.12)',
-                    color: 'var(--accent, #bcff38)',
+                    color: 'var(--accent)',
                     border: '1px solid rgba(188, 255, 56, 0.2)'
                   }}
                 >
                   <DollarSign size={18} />
                 </div>
-                <span className='text-sm font-semibold text-slate-300'>R$</span>
+                <span className='text-sm font-semibold' style={{ color: 'var(--muted)' }}>
+                  R$
+                </span>
               </div>
               <input
                 ref={amountInputRef}
@@ -254,18 +295,16 @@ export const ReceivePaymentModal = ({
                   if (amountInput) setAmountInput(formatCurrency(parsed))
                 }}
                 placeholder='0,00'
-                className='w-full h-14 pl-24 pr-4 rounded-2xl text-white text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400/60'
+                className='w-full h-14 pl-24 pr-4 rounded-2xl text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400/60'
                 style={{
-                  background: 'rgba(0, 0, 0, 0.2)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                  background: 'rgba(11, 15, 20, 0.55)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                  caretColor: 'var(--accent)'
                 }}
               />
             </div>
-            <div className='flex items-center justify-between text-xs text-slate-400'>
-              <span>Status</span>
-              <span className='text-emerald-300'>Pago agora</span>
-            </div>
-            <p className='text-xs text-slate-500'>
+            <p className='text-xs' style={{ color: 'var(--muted)' }}>
               Ajuste o valor caso o pagamento seja parcial.
             </p>
             {error && (
@@ -275,48 +314,42 @@ export const ReceivePaymentModal = ({
             )}
           </div>
 
-          <div className='space-y-2'>
-            <label className='block text-sm font-medium text-slate-300'>
-              Nota (opcional)
-            </label>
-            <textarea
-              rows={3}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              className='w-full rounded-2xl text-white text-sm p-3 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400/40'
-              style={{
-                background: 'rgba(0, 0, 0, 0.2)',
-                border: '1px solid rgba(255, 255, 255, 0.08)'
-              }}
-              placeholder='Nota (opcional)'
-            />
-          </div>
-
           <div
             className='rounded-2xl p-3 flex gap-3 border'
             style={{
-              background: 'rgba(255, 193, 7, 0.12)',
-              borderColor: 'rgba(255, 193, 7, 0.25)'
+              background: 'rgba(255, 216, 77, 0.12)',
+              borderColor: 'rgba(255, 216, 77, 0.3)'
             }}
           >
-            <AlertTriangle size={18} className='text-amber-300 shrink-0 mt-0.5' />
-            <p className='text-xs text-amber-100/80'>{warningText}</p>
+            <AlertTriangle
+              size={18}
+              className='shrink-0 mt-0.5'
+              style={{ color: 'var(--warning)' }}
+            />
+            <p className='text-xs' style={{ color: 'rgba(255, 236, 194, 0.9)' }}>
+              {warningText}
+            </p>
           </div>
         </div>
 
         <div
-          className='px-5 pb-5 pt-3 flex flex-col gap-3 border-t border-white/10'
-          style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
+          className='px-5 pb-5 pt-3 flex flex-col gap-3 border-t'
+          style={{
+            borderColor: 'var(--border)',
+            paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))'
+          }}
         >
           <button
             type='button'
             onClick={handleConfirm}
             disabled={isSubmitting}
-            className='w-full h-14 rounded-2xl font-semibold text-slate-950 transition-all active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed'
+            className='w-full h-14 rounded-2xl font-semibold transition-all active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed'
             style={{
-              background: 'var(--accent, #bcff38)',
+              background:
+                'linear-gradient(135deg, rgba(184, 255, 44, 1) 0%, rgba(154, 236, 38, 1) 100%)',
               color: 'var(--accent-ink, #0c1014)',
-              boxShadow: '0 14px 30px -18px rgba(188, 255, 56, 0.45)'
+              boxShadow:
+                '0 16px 30px -18px rgba(184, 255, 44, 0.55), 0 0 18px rgba(184, 255, 44, 0.2)'
             }}
           >
             {isSubmitting ? 'Processando...' : 'Receber'}
@@ -324,10 +357,11 @@ export const ReceivePaymentModal = ({
           <button
             type='button'
             onClick={onClose}
-            className='w-full h-12 rounded-2xl font-semibold text-slate-200 transition-all active:scale-[0.99]'
+            className='w-full h-12 rounded-2xl font-semibold transition-all active:scale-[0.99]'
             style={{
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.12)'
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              color: 'var(--text)'
             }}
           >
             Cancelar

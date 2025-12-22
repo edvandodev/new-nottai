@@ -5,6 +5,7 @@ body {
   /* slate-950 */
   color: #f8fafc;
   /* slate-50 */
+  font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   /* App-like feel: prevent text selection */
@@ -14,6 +15,13 @@ body {
 input,
 textarea {
   user-select: text;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
 }
 
 /* Hide scrollbar for cleaner mobile look but allow scroll */
@@ -41,6 +49,7 @@ textarea {
 }
 
 @theme {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --color-slate-850: #1e293b;
   --color-slate-950: #020617;
 
