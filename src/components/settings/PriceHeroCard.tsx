@@ -20,7 +20,7 @@ export function PriceHeroCard({ valueLabel, subtitle, onEdit }: PriceHeroCardPro
       <div className='relative px-5 py-4 flex items-center justify-between gap-4'>
         <div>
           <p className='text-[11px] uppercase tracking-[0.08em] font-semibold text-slate-500'>
-            Preco atual
+            {'Pre\u00e7o atual'}
           </p>
           <div className='mt-1 text-3xl font-bold text-white leading-tight' style={{ color: 'var(--text)' }}>
             {valueLabel}

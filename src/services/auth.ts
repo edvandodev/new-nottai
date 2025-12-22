@@ -30,7 +30,7 @@ const saveCachedUser = (user: AppUser | null) => {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(user))
   } catch (error) {
-    console.warn('Nao foi possivel salvar usuario em cache', error)
+    console.warn('N\u00e3o foi poss\u00edvel salvar usu\u00e1rio em cache', error)
   }
 }
 
@@ -54,7 +54,10 @@ export const authService = {
     try {
       await FirebaseAuthentication.setLanguageCode({ languageCode: 'pt-BR' })
     } catch (error) {
-      console.warn('Nao foi possivel definir idioma pt-BR para emails de auth', error)
+      console.warn(
+        'N\u00e3o foi poss\u00edvel definir idioma pt-BR para e-mails de auth',
+        error
+      )
     }
   },
 
@@ -132,7 +135,10 @@ export const authService = {
       try {
         await FirebaseAuthentication.updateProfile({ displayName: 'Teste' })
       } catch (error) {
-        console.warn('Nao foi possivel definir displayName para anonimo', error)
+        console.warn(
+          'N\u00e3o foi poss\u00edvel definir displayName para an\u00f4nimo',
+          error
+        )
       }
     }
     const mapped = mapUser(user)

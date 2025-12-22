@@ -14,7 +14,7 @@ type ResetState = {
 
 const translateError = (error: any) => {
   const code = (error?.code || error?.message || '').toString()
-  if (code.includes('email-already-in-use')) return 'Email ja esta em uso.'
+  if (code.includes('email-already-in-use')) return 'E-mail j\u00e1 est\u00e1 em uso.'
   if (code.includes('weak-password') || code.includes('password')) {
     return 'Senha muito fraca. Use pelo menos 6 caracteres.'
   }
@@ -23,16 +23,16 @@ const translateError = (error: any) => {
     code.includes('invalid-login') ||
     code.includes('invalid-email')
   ) {
-    return 'Credenciais invalidas. Verifique email e senha.'
+    return 'Credenciais inv\u00e1lidas. Verifique e-mail e senha.'
   }
-  return 'Nao foi possivel completar a acao. Tente novamente.'
+  return 'N\u00e3o foi poss\u00edvel completar a a\u00e7\u00e3o. Tente novamente.'
 }
 
 const translateResetError = (error: any) => {
   const code = (error?.code || error?.message || '').toString()
-  if (code.includes('invalid-email')) return 'Informe um email valido.'
-  if (code.includes('user-not-found')) return 'Se existir uma conta, enviaremos o email.'
-  return 'Nao foi possivel enviar o email. Tente novamente.'
+  if (code.includes('invalid-email')) return 'Informe um e-mail v\u00e1lido.'
+  if (code.includes('user-not-found')) return 'Se existir uma conta, enviaremos o e-mail.'
+  return 'N\u00e3o foi poss\u00edvel enviar o e-mail. Tente novamente.'
 }
 
 export function AuthPage() {
@@ -64,7 +64,7 @@ export function AuthPage() {
 
     const trimmedEmail = email.trim()
     if (!trimmedEmail) {
-      setError('Informe um email.')
+      setError('Informe um e-mail.')
       return
     }
     if (password.length < 6) {
@@ -72,7 +72,7 @@ export function AuthPage() {
       return
     }
     if (mode === 'signup' && password !== confirmPassword) {
-      setError('As senhas nao conferem.')
+      setError('As senhas n\u00e3o conferem.')
       return
     }
 
@@ -82,7 +82,7 @@ export function AuthPage() {
         await authService.signIn(trimmedEmail, password)
       } else {
         await authService.signUp(trimmedEmail, password)
-        setInfo('Conta criada! Verifique seu email para ativar sua conta.')
+        setInfo('Conta criada! Verifique seu e-mail para ativar sua conta.')
       }
     } catch (err) {
       setError(translateError(err))
@@ -99,7 +99,7 @@ export function AuthPage() {
       await authService.signInAnonymously()
       setInfo('Entrou como convidado (teste).')
     } catch (err) {
-      setError('Nao foi possivel entrar como convidado.')
+      setError('N\u00e3o foi poss\u00edvel entrar como convidado.')
     } finally {
       setGuestLoading(false)
     }
@@ -118,11 +118,11 @@ export function AuthPage() {
     setReset((prev) => ({ ...prev, error: null, success: null }))
     const trimmedEmail = reset.email.trim()
     if (!trimmedEmail) {
-      setReset((prev) => ({ ...prev, error: 'Informe um email.' }))
+      setReset((prev) => ({ ...prev, error: 'Informe um e-mail.' }))
       return
     }
     if (!/.+@.+\..+/.test(trimmedEmail)) {
-      setReset((prev) => ({ ...prev, error: 'Informe um email valido.' }))
+      setReset((prev) => ({ ...prev, error: 'Informe um e-mail v\u00e1lido.' }))
       return
     }
 
@@ -131,7 +131,8 @@ export function AuthPage() {
       await authService.sendPasswordReset(trimmedEmail)
       setReset((prev) => ({
         ...prev,
-        success: 'Se existir uma conta, enviamos um email para redefinir sua senha.',
+        success:
+          'Se existir uma conta, enviamos um e-mail para redefinir sua senha.',
         error: null
       }))
     } catch (err) {
@@ -208,14 +209,14 @@ export function AuthPage() {
               <div className='space-y-2'>
                 <label className='text-sm font-medium text-slate-200 flex items-center gap-2'>
                   <Mail size={16} className='text-blue-400' />
-                  Email
+                  E-mail
                 </label>
                 <input
                   type='email'
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className='w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  placeholder='voce@email.com'
+                  placeholder='voc\u00ea@email.com'
                   disabled={loading}
                   required
                 />
@@ -332,13 +333,13 @@ export function AuthPage() {
 
             <form className='space-y-3' onSubmit={handleResetSubmit}>
               <div className='space-y-1'>
-                <label className='text-sm text-slate-300'>Email</label>
+                <label className='text-sm text-slate-300'>E-mail</label>
                 <input
                   type='email'
                   value={reset.email}
                   onChange={(e) => setReset((prev) => ({ ...prev, email: e.target.value }))}
                   className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  placeholder='voce@email.com'
+                  placeholder='voc\u00ea@email.com'
                   disabled={reset.loading}
                   required
                 />

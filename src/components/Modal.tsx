@@ -13,13 +13,35 @@ export function Modal({
 }) {
   if (!open) return null
   return (
-    <div className='fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center px-4'>
-      <div className='w-full max-w-lg bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4'>
+    <div
+      data-theme='flat-lime'
+      className='fixed inset-0 z-50 flex items-center justify-center px-4'
+      style={{
+        background: 'rgba(11, 15, 20, 0.72)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)'
+      }}
+    >
+      <div
+        className='w-full max-w-lg rounded-2xl p-6 shadow-xl space-y-4 border'
+        style={{
+          background: 'var(--surface)',
+          borderColor: 'var(--border)',
+          boxShadow: '0 24px 50px -34px var(--shadow)'
+        }}
+      >
         <div className='flex items-center justify-between'>
-          <h2 className='text-lg font-semibold text-white'>{title}</h2>
+          <h2 className='text-lg font-semibold' style={{ color: 'var(--text)' }}>
+            {title}
+          </h2>
           <button
             onClick={onClose}
-            className='text-slate-400 hover:text-white text-sm'
+            className='h-9 w-9 rounded-full flex items-center justify-center text-sm'
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--muted)'
+            }}
           >
             Fechar
           </button>

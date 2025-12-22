@@ -206,7 +206,7 @@ function App() {
         console.error('Falha ao preparar conta', error)
         if (!cancelled) {
           setDataError(
-            'Nao foi possivel preparar sua conta. Verifique sua internet e tente novamente.'
+            'N\u00e3o foi poss\u00edvel preparar sua conta. Verifique sua internet e tente novamente.'
           )
         }
         return cleanupAuto
@@ -520,10 +520,10 @@ function App() {
     try {
       setIsSendingVerification(true)
       await authService.sendEmailVerification()
-      alert('Enviamos um novo email de verificacao (se existir uma conta).')
+      alert('Enviamos um novo e-mail de verifica\u00e7\u00e3o (se existir uma conta).')
     } catch (error) {
       console.error('Falha ao reenviar verificacao', error)
-      alert('Nao foi possivel reenviar. Tente novamente.')
+      alert('N\u00e3o foi poss\u00edvel reenviar. Tente novamente.')
     } finally {
       setIsSendingVerification(false)
     }
@@ -535,13 +535,15 @@ function App() {
       const refreshed = await authService.reloadUser()
       setUser(refreshed)
       if (refreshed?.emailVerified) {
-        alert('Email verificado com sucesso!')
+        alert('E-mail verificado com sucesso!')
       } else {
-        alert('Ainda nao detectamos a verificacao. Tente novamente apos confirmar o email.')
+        alert(
+          'Ainda n\u00e3o detectamos a verifica\u00e7\u00e3o. Tente novamente ap\u00f3s confirmar o e-mail.'
+        )
       }
     } catch (error) {
       console.error('Falha ao checar verificacao', error)
-      alert('Nao foi possivel verificar agora. Tente novamente.')
+      alert('N\u00e3o foi poss\u00edvel verificar agora. Tente novamente.')
     } finally {
       setIsCheckingVerification(false)
     }
@@ -723,10 +725,10 @@ function App() {
         if (!payment) setIsReceiptModalOpen(false)
       } catch (err) {
         console.error('Falha ao gerar comprovante', err)
-        alert('Nao foi possivel gerar o comprovante.')
+        alert('N\u00e3o foi poss\u00edvel gerar o comprovante.')
       }
     } else {
-      alert('Nao ha informacoes para gerar o recibo.')
+      alert('N\u00e3o h\u00e1 informa\u00e7\u00f5es para gerar o recibo.')
     }
   }
   // --- Deletion Handlers exposed to pages ---
@@ -753,24 +755,28 @@ function App() {
     return (
       <div className='mx-4 mt-3 mb-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-100 px-4 py-3 flex flex-col gap-2'>
         <div className='flex items-center justify-between gap-2'>
-          <p className='text-sm font-semibold'>Email nao verificado</p>
-          <span className='text-xs text-amber-200/80'>{user.email || 'Sem email'}</span>
+          <p className='text-sm font-semibold'>{'E-mail n\u00e3o verificado'}</p>
+          <span className='text-xs text-amber-200/80'>
+            {user.email || 'Sem e-mail'}
+          </span>
         </div>
-        <p className='text-xs text-amber-100/80'>Verifique seu email para liberar todos os recursos.</p>
+        <p className='text-xs text-amber-100/80'>
+          {'Verifique seu e-mail para liberar todos os recursos.'}
+        </p>
         <div className='flex flex-wrap gap-2'>
           <button
             onClick={handleResendVerification}
             disabled={isSendingVerification}
             className='px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500/30 border border-amber-400/50 text-amber-50 disabled:opacity-60'
           >
-            {isSendingVerification ? 'Enviando...' : 'Reenviar verificacao'}
+            {isSendingVerification ? 'Enviando...' : 'Reenviar verifica\u00e7\u00e3o'}
           </button>
           <button
             onClick={handleCheckVerification}
             disabled={isCheckingVerification}
             className='px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 border border-slate-600 text-white disabled:opacity-60'
           >
-            {isCheckingVerification ? 'Checando...' : 'Ja verifiquei'}
+            {isCheckingVerification ? 'Checando...' : 'J\u00e1 verifiquei'}
           </button>
         </div>
       </div>
@@ -849,7 +855,7 @@ function App() {
       case 'SETTINGS':
         return 'Ajustes'
       case 'PAYMENTS':
-        return 'Historico'
+        return 'Hist\u00f3rico'
       default:
         return ''
     }

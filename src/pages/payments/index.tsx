@@ -51,7 +51,7 @@ const normalizeTs = (value: Payment['date']) => {
 const startOfDay = (dt: Date) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime()
 
 const formatDayWithTime = (ts: number) => {
-  if (!ts) return 'Data indisponivel'
+  if (!ts) return 'Data indispon\u00edvel'
   const d = new Date(ts)
   const now = new Date()
   const today = startOfDay(now)
@@ -383,7 +383,7 @@ export function PaymentsPage({
           { label: 'Todos', value: 'ALL' },
           { label: 'Hoje', value: 'TODAY' },
           { label: 'Semana', value: 'WEEK' },
-          { label: 'Mes', value: 'MONTH' }
+          { label: 'M\u00eas', value: 'MONTH' }
         ]}
       />
 
@@ -394,7 +394,7 @@ export function PaymentsPage({
             <button
               type='button'
               onClick={() => setShowPaymentPicker(false)}
-              aria-label='Fechar selecao'
+              aria-label='Fechar sele\u00e7\u00e3o'
               style={{ color: 'var(--muted)' }}
             >
               <X size={16} />
@@ -427,7 +427,7 @@ export function PaymentsPage({
 
       <div className='mt-6 mb-3 flex items-center justify-between'>
         <h3 className='text-sm font-semibold uppercase tracking-wide' style={{ color: 'var(--muted)' }}>
-          Lancamentos Recentes
+          {'Lan\u00e7amentos recentes'}
         </h3>
       </div>
 
@@ -442,14 +442,43 @@ export function PaymentsPage({
           <Wallet size={48} className='mx-auto mb-3' style={{ color: 'var(--muted)' }} />
           <p className='text-base font-semibold'>Nenhum pagamento registrado</p>
           <p className='text-sm' style={{ color: 'var(--muted)' }}>
-            Os pagamentos aparecerao aqui.
+            {'Os pagamentos aparecer\u00e3o aqui.'}
           </p>
+          <button
+            type='button'
+            onClick={handleAddPayment}
+            disabled={paymentCandidates.length === 0}
+            className='mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-transform active:scale-95 disabled:opacity-60'
+            style={{
+              background: 'var(--accent)',
+              color: 'var(--accent-ink)',
+              border: '1px solid var(--accent)'
+            }}
+          >
+            <Plus size={14} strokeWidth={3} />
+            Registrar recebimento
+          </button>
         </div>
       ) : filteredItems.length === 0 ? (
         <div className='flat-card p-4 text-center'>
           <p className='text-sm' style={{ color: 'var(--muted)' }}>
             Nenhum resultado para essa busca.
           </p>
+          <button
+            type='button'
+            onClick={() => {
+              setSearchQuery('')
+              setFilterMode('ALL')
+            }}
+            className='mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-transform active:scale-95'
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)'
+            }}
+          >
+            Limpar filtros
+          </button>
         </div>
       ) : (
         <div

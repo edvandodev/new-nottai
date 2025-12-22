@@ -31,7 +31,7 @@ export function EditPriceSheet({ open, initialValue, onClose, onSave }: EditPric
       return
     }
     if (parsed < 0) {
-      setError('Valor nao pode ser negativo.')
+      setError('Valor n\u00e3o pode ser negativo.')
       return
     }
     try {
@@ -39,7 +39,7 @@ export function EditPriceSheet({ open, initialValue, onClose, onSave }: EditPric
       await onSave(parsed)
       onClose()
     } catch (err) {
-      setError('Nao foi possivel salvar. Tente novamente.')
+      setError('N\u00e3o foi poss\u00edvel salvar. Tente novamente.')
     } finally {
       setIsSaving(false)
     }
@@ -60,9 +60,11 @@ export function EditPriceSheet({ open, initialValue, onClose, onSave }: EditPric
         <div className='px-5 pt-4 pb-3 flex items-center justify-between'>
           <div>
             <p className='text-[11px] uppercase tracking-[0.08em] text-slate-500 font-semibold'>
-              Editar preco
+              {'Editar pre\u00e7o'}
             </p>
-            <h2 className='text-lg font-semibold text-white'>Preco padrao (R$/L)</h2>
+            <h2 className='text-lg font-semibold text-white'>
+              {'Pre\u00e7o padr\u00e3o (R$/L)'}
+            </h2>
           </div>
           <button
             onClick={onClose}

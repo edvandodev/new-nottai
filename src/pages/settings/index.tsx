@@ -62,7 +62,7 @@ export function SettingsPage({
     })}`
 
   const formatSyncAgo = (ts: number | null) => {
-    if (!ts) return 'Aguardando primeira sincronizacao'
+    if (!ts) return 'Aguardando primeira sincroniza\u00e7\u00e3o'
     const diffMinutes = Math.max(
       0,
       Math.floor((Date.now() - Number(ts)) / 1000 / 60)
@@ -83,7 +83,7 @@ export function SettingsPage({
       await onSavePriceSettings(nextSettings)
       setCurrentPrice(nextValue)
     } catch (error) {
-      console.error('Falha ao salvar precos', error)
+      console.error('Falha ao salvar pre\u00e7os', error)
       throw error
     }
   }
@@ -91,16 +91,16 @@ export function SettingsPage({
   const translateError = (error: any) => {
     const code = (error?.code || error?.message || '').toString()
     if (code.includes('invalid-credential') || code.includes('invalid-login')) {
-      return 'Credenciais invalidas. Verifique email e senha.'
+      return 'Credenciais inv\u00e1lidas. Verifique e-mail e senha.'
     }
-    if (code.includes('email-already-in-use')) return 'Email ja esta em uso.'
-    if (code.includes('invalid-email')) return 'Email invalido.'
-    if (code.includes('weak-password')) return 'Senha muito fraca (minimo 6).'
+    if (code.includes('email-already-in-use')) return 'E-mail j\u00e1 est\u00e1 em uso.'
+    if (code.includes('invalid-email')) return 'E-mail inv\u00e1lido.'
+    if (code.includes('weak-password')) return 'Senha muito fraca (m\u00ednimo 6).'
     if (code.includes('network')) return 'Sem internet. Tente novamente.'
     if (code.includes('requires-recent-login')) {
-      return 'Reautenticacao necessaria. Informe sua senha atual.'
+      return 'Reautentica\u00e7\u00e3o necess\u00e1ria. Informe sua senha atual.'
     }
-    return 'Nao foi possivel concluir a acao. Tente novamente.'
+    return 'N\u00e3o foi poss\u00edvel concluir a a\u00e7\u00e3o. Tente novamente.'
   }
 
   const Modal = ({
@@ -141,7 +141,7 @@ export function SettingsPage({
     const handleUpdateEmail = async (reauth = false) => {
       const trimmedEmail = newEmail.trim()
       if (!trimmedEmail) {
-        setError('Informe um email valido.')
+        setError('Informe um e-mail v\u00e1lido.')
         return
       }
       setError(null)
@@ -157,7 +157,7 @@ export function SettingsPage({
           await authService.reauthWithPassword(currentUserEmail, password)
         }
         await authService.updateEmail(trimmedEmail)
-        setSuccess('Email atualizado com sucesso.')
+        setSuccess('E-mail atualizado com sucesso.')
       } catch (err) {
         const code = (err as any)?.code || (err as any)?.message || ''
         if (!reauth && code.toString().includes('requires-recent-login')) {
@@ -239,7 +239,7 @@ export function SettingsPage({
         return
       }
       if (newPassword !== confirmPassword) {
-        setError('As senhas nao conferem.')
+        setError('As senhas n\u00e3o conferem.')
         return
       }
       try {
@@ -344,7 +344,7 @@ export function SettingsPage({
         return
       }
       if (!currentUserId) {
-        setError('Usuario invalido para exclusao.')
+        setError('Usu\u00e1rio inv\u00e1lido para exclus\u00e3o.')
         return
       }
       try {
@@ -431,7 +431,7 @@ export function SettingsPage({
       : `Pend\u00eancias offline: ${pendingCount}`
   const accountLabel = currentUserIsAnonymous
     ? 'Convidado (Teste)'
-    : currentUserEmail || 'Sem email'
+    : currentUserEmail || 'Sem e-mail'
   const standardPriceLabel = formatCurrency(currentPrice)
   const customPriceLabel = formatCurrency(priceSettings.custom ?? 0)
 
@@ -599,9 +599,13 @@ export function SettingsPage({
                   <Clock3 size={18} />
                 </div>
                 <div className='min-w-0'>
-                  <p className='text-sm font-semibold'>{'Ultima sincroniza\u00e7\u00e3o'}</p>
+                  <p className='text-sm font-semibold'>
+                    {'\u00daltima sincroniza\u00e7\u00e3o'}
+                  </p>
                   <p className='text-xs' style={{ color: 'var(--muted)' }}>
-                    {lastSyncAt ? 'Automatica' : 'Aguardando primeira sincronizacao'}
+                    {lastSyncAt
+                      ? 'Autom\u00e1tica'
+                      : 'Aguardando primeira sincroniza\u00e7\u00e3o'}
                   </p>
                 </div>
               </div>
@@ -762,7 +766,7 @@ export function SettingsPage({
                 await onSignOut()
               } catch (error) {
                 console.error('Falha ao sair', error)
-                alert('Nao foi possivel sair. Tente novamente.')
+                alert('N\u00e3o foi poss\u00edvel sair. Tente novamente.')
               } finally {
                 setIsSigningOut(false)
               }

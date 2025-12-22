@@ -339,7 +339,7 @@ export const NewClientPage: React.FC<NewClientPageProps> = ({
               className='block text-xs font-semibold uppercase tracking-wide mb-2'
               style={{ color: 'var(--muted)' }}
             >
-              Tabela de preco
+              {'Tabela de pre\u00e7o'}
             </label>
             <div className='flat-card p-2 flex gap-2'>
               <button
@@ -372,7 +372,9 @@ export const NewClientPage: React.FC<NewClientPageProps> = ({
             </div>
             {priceType === 'CUSTOM' && (
               <p className='text-xs mt-2' style={{ color: 'var(--muted)' }}>
-                O valor segue o preco personalizado definido nas configuracoes.
+                  {
+                    'O valor segue o pre\u00e7o personalizado definido nas configura\u00e7\u00f5es.'
+                  }
               </p>
             )}
           </div>

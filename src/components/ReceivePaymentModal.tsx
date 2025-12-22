@@ -145,7 +145,7 @@ export const ReceivePaymentModal = ({
 
   const formattedTotal = formatCurrency(totalDue)
   const warningText =
-    'Ao confirmar, registramos o pagamento e, se o valor for menor que o saldo, manteremos o restante em aberto no historico.'
+    'Ao confirmar, registramos o pagamento e, se o valor for menor que o saldo, manteremos o restante em aberto no hist\u00f3rico.'
 
   return createPortal(
     <div

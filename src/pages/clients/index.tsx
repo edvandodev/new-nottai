@@ -566,7 +566,7 @@ export function ClientsPage({
               type='button'
               onClick={() => setShowPaymentPicker(false)}
               style={{ color: 'var(--muted)' }}
-              aria-label='Fechar seleÃ§Ã£o'
+              aria-label='Fechar sele\u00e7\u00e3o'
             >
               <X size={16} />
             </button>
@@ -688,12 +688,40 @@ export function ClientsPage({
           <p className='text-sm' style={{ color: 'var(--muted)' }}>
             Adicione um novo cliente acima.
           </p>
+          <button
+            type='button'
+            onClick={onAddClient}
+            className='mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-transform active:scale-95'
+            style={{
+              background: 'var(--accent)',
+              color: 'var(--accent-ink)',
+              border: '1px solid var(--accent)'
+            }}
+          >
+            <Plus size={14} strokeWidth={3} />
+            Adicionar cliente
+          </button>
         </div>
       ) : filteredClients.length === 0 ? (
         <div className='flat-card p-4 text-center'>
           <p className='text-sm' style={{ color: 'var(--muted)' }}>
             Nenhum cliente encontrado
           </p>
+          <button
+            type='button'
+            onClick={() => {
+              setSearchQuery('')
+              setFilterMode('ALL')
+            }}
+            className='mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-transform active:scale-95'
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)'
+            }}
+          >
+            Limpar filtros
+          </button>
         </div>
       ) : (
         <div className='space-y-[11px] pb-4'>
@@ -773,10 +801,10 @@ export function ClientsPage({
     const disableGenerateNote = balance <= 0 || !hasSalesHistory
     const historyHeaderLabel =
       historyFilter === 'SALES'
-        ? 'Historico de Vendas'
+        ? 'Hist\u00f3rico de Vendas'
         : historyFilter === 'PAYMENTS'
-          ? 'Historico de Pagamentos'
-          : 'Historico de Movimentacoes'
+          ? 'Hist\u00f3rico de Pagamentos'
+          : 'Hist\u00f3rico de Movimenta\u00e7\u00f5es'
     const flattenedHistoryItems = filteredHistoryGroups.flatMap((group) => group.items)
 
     return (
@@ -1074,7 +1102,9 @@ export function ClientsPage({
                 className='text-center py-8 rounded-2xl border border-dashed'
                 style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
               >
-                <p style={{ color: 'var(--muted)' }}>Nenhuma movimentacao registrada.</p>
+                <p style={{ color: 'var(--muted)' }}>
+                  {'Nenhuma movimenta\u00e7\u00e3o registrada.'}
+                </p>
               </div>
             ) : (
               <div

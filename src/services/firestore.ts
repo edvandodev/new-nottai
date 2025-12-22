@@ -12,7 +12,7 @@ const backfilledPayments = new Set<string>()
 
 const requireUid = (): string => {
   if (!currentUid) {
-    throw new Error('Usuario nao autenticado')
+    throw new Error('Usu\u00e1rio n\u00e3o autenticado')
   }
   return currentUid
 }
