@@ -138,14 +138,27 @@ export function PaymentsPage({
     () => payments.reduce((acc, payment) => acc + (payment.amount || 0), 0),
     [payments]
   )
-  const litersReceivable = useMemo(
-    () =>
-      sales.reduce((acc, sale) => {
-        if (sale.paymentStatus !== 'PRAZO' || sale.isPaid === true) return acc
-        return acc + (sale.liters || 0)
-      }, 0),
-    [sales]
-  )
+  const litersReceivable = useMemo(() => {
+    const byClient = new Map<string, { liters: number; value: number }>()
+    sales.forEach((sale) => {
+      if (sale.isPaid === true || sale.paymentStatus !== 'PRAZO') return
+      const prev = byClient.get(sale.clientId) || { liters: 0, value: 0 }
+      byClient.set(sale.clientId, {
+        liters: prev.liters + (sale.liters || 0),
+        value: prev.value + (sale.totalValue || 0)
+      })
+    })
+
+    let totalLiters = 0
+    byClient.forEach((data, clientId) => {
+      const balance = Math.max(0, clientBalances.get(clientId) || 0)
+      if (balance <= 0 || data.value <= 0) return
+      const ratio = Math.min(balance / data.value, 1)
+      totalLiters += data.liters * ratio
+    })
+
+    return totalLiters
+  }, [sales, clientBalances])
   const totalReceivedMonthly = useMemo(() => {
     const now = new Date()
     const currentMonth = now.getMonth()

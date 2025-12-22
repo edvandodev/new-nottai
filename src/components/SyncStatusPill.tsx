@@ -6,8 +6,8 @@ const formatAgo = (ts: number) => {
   if (diffSec < 10) return 'Sincronizado agora'
   const minutes = Math.floor(diffSec / 60)
   if (minutes < 1) return 'Sincronizado agora'
-  if (minutes === 1) return 'Sincronizado h? 1 min'
-  return `Sincronizado h? ${minutes} min`
+  if (minutes === 1) return 'Sincronizado h\u00e1 1 min'
+  return `Sincronizado h\u00e1 ${minutes} min`
 }
 
 export function SyncStatusPill() {
@@ -19,10 +19,20 @@ export function SyncStatusPill() {
     ? formatAgo(lastSyncAt)
     : 'Sincronizando...'
 
-  const base = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border'
-  const classes = !isOnline
-    ? 'bg-red-500/10 text-red-200 border-red-500/40'
-    : 'bg-emerald-500/10 text-emerald-200 border-emerald-500/40'
+  const base = 'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border'
+  const dotColor = !isOnline ? 'bg-rose-400' : 'bg-emerald-400'
 
-  return <span className={`${base} ${classes}`}>{label}</span>
+  return (
+    <span
+      className={base}
+      style={{
+        background: 'var(--surface-2)',
+        borderColor: 'var(--border)',
+        color: 'var(--text)'
+      }}
+    >
+      <span className={`h-2 w-2 rounded-full ${dotColor}`} />
+      {label}
+    </span>
+  )
 }

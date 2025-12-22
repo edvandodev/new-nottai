@@ -1,17 +1,24 @@
 import React, { useEffect, useState } from 'react'
-import { ChevronLeft, CloudOff, Clock3, Lock, Mail, ShieldOff, Wifi } from 'lucide-react'
+import {
+  CloudOff,
+  Clock3,
+  Droplets,
+  Info,
+  Lock,
+  Mail,
+  Settings as SettingsIcon,
+  Trash2,
+  Wifi
+} from 'lucide-react'
 import type { PriceSettings } from '@/types'
 import { authService } from '@/services/auth'
 import { firestoreService } from '@/services/firestore'
-import { SyncStatusPill } from '@/components/SyncStatusPill'
-import { PendingChangesPill } from '@/components/PendingChangesPill'
-import { useSyncStatus } from '@/hooks/useSyncStatus'
-import { usePendingQueue } from '@/hooks/usePendingQueue'
-import { SettingsSection } from '@/components/settings/SettingsSection'
-import { SettingsItem } from '@/components/settings/SettingsItem'
-import { PriceHeroCard } from '@/components/settings/PriceHeroCard'
 import { EditPriceSheet } from '@/components/settings/EditPriceSheet'
-import { useTheme, themeDefinitions } from '@/context/ThemeContext'
+import { PendingChangesPill } from '@/components/PendingChangesPill'
+import { SyncStatusPill } from '@/components/SyncStatusPill'
+import { usePendingQueue } from '@/hooks/usePendingQueue'
+import { useSyncStatus } from '@/hooks/useSyncStatus'
+import '../../styles/theme-flat.css'
 
 type SettingsPageProps = {
   priceSettings: PriceSettings
@@ -40,9 +47,6 @@ export function SettingsPage({
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showPriceSheet, setShowPriceSheet] = useState(false)
-  const [showThemeSheet, setShowThemeSheet] = useState(false)
-
-  const { themeId, setThemeId, themes } = useTheme()
 
   useEffect(() => {
     setCurrentPrice(priceSettings.standard ?? 0)
@@ -64,10 +68,10 @@ export function SettingsPage({
       Math.floor((Date.now() - Number(ts)) / 1000 / 60)
     )
     if (diffMinutes === 0) return 'Sincronizado agora'
-    if (diffMinutes === 1) return 'Sincronizado ha 1 min'
-    if (diffMinutes < 60) return `Sincronizado ha ${diffMinutes} min`
+    if (diffMinutes === 1) return 'Sincronizado h\u00e1 1 min'
+    if (diffMinutes < 60) return `Sincronizado h\u00e1 ${diffMinutes} min`
     const hours = Math.floor(diffMinutes / 60)
-    return `Sincronizado ha ${hours}h`
+    return `Sincronizado h\u00e1 ${hours}h`
   }
 
   const handleSavePrice = async (nextValue: number) => {
@@ -416,62 +420,340 @@ export function SettingsPage({
     )
   }
 
-  const userInitial = (currentUserEmail || '?').trim().charAt(0).toUpperCase() || '?'
   const bullet = '\u2022'
   const passwordMask = bullet.repeat(8)
   const syncStatusLine = isOnline
     ? `Online ${bullet} sincronizando automaticamente`
-    : `Offline ${bullet} suas alteracoes serao sincronizadas quando voltar a internet.`
+    : `Offline ${bullet} suas altera\u00e7\u00f5es ser\u00e3o sincronizadas quando voltar a internet.`
   const offlineLabel =
     failedCount > 0
-      ? `Pendencias offline: ${pendingCount} (${failedCount} falharam)`
-      : `Pendencias offline: ${pendingCount}`
+      ? `Pend\u00eancias offline: ${pendingCount} (${failedCount} falharam)`
+      : `Pend\u00eancias offline: ${pendingCount}`
   const accountLabel = currentUserIsAnonymous
     ? 'Convidado (Teste)'
     : currentUserEmail || 'Sem email'
-  const enabledThemes = themes.filter((t) => t.enabled)
-  const currentThemeName =
-    themes.find((t) => t.id === themeId)?.name || 'Tema 01 (Atual)'
+  const standardPriceLabel = formatCurrency(currentPrice)
+  const customPriceLabel = formatCurrency(priceSettings.custom ?? 0)
 
   return (
     <div
-      className='space-y-5 animate-fade-in'
+      data-theme='flat-lime'
+      className='min-h-screen animate-fade-in'
       style={{
-        paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))'
+        background: 'var(--bg)',
+        color: 'var(--text)',
+        paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))',
+        paddingLeft: 16,
+        paddingRight: 16
       }}
     >
-      <div className='flex items-center justify-between px-1'>
-        <button
-          type='button'
-          onClick={() => {
-            if (window.history.length > 1) window.history.back()
+      <div className='flex items-center gap-4 mb-6'>
+        <div
+          className='h-12 w-12 rounded-2xl flex items-center justify-center'
+          style={{
+            background: 'rgba(184, 255, 44, 0.14)',
+            border: '1px solid rgba(184, 255, 44, 0.4)',
+            color: 'var(--accent)'
           }}
-          className='h-10 w-10 rounded-full bg-slate-900/80 border border-slate-800 text-slate-200 flex items-center justify-center active:scale-[0.97] hover:border-slate-600'
         >
-          <ChevronLeft size={18} />
-        </button>
-        <h1 className='text-lg font-semibold text-white'>Ajustes</h1>
-        <span className='w-10' />
+          <SettingsIcon size={20} />
+        </div>
+        <div>
+          <h1 className='text-[24px] font-semibold leading-none'>
+            {'Configura\u00e7\u00f5es'}
+          </h1>
+          <p className='mt-1 text-xs' style={{ color: 'var(--muted)' }}>
+            Personalize seu app
+          </p>
+        </div>
+      </div>
+
+      <div className='space-y-6'>
+        <div>
+          <p
+            className='text-[11px] font-semibold uppercase tracking-[0.2em] mb-2'
+            style={{ color: 'var(--accent)' }}
+          >
+            {'PRE\u00c7OS'}
+          </p>
+          <div className='flat-card overflow-hidden'>
+            <button
+              type='button'
+              onClick={() => setShowPriceSheet(true)}
+              className='w-full flex items-center justify-between gap-4 px-4 py-4 text-left transition-transform active:scale-[0.99]'
+            >
+              <div className='flex items-center gap-3 min-w-0'>
+                <div
+                  className='h-10 w-10 rounded-xl flex items-center justify-center'
+                  style={{
+                    background: 'rgba(184, 255, 44, 0.14)',
+                    border: '1px solid rgba(184, 255, 44, 0.4)',
+                    color: 'var(--accent)'
+                  }}
+                >
+                  <Droplets size={18} />
+                </div>
+                <div className='min-w-0'>
+                  <p className='text-sm font-semibold'>{'Pre\u00e7o Padr\u00e3o'}</p>
+                  <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                    Usado em novas vendas
+                  </p>
+                </div>
+              </div>
+              <span
+                className='px-3 py-1 rounded-full text-sm font-semibold tabular-nums'
+                style={{
+                  background: 'rgba(184, 255, 44, 0.18)',
+                  border: '1px solid rgba(184, 255, 44, 0.5)',
+                  color: 'var(--accent)'
+                }}
+              >
+                {standardPriceLabel}
+              </span>
+            </button>
+            <div className='h-px' style={{ background: 'rgba(255, 255, 255, 0.06)' }} />
+            <div className='flex items-center justify-between gap-4 px-4 py-4'>
+              <div className='flex items-center gap-3 min-w-0'>
+                <div
+                  className='h-10 w-10 rounded-xl flex items-center justify-center'
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--muted)'
+                  }}
+                >
+                  <Droplets size={18} />
+                </div>
+                <div className='min-w-0'>
+                  <p className='text-sm font-semibold'>
+                    {'Pre\u00e7o Personalizado'}
+                  </p>
+                  <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                    Clientes especiais
+                  </p>
+                </div>
+              </div>
+              <span
+                className='px-3 py-1 rounded-full text-sm font-semibold tabular-nums'
+                style={{
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--muted)'
+                }}
+              >
+                {customPriceLabel}
+              </span>
+            </div>
+          </div>
+          <div className='mt-3 flex items-start gap-2 text-xs' style={{ color: 'var(--muted)' }}>
+            <Info size={14} className='mt-0.5' />
+            <p>
+              {
+                'O pre\u00e7o padr\u00e3o \u00e9 usado automaticamente em novas vendas. O personalizado pode ser aplicado a clientes espec\u00edficos.'
+              }
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <p
+            className='text-[11px] font-semibold uppercase tracking-[0.2em] mb-2'
+            style={{ color: 'var(--accent)' }}
+          >
+            {'SINCRONIZA\u00c7\u00c3O'}
+          </p>
+          <div className='flat-card overflow-hidden'>
+            <div className='flex items-center justify-between gap-4 px-4 py-4'>
+              <div className='flex items-center gap-3 min-w-0'>
+                <div
+                  className='h-10 w-10 rounded-xl flex items-center justify-center'
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--muted)'
+                  }}
+                >
+                  <Wifi size={18} />
+                </div>
+                <div className='min-w-0'>
+                  <p className='text-sm font-semibold'>Status</p>
+                  <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                    {syncStatusLine}
+                  </p>
+                </div>
+              </div>
+              <SyncStatusPill />
+            </div>
+            <div className='h-px' style={{ background: 'rgba(255, 255, 255, 0.06)' }} />
+            <div className='flex items-center justify-between gap-4 px-4 py-4'>
+              <div className='flex items-center gap-3 min-w-0'>
+                <div
+                  className='h-10 w-10 rounded-xl flex items-center justify-center'
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--muted)'
+                  }}
+                >
+                  <Clock3 size={18} />
+                </div>
+                <div className='min-w-0'>
+                  <p className='text-sm font-semibold'>{'Ultima sincroniza\u00e7\u00e3o'}</p>
+                  <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                    {lastSyncAt ? 'Automatica' : 'Aguardando primeira sincronizacao'}
+                  </p>
+                </div>
+              </div>
+              <span
+                className='inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border'
+                style={{
+                  background: 'var(--surface-2)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                <span className='h-2 w-2 rounded-full bg-emerald-400' />
+                {formatSyncAgo(lastSyncAt ?? null)}
+              </span>
+            </div>
+            <div className='h-px' style={{ background: 'rgba(255, 255, 255, 0.06)' }} />
+            <div className='flex items-center justify-between gap-4 px-4 py-4'>
+              <div className='flex items-center gap-3 min-w-0'>
+                <div
+                  className='h-10 w-10 rounded-xl flex items-center justify-center'
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--muted)'
+                  }}
+                >
+                  <CloudOff size={18} />
+                </div>
+                <div className='min-w-0'>
+                  <p className='text-sm font-semibold'>{'Pend\u00eancias offline'}</p>
+                  <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                    {offlineLabel}
+                  </p>
+                </div>
+              </div>
+              <PendingChangesPill onClick={() => onOpenPendingModal?.()} />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p
+            className='text-[11px] font-semibold uppercase tracking-[0.2em] mb-2'
+            style={{ color: 'var(--accent)' }}
+          >
+            {'CONTA & SEGURAN\u00c7A'}
+          </p>
+          <div className='flat-card overflow-hidden'>
+            <div className='flex items-center justify-between gap-4 px-4 py-4'>
+              <div className='flex items-center gap-3 min-w-0'>
+                <div
+                  className='h-10 w-10 rounded-xl flex items-center justify-center'
+                  style={{
+                    background: 'rgba(184, 255, 44, 0.14)',
+                    border: '1px solid rgba(184, 255, 44, 0.4)',
+                    color: 'var(--accent)'
+                  }}
+                >
+                  <Mail size={18} />
+                </div>
+                <div className='min-w-0'>
+                  <p className='text-sm font-semibold'>E-mail</p>
+                  <p className='text-xs truncate' style={{ color: 'var(--muted)' }}>
+                    {accountLabel}
+                  </p>
+                </div>
+              </div>
+              <button
+                type='button'
+                onClick={() => setShowEmailModal(true)}
+                className='px-3 py-1.5 rounded-full text-xs font-semibold transition-transform active:scale-[0.98]'
+                style={{
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                Alterar
+              </button>
+            </div>
+            <div className='h-px' style={{ background: 'rgba(255, 255, 255, 0.06)' }} />
+            <div className='flex items-center justify-between gap-4 px-4 py-4'>
+              <div className='flex items-center gap-3 min-w-0'>
+                <div
+                  className='h-10 w-10 rounded-xl flex items-center justify-center'
+                  style={{
+                    background: 'rgba(184, 255, 44, 0.14)',
+                    border: '1px solid rgba(184, 255, 44, 0.4)',
+                    color: 'var(--accent)'
+                  }}
+                >
+                  <Lock size={18} />
+                </div>
+                <div className='min-w-0'>
+                  <p className='text-sm font-semibold'>Senha</p>
+                  <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                    {passwordMask}
+                  </p>
+                </div>
+              </div>
+              <button
+                type='button'
+                onClick={() => setShowPasswordModal(true)}
+                className='px-3 py-1.5 rounded-full text-xs font-semibold transition-transform active:scale-[0.98]'
+                style={{
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                Alterar
+              </button>
+            </div>
+            <div className='h-px' style={{ background: 'rgba(255, 255, 255, 0.06)' }} />
+            <div className='flex items-center justify-between gap-4 px-4 py-4'>
+              <div className='flex items-center gap-3 min-w-0'>
+                <div
+                  className='h-10 w-10 rounded-xl flex items-center justify-center'
+                  style={{
+                    background: 'rgba(255, 90, 106, 0.14)',
+                    border: '1px solid rgba(255, 90, 106, 0.45)',
+                    color: 'var(--danger)'
+                  }}
+                >
+                  <Trash2 size={18} />
+                </div>
+                <div className='min-w-0'>
+                  <p className='text-sm font-semibold text-rose-200'>Excluir conta</p>
+                  <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                    Remove seus dados...
+                  </p>
+                </div>
+              </div>
+              <button
+                type='button'
+                onClick={() => setShowDeleteModal(true)}
+                className='px-3 py-1.5 rounded-full text-xs font-semibold transition-transform active:scale-[0.98]'
+                style={{
+                  background: 'rgba(255, 90, 106, 0.95)',
+                  border: '1px solid rgba(255, 90, 106, 0.55)',
+                  color: '#fff'
+                }}
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {onSignOut && (
-        <div className='bg-slate-900/70 border border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4'>
-          <div className='flex items-center gap-3 min-w-0'>
-            <div className='h-12 w-12 rounded-full border border-blue-500/30 bg-blue-600/20 text-blue-100 font-bold flex items-center justify-center shadow-inner shadow-blue-900/30'>
-              {userInitial}
-            </div>
-            <div className='min-w-0'>
-              <p className='text-[11px] uppercase tracking-wide text-slate-500 font-semibold'>
-                Conta
-              </p>
-              <p className='text-sm font-semibold text-white truncate'>
-                {accountLabel}
-              </p>
-              {currentUserIsAnonymous && (
-                <p className='text-[11px] text-slate-400'>Sessao temporaria</p>
-              )}
-            </div>
-          </div>
+        <div className='mt-6 flex justify-center'>
           <button
             onClick={async () => {
               if (!onSignOut) return
@@ -486,99 +768,20 @@ export function SettingsPage({
               }
             }}
             disabled={isSigningOut}
-            className='px-4 py-2 rounded-full border border-slate-700 bg-slate-800/60 hover:border-slate-500 hover:bg-slate-800 text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60'
+            className='px-4 py-2 rounded-full text-xs font-semibold transition-transform active:scale-[0.98] disabled:opacity-60'
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--muted)'
+            }}
           >
             {isSigningOut ? 'Saindo...' : 'Sair'}
           </button>
         </div>
       )}
 
-      <PriceHeroCard
-        valueLabel={`${formatCurrency(currentPrice)} / L`}
-        subtitle='Aplicado por padrao'
-        onEdit={() => setShowPriceSheet(true)}
-      />
-
-      <SettingsSection title='Conta & Seguranca'>
-        <SettingsItem
-          icon={<Mail size={18} />}
-          title='E-mail'
-          subtitle={accountLabel}
-          onClick={() => setShowEmailModal(true)}
-          rightSlot={
-            <span className='px-3 py-1 rounded-full bg-slate-800/70 border border-slate-700 text-xs font-semibold text-slate-100'>
-              Alterar
-            </span>
-          }
-        />
-        <SettingsItem
-          icon={<Lock size={18} />}
-          title='Senha'
-          subtitle={passwordMask}
-          onClick={() => setShowPasswordModal(true)}
-          rightSlot={
-            <span className='px-3 py-1 rounded-full bg-slate-800/70 border border-slate-700 text-xs font-semibold text-slate-100'>
-              Alterar
-            </span>
-          }
-        />
-        <SettingsItem
-          icon={<ShieldOff size={18} className='text-red-300' />}
-          title='Excluir conta'
-          subtitle='Remove seus dados e acesso'
-          danger
-          onClick={() => setShowDeleteModal(true)}
-          rightSlot={
-            <span className='px-3 py-1 rounded-full bg-red-500/15 border border-red-500/50 text-xs font-semibold text-red-200'>
-              Excluir
-            </span>
-          }
-        />
-      </SettingsSection>
-
-      <SettingsSection title='Aparencia'>
-        <SettingsItem
-          icon={<div className='h-5 w-5 rounded-full bg-gradient-to-br from-blue-500 to-emerald-400' />}
-          title='Tema'
-          subtitle={currentThemeName}
-          onClick={() => setShowThemeSheet(true)}
-          rightSlot={
-            <span className='px-3 py-1 rounded-full bg-slate-800/70 border border-slate-700 text-xs font-semibold text-slate-100'>
-              Alterar
-            </span>
-          }
-        />
-      </SettingsSection>
-
-      <SettingsSection title='Sincronizacao'>
-        <SettingsItem
-          icon={<Wifi size={18} />}
-          title='Status'
-          subtitle={syncStatusLine}
-          rightSlot={<SyncStatusPill />}
-        />
-        <SettingsItem
-          icon={<Clock3 size={18} />}
-          title='Ultima sincronizacao'
-          subtitle={lastSyncAt ? 'Automatica' : 'Aguardando primeira sincronizacao'}
-          rightSlot={
-            <span className='inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/70 border border-slate-700 text-xs font-semibold text-slate-100'>
-              <span className='h-2 w-2 rounded-full bg-emerald-400' />
-              {formatSyncAgo(lastSyncAt ?? null)}
-            </span>
-          }
-        />
-        <SettingsItem
-          icon={<CloudOff size={18} />}
-          title='Pendencias offline'
-          subtitle={offlineLabel}
-          onClick={() => onOpenPendingModal?.()}
-          rightSlot={<PendingChangesPill onClick={() => onOpenPendingModal?.()} />}
-        />
-      </SettingsSection>
-
       <div className='text-center p-4'>
-        <p className='text-slate-600 text-sm'>{versionLabel}</p>
+        <p className='text-slate-600 text-xs'>{versionLabel}</p>
       </div>
 
       <EmailModal />
@@ -590,67 +793,6 @@ export function SettingsPage({
         onClose={() => setShowPriceSheet(false)}
         onSave={handleSavePrice}
       />
-      {showThemeSheet && (
-        <div className='fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 backdrop-blur-sm px-3 pb-3'>
-          <div
-            className='w-full max-w-lg rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl shadow-black/40 overflow-hidden animate-slide-up'
-            style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow)' }}
-          >
-            <div className='px-5 pt-4 pb-3 flex items-center justify-between'>
-              <div>
-                <p className='text-[11px] uppercase tracking-[0.08em] text-slate-500 font-semibold'>
-                  Aparencia
-                </p>
-                <h2 className='text-lg font-semibold text-white'>Escolher tema</h2>
-              </div>
-              <button
-                onClick={() => setShowThemeSheet(false)}
-                className='text-slate-400 hover:text-white text-sm font-semibold'
-              >
-                Fechar
-              </button>
-            </div>
-            <div className='px-5 pb-5 space-y-2'>
-              {themeDefinitions.map((theme) => {
-                const isEnabled = theme.enabled
-                const isActive = theme.id === themeId
-                const label = theme.name + (!isEnabled ? ' (Em breve)' : '')
-                return (
-                  <button
-                    key={theme.id}
-                    type='button'
-                    disabled={!isEnabled}
-                    onClick={() => {
-                      if (!isEnabled) return
-                      setThemeId(theme.id)
-                      setShowThemeSheet(false)
-                    }}
-                    className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
-                      isActive
-                        ? 'border-blue-500/70 bg-blue-500/10 text-white'
-                        : 'border-slate-800 bg-slate-800/40 text-slate-100'
-                    } ${!isEnabled ? 'opacity-60 cursor-not-allowed' : 'active:scale-[0.99] hover:border-slate-600'}`}
-                  >
-                    <div className='min-w-0'>
-                      <p className='text-sm font-semibold truncate'>{label}</p>
-                      {!isEnabled && (
-                        <p className='text-xs text-slate-400'>Disponivel futuramente</p>
-                      )}
-                    </div>
-                    <span
-                      className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
-                        isActive ? 'border-blue-400' : 'border-slate-500'
-                      } ${isEnabled ? '' : 'opacity-60'}`}
-                    >
-                      {isActive && <span className='h-2.5 w-2.5 rounded-full bg-blue-400' />}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
