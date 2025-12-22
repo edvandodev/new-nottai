@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -12,6 +12,7 @@ import {
   X
 } from 'lucide-react'
 import type { Client, Payment, Sale } from '@/types'
+import '../../styles/theme-flat.css'
 
 type ReportsPageProps = {
   sales: Sale[]
@@ -154,7 +155,7 @@ const computeChange = (
 type StatsSummaryCardProps = {
   title: string
   icon: React.ReactNode
-  accent: 'blue' | 'green'
+  tone?: 'neutral' | 'accent'
   mainValue: string
   previousValue: string
   change: { direction: ChangeDirection; percent: number }
@@ -180,25 +181,35 @@ const MonthYearToggle = ({
       type='button'
       onClick={onPrevMonth}
       aria-label='Mês anterior'
-      className='h-7 w-7 rounded-full flex items-center justify-center text-white/80 hover:text-white transition'
+      className='h-8 w-8 rounded-full flex items-center justify-center border transition-colors hover:brightness-110'
+      style={{
+        borderColor: 'var(--border)',
+        background: 'var(--surface-2)',
+        color: 'var(--muted)'
+      }}
     >
       <ChevronLeft size={16} />
     </button>
-    <div className='flex items-center gap-1.5 text-sm font-semibold text-white/90'>
+    <div
+      className='flex items-center gap-1.5 text-sm font-semibold'
+      style={{ color: 'var(--text)' }}
+    >
       <button
         type='button'
         onClick={onPressCenter}
-        className='hover:text-white transition'
+        className='transition-colors hover:brightness-110'
         aria-label='Selecionar mês e ano'
+        style={{ color: 'var(--text)' }}
       >
         {monthLabel}
       </button>
-      <span className='text-white/60'>/</span>
+      <span style={{ color: 'var(--muted)' }}>/</span>
       <button
         type='button'
         onClick={onPressCenter}
-        className='hover:text-white transition'
+        className='transition-colors hover:brightness-110'
         aria-label='Selecionar mês e ano'
+        style={{ color: 'var(--text)' }}
       >
         {yearLabel}
       </button>
@@ -207,7 +218,12 @@ const MonthYearToggle = ({
       type='button'
       onClick={onNextMonth}
       aria-label='Próximo mês'
-      className='h-7 w-7 rounded-full flex items-center justify-center text-white/80 hover:text-white transition'
+      className='h-8 w-8 rounded-full flex items-center justify-center border transition-colors hover:brightness-110'
+      style={{
+        borderColor: 'var(--border)',
+        background: 'var(--surface-2)',
+        color: 'var(--muted)'
+      }}
     >
       <ChevronRight size={16} />
     </button>
@@ -223,16 +239,42 @@ const ViewToggle = ({
 }) => {
   const optionClasses = (mode: ViewMode) =>
     [
-      'px-3 py-1.5 rounded-full text-xs font-semibold transition',
-      value === mode ? 'bg-blue-600/30 text-blue-100 shadow' : 'text-white/70 hover:text-white'
+      'px-3 py-1 rounded-full text-[11px] font-semibold transition-colors',
+      value === mode ? '' : 'hover:brightness-110'
     ].join(' ')
+  const activeStyle = {
+    background: 'var(--accent)',
+    color: 'var(--accent-ink)',
+    boxShadow: '0 10px 22px -16px var(--shadow)'
+  }
+  const inactiveStyle = {
+    background: 'transparent',
+    color: 'var(--muted)'
+  }
 
   return (
-    <div className='inline-flex rounded-full border border-white/10 bg-white/5 p-0.5 shadow-inner'>
-      <button type='button' onClick={() => onChange('month')} className={optionClasses('month')}>
+    <div
+      className='inline-flex items-center gap-1 rounded-full border p-0.5'
+      style={{
+        borderColor: 'var(--border)',
+        background: 'var(--surface-2)',
+        boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.15)'
+      }}
+    >
+      <button
+        type='button'
+        onClick={() => onChange('month')}
+        className={optionClasses('month')}
+        style={value === 'month' ? activeStyle : inactiveStyle}
+      >
         Mês
       </button>
-      <button type='button' onClick={() => onChange('week')} className={optionClasses('week')}>
+      <button
+        type='button'
+        onClick={() => onChange('week')}
+        className={optionClasses('week')}
+        style={value === 'week' ? activeStyle : inactiveStyle}
+      >
         Semana
       </button>
     </div>
@@ -242,17 +284,44 @@ const ViewToggle = ({
 const StatsSummaryCard = ({
   title,
   icon,
-  accent,
+  tone = 'neutral',
   mainValue,
   previousValue,
   change
 }: StatsSummaryCardProps) => {
-  const accentText =
-    accent === 'blue' ? 'text-blue-100' : 'text-green-100'
-  const accentIconBg =
-    accent === 'blue' ? 'bg-blue-500/20 text-blue-300' : 'bg-green-500/20 text-green-300'
-  const accentBorder =
-    accent === 'blue' ? 'border-blue-500/30 bg-blue-900/15' : 'border-green-500/30 bg-green-900/15'
+  const isAccent = tone === 'accent'
+  const cardStyle = isAccent
+    ? {
+        background:
+          'linear-gradient(160deg, rgba(184, 255, 44, 0.16) 0%, rgba(18, 24, 33, 0.95) 60%, rgba(11, 15, 20, 0.98) 100%)',
+        borderColor: 'rgba(184, 255, 44, 0.35)',
+        boxShadow: '0 18px 40px -28px rgba(184, 255, 44, 0.35)'
+      }
+    : {
+        background: 'var(--surface)',
+        borderColor: 'var(--border)',
+        boxShadow: '0 16px 32px -28px var(--shadow)'
+      }
+
+  const iconStyle = isAccent
+    ? {
+        background: 'rgba(184, 255, 44, 0.18)',
+        color: 'var(--accent)',
+        borderColor: 'rgba(184, 255, 44, 0.35)'
+      }
+    : {
+        background: 'var(--surface-2)',
+        color: 'var(--accent)',
+        borderColor: 'var(--border)'
+      }
+
+  const valueStyle = {
+    color: isAccent ? 'var(--accent)' : 'var(--text)'
+  }
+
+  const dividerStyle = {
+    background: isAccent ? 'rgba(184, 255, 44, 0.22)' : 'var(--border)'
+  }
 
   const changeColor =
     change.direction === 'up'
@@ -273,33 +342,44 @@ const StatsSummaryCard = ({
 
   return (
     <div
-      className={`rounded-2xl p-4 border ${accentBorder} flex flex-col gap-3 shadow-sm overflow-hidden`}
+      className='flat-card p-4 flex flex-col gap-3 shadow-sm overflow-hidden'
+      style={cardStyle}
     >
       <div className='flex items-start justify-between gap-3'>
         <div className='space-y-1 flex-1 min-w-0'>
-          <p className='text-xs uppercase tracking-wide text-slate-400 font-semibold'>
+          <p
+            className='text-xs uppercase tracking-wide font-semibold'
+            style={{ color: 'var(--muted)' }}
+          >
             {title}
           </p>
           <p
-            className={`text-base font-extrabold ${accentText} whitespace-nowrap overflow-hidden text-ellipsis`}
+            className='text-lg font-extrabold whitespace-nowrap overflow-hidden text-ellipsis'
+            style={valueStyle}
             title={mainValue}
           >
             {mainValue}
           </p>
         </div>
         <div
-          className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${accentIconBg}`}
+          className='h-8 w-8 rounded-full flex items-center justify-center shrink-0 border'
+          style={iconStyle}
         >
           {icon}
         </div>
       </div>
 
-      <div className='h-px w-full bg-slate-700/70' />
+      <div className='h-px w-full' style={dividerStyle} />
 
       <div className='space-y-1'>
-        <p className='text-slate-400 text-[11px] font-medium'>Mês passado</p>
-        <div className='flex items-center justify-between text-xs text-slate-400'>
-          <span className='font-semibold whitespace-nowrap overflow-hidden text-ellipsis'>
+        <p className='text-[11px] font-medium' style={{ color: 'var(--muted)' }}>
+          Mês passado
+        </p>
+        <div className='flex items-center justify-between text-xs' style={{ color: 'var(--muted)' }}>
+          <span
+            className='font-semibold whitespace-nowrap overflow-hidden text-ellipsis'
+            style={{ color: 'var(--text)' }}
+          >
             {previousValue}
           </span>
           <span className={`flex items-center gap-1 font-bold ${changeColor}`}>
@@ -460,6 +540,12 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
       ),
     [clients, mergedSales, reportMonth, reportYear]
   )
+  const rankingTotalValue = monthlyTotals[reportMonth]?.totalValue || 0
+  const rankingTotalLiters = monthlyTotals[reportMonth]?.totalLiters || 0
+  const maxRankingValue = useMemo(
+    () => monthlyRanking.reduce((max, item) => Math.max(max, item.totalValue), 0),
+    [monthlyRanking]
+  )
 
   const getAvatarColors = (input: string) => {
     let hash = 0
@@ -475,12 +561,15 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
   }
 
   return (
-    <div className='space-y-6 animate-fade-in'>
+    <div className='space-y-6 animate-fade-in' style={{ color: 'var(--text)' }}>
       <div className='space-y-3'>
         <div className='flex items-center justify-between gap-4'>
           <div className='flex items-center gap-2'>
-            <CalendarDays size={16} className='text-slate-400' />
-            <h3 className='text-slate-200 text-sm font-bold uppercase tracking-wider'>
+            <CalendarDays size={16} style={{ color: 'var(--muted)' }} />
+            <h3
+              className='text-xs font-semibold uppercase tracking-wider'
+              style={{ color: 'var(--muted)' }}
+            >
               Resumo do período
             </h3>
           </div>
@@ -493,21 +582,40 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               onPressCenter={() => setShowMonthYearPicker((prev) => !prev)}
             />
             {showMonthYearPicker && (
-              <div className='absolute right-0 mt-2 bg-slate-900/70 backdrop-blur-md border border-white/10 rounded-xl shadow-lg p-3 z-30 w-64'>
+              <div
+                className='absolute right-0 mt-2 flat-card p-3 z-30 w-64'
+                style={{
+                  background: 'var(--surface)',
+                  borderColor: 'var(--border)',
+                  boxShadow: '0 18px 40px -30px var(--shadow)'
+                }}
+              >
                 <div className='flex items-center justify-between mb-2 px-1'>
                   <button
                     type='button'
                     onClick={() => setReportDate((prev) => ({ ...prev, year: prev.year - 1 }))}
-                    className='h-7 w-7 rounded-full flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition'
+                    className='h-7 w-7 rounded-full flex items-center justify-center border transition-colors hover:brightness-110'
+                    style={{
+                      borderColor: 'var(--border)',
+                      background: 'var(--surface-2)',
+                      color: 'var(--muted)'
+                    }}
                     aria-label='Ano anterior'
                   >
                     <ChevronLeft size={16} />
                   </button>
-                  <span className='text-sm font-semibold text-slate-100'>{reportYear}</span>
+                  <span className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                    {reportYear}
+                  </span>
                   <button
                     type='button'
                     onClick={() => setReportDate((prev) => ({ ...prev, year: prev.year + 1 }))}
-                    className='h-7 w-7 rounded-full flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition'
+                    className='h-7 w-7 rounded-full flex items-center justify-center border transition-colors hover:brightness-110'
+                    style={{
+                      borderColor: 'var(--border)',
+                      background: 'var(--surface-2)',
+                      color: 'var(--muted)'
+                    }}
                     aria-label='Próximo ano'
                   >
                     <ChevronRight size={16} />
@@ -522,11 +630,20 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                         setReportDate((prev) => ({ ...prev, month: idx }))
                         setShowMonthYearPicker(false)
                       }}
-                      className={`rounded-lg py-2 text-xs font-semibold transition ${
+                      className='rounded-lg py-2 text-xs font-semibold transition border'
+                      style={
                         idx === reportMonth
-                          ? 'bg-blue-600/25 text-white'
-                          : 'text-slate-200 hover:bg-slate-800'
-                      }`}
+                          ? {
+                              background: 'var(--accent)',
+                              color: 'var(--accent-ink)',
+                              borderColor: 'var(--accent)'
+                            }
+                          : {
+                              background: 'var(--surface-2)',
+                              color: 'var(--text)',
+                              borderColor: 'var(--border)'
+                            }
+                      }
                     >
                       {label}
                     </button>
@@ -541,7 +658,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
           <StatsSummaryCard
             title='Total Litros'
             icon={<Droplets size={12} />}
-            accent='blue'
+            tone='neutral'
             mainValue={`${reportData.totalLiters} L`}
             previousValue={`${previousTotals.liters} L`}
             change={litersChange}
@@ -549,7 +666,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
           <StatsSummaryCard
             title='Valor Total'
             icon={<DollarSign size={12} />}
-            accent='green'
+            tone='accent'
             mainValue={formatCurrency(reportData.totalValue)}
             previousValue={formatCurrency(previousTotals.value)}
             change={valueChange}
@@ -559,8 +676,11 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
       <div>
         <div className='flex items-center justify-between gap-3 mb-4'>
           <div className='flex items-center gap-2'>
-            <BarChart3 size={18} className='text-slate-500' />
-            <h3 className='text-slate-200 text-sm font-bold uppercase tracking-wider'>
+            <BarChart3 size={18} style={{ color: 'var(--muted)' }} />
+            <h3
+              className='text-xs font-semibold uppercase tracking-wider'
+              style={{ color: 'var(--muted)' }}
+            >
               {viewMode === 'month' ? 'Vendas por Mês' : 'Vendas por Semana'}
             </h3>
           </div>
@@ -569,17 +689,24 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
 
         {viewMode === 'month' ? (
           hasMonthlyData ? (
-            <div className='bg-slate-900/50 border border-slate-800 rounded-xl p-4'>
-              <div className='flex items-center justify-between text-sm text-slate-300 mb-4'>
-                <span className='font-semibold text-slate-100'>
+            <div
+              className='flat-card p-4'
+              style={{
+                background:
+                  'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(11, 15, 20, 0.98) 100%)',
+                borderColor: 'var(--border)'
+              }}
+            >
+              <div className='flex items-center justify-between text-sm mb-4'>
+                <span className='font-semibold' style={{ color: 'var(--text)' }}>
                   {MONTHS_FULL[reportMonth]}
                 </span>
-                <div className='flex items-center gap-3 text-xs sm:text-sm text-slate-300'>
-                  <span className='font-semibold'>
+                <div className='flat-pill px-3 py-1 text-xs font-semibold flex items-center gap-2'>
+                  <span className='font-semibold' style={{ color: 'var(--accent)' }}>
                     {formatCurrency(monthlyTotals[reportMonth]?.totalValue || 0)}
                   </span>
-                  <span className='text-slate-400'>•</span>
-                  <span className='font-semibold'>
+                  <span style={{ color: 'var(--muted)' }}>•</span>
+                  <span className='font-semibold' style={{ color: 'var(--muted)' }}>
                     {(monthlyTotals[reportMonth]?.totalLiters || 0).toLocaleString('pt-BR')} L
                   </span>
                 </div>
@@ -590,18 +717,21 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                     const maxValue = Math.max(...monthlyTotals.map((m) => m.totalValue), 1)
                     return (
                       <div className='flex gap-3'>
-                        <div className='flex h-48 flex-col justify-between text-[10px] text-slate-500'>
+                        <div
+                          className='flex h-48 flex-col justify-between text-[10px]'
+                          style={{ color: 'var(--muted)' }}
+                        >
                           <div className='flex items-center gap-2'>
-                            <span className='h-px w-3 bg-slate-600/70' />
+                            <span className='h-px w-3' style={{ background: 'var(--border)' }} />
                           </div>
                           <div className='flex items-center gap-2'>
-                            <span className='h-px w-3 bg-slate-600/70' />
+                            <span className='h-px w-3' style={{ background: 'var(--border)' }} />
                           </div>
                           <div className='flex items-center gap-2'>
-                            <span className='h-px w-3 bg-slate-600/70' />
+                            <span className='h-px w-3' style={{ background: 'var(--border)' }} />
                           </div>
                           <div className='flex items-center gap-2'>
-                            <span className='h-px w-3 bg-slate-600/70' />
+                            <span className='h-px w-3' style={{ background: 'var(--border)' }} />
                           </div>
                           <div className='flex items-center gap-2'>
                             <span>0</span>
@@ -627,35 +757,51 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                 title={`${MONTHS_SHORT[idx]} - ${formatCurrency(entry.totalValue)}`}
                               >
                                 {isActive && (
-                                  <span className='absolute inset-y-0 w-0.5 bg-blue-500/10 z-0' />
+                                  <span
+                                    className='absolute inset-y-0 w-0.5 z-0'
+                                    style={{ background: 'rgba(184, 255, 44, 0.12)' }}
+                                  />
                                 )}
-                                <div className='h-32 sm:h-40 w-[65%] bg-slate-800/5 overflow-hidden flex items-end justify-center relative z-10'>
+                                <div
+                                  className='h-32 sm:h-40 w-[65%] overflow-hidden flex items-end justify-center relative z-10'
+                                  style={{ background: 'rgba(148, 163, 184, 0.08)' }}
+                                >
                                   <div
-                                    className={`w-full transition-all ${
-                                      isActive
-                                        ? 'bg-blue-400 shadow-lg shadow-blue-900/30'
-                                        : 'bg-slate-600'
-                                    }`}
+                                    className='w-full transition-all'
                                     style={{
                                       height: `${barHeightPct}%`,
-                                      opacity: isZero ? 0.2 : 1
+                                      opacity: isZero ? 0.2 : 1,
+                                      background: isActive
+                                        ? 'var(--accent)'
+                                        : 'rgba(148, 163, 184, 0.55)',
+                                      boxShadow: isActive
+                                        ? '0 12px 24px -18px rgba(184, 255, 44, 0.55)'
+                                        : 'none'
                                     }}
                                   />
                                 </div>
                                 {showTooltip && (
-                                  <div className='absolute -top-10 sm:-top-12 bg-slate-800 text-slate-100 text-xs px-2.5 py-1 rounded-lg border border-slate-700 shadow-lg whitespace-nowrap'>
+                                  <div
+                                    className='absolute -top-10 sm:-top-12 text-xs px-2.5 py-1 rounded-lg border shadow-lg whitespace-nowrap'
+                                    style={{
+                                      background: 'var(--surface)',
+                                      borderColor: 'var(--border)',
+                                      color: 'var(--text)'
+                                    }}
+                                  >
                                     <span className='font-semibold'>{formatCurrency(entry.totalValue)}</span>
                                     {entry.totalLiters ? (
-                                      <span className='text-slate-400 ml-2'>
+                                      <span className='ml-2' style={{ color: 'var(--muted)' }}>
                                         {entry.totalLiters.toLocaleString('pt-BR')} L
                                       </span>
                                     ) : null}
                                   </div>
                                 )}
                                 <span
-                                  className={`text-[11px] font-semibold uppercase tracking-wide ${
-                                    isActive ? 'text-blue-200' : 'text-slate-400'
-                                  }`}
+                                  className='text-[11px] font-semibold uppercase tracking-wide'
+                                  style={{
+                                    color: isActive ? 'var(--accent)' : 'var(--muted)'
+                                  }}
                                 >
                                   {MONTHS_SHORT[idx]}
                                 </span>
@@ -669,10 +815,14 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                 </div>
               </div>
               <div className='mt-2.5'>
-                <div className='relative h-0.5 w-full rounded-full bg-slate-800/40 overflow-hidden'>
+                <div
+                  className='relative h-0.5 w-full rounded-full overflow-hidden'
+                  style={{ background: 'rgba(148, 163, 184, 0.2)' }}
+                >
                   <div
-                    className='absolute top-0 h-full rounded-full bg-blue-500/40 transition-all'
+                    className='absolute top-0 h-full rounded-full transition-all'
                     style={{
+                      background: 'rgba(184, 255, 44, 0.45)',
                       width: `${chartScroll.widthPct}%`,
                       left: `${chartScroll.leftPct}%`
                     }}
@@ -681,13 +831,21 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               </div>
             </div>
           ) : (
-            <div className='bg-slate-900/50 rounded-xl p-8 text-center border border-slate-800 border-dashed'>
-              <p className='text-slate-500'>Nenhuma venda registrada neste período.</p>
+            <div
+              className='flat-card p-8 text-center'
+              style={{ borderStyle: 'dashed', borderColor: 'var(--border)' }}
+            >
+              <p className='text-sm' style={{ color: 'var(--muted)' }}>
+                Nenhuma venda registrada neste período.
+              </p>
             </div>
           )
         ) : reportData.weeks.length === 0 ? (
-          <div className='bg-slate-900/50 rounded-xl p-8 text-center border border-slate-800 border-dashed'>
-            <p className='text-slate-500'>
+          <div
+            className='flat-card p-8 text-center'
+            style={{ borderStyle: 'dashed', borderColor: 'var(--border)' }}
+          >
+            <p className='text-sm' style={{ color: 'var(--muted)' }}>
               Nenhuma venda registrada neste período.
             </p>
           </div>
@@ -696,17 +854,19 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
             {reportData.weeks.map((week, idx) => (
               <div
                 key={idx}
-                className='bg-slate-800 rounded-xl p-4 border border-slate-700 flex justify-between items-center'
+                className='flat-card p-4 flex justify-between items-center'
               >
                 <div className='flex flex-col'>
-                  <span className='text-white font-bold'>{week.label}</span>
-                  <span className='text-slate-500 text-xs mt-0.5'>
+                  <span className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                    {week.label}
+                  </span>
+                  <span className='text-xs mt-0.5' style={{ color: 'var(--muted)' }}>
                     {week.liters}{' '}
                     {week.liters === 1 ? 'Litro vendido' : 'Litros vendidos'}
                   </span>
                 </div>
-                <div className='px-3 py-1 bg-slate-900 rounded-lg border border-slate-700'>
-                  <span className='text-green-400 font-bold'>
+                <div className='flat-pill px-3 py-1'>
+                  <span className='font-semibold' style={{ color: 'var(--accent)' }}>
                     {formatCurrency(week.value)}
                   </span>
                 </div>
@@ -717,9 +877,12 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
       </div>
 
       <div className='space-y-3'>
-        <div className='flex items-center gap-2 text-slate-200'>
-          <Users size={16} className='text-slate-400' />
-          <h3 className='text-slate-200 text-sm font-bold uppercase tracking-wider'>
+        <div className='flex items-center gap-2'>
+          <Users size={16} style={{ color: 'var(--muted)' }} />
+          <h3
+            className='text-xs font-semibold uppercase tracking-wider'
+            style={{ color: 'var(--muted)' }}
+          >
             TOP CLIENTES ({MONTHS_FULL[reportMonth].toUpperCase()})
           </h3>
           {monthlyRanking.length > 0 && (
@@ -728,107 +891,168 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               tabIndex={0}
               onClick={() => setIsRankingOpen(true)}
               onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsRankingOpen(true)}
-              className='ml-auto text-xs font-semibold text-blue-300 hover:text-blue-200 cursor-pointer inline-flex items-center gap-1'
+              className='ml-auto text-xs font-semibold cursor-pointer inline-flex items-center gap-1'
+              style={{ color: 'var(--accent)' }}
             >
               VER TODOS
-              <ChevronRight size={18} strokeWidth={3} className='text-blue-300 group-hover:text-blue-200' />
+              <ChevronRight size={18} strokeWidth={3} />
             </span>
           )}
         </div>
 
         {topClients.length === 0 ? (
-          <div className='bg-slate-900 rounded-lg border border-slate-800 px-4 py-6 text-center text-slate-500 text-sm'>
+          <div
+            className='flat-card px-4 py-6 text-center text-sm'
+            style={{ borderStyle: 'dashed', borderColor: 'var(--border)', color: 'var(--muted)' }}
+          >
             Nenhuma venda registrada neste período.
           </div>
         ) : (
-          <div className='flex gap-3 overflow-x-auto no-scrollbar pb-1'>
-            {topClients.map((client, idx) => {
-              const initials = client.name
-                .trim()
-                .split(/\s+/)
-                .slice(0, 2)
-                .map((p) => p[0]?.toUpperCase() || '')
-                .join('')
+            <div className='flex gap-3 overflow-x-auto no-scrollbar pb-1'>
+              {topClients.map((client, idx) => {
+                const initials = client.name
+                  .trim()
+                  .split(/\s+/)
+                  .slice(0, 2)
+                  .map((p) => p[0]?.toUpperCase() || '')
+                  .join('')
+                const colors = getAvatarColors(client.clientId || client.name)
+                const isLeader = idx === 0
+                const cardStyle = isLeader
+                  ? {
+                      background:
+                        'linear-gradient(160deg, rgba(184, 255, 44, 0.16) 0%, rgba(18, 24, 33, 0.96) 70%)',
+                      borderColor: 'rgba(184, 255, 44, 0.35)',
+                      boxShadow: '0 16px 30px -24px rgba(184, 255, 44, 0.35)'
+                    }
+                  : {
+                      background: 'var(--surface)',
+                      borderColor: 'var(--border)'
+                    }
+                const badgeStyle = isLeader
+                  ? {
+                      background: 'rgba(184, 255, 44, 0.18)',
+                      color: 'var(--accent)',
+                      borderColor: 'rgba(184, 255, 44, 0.35)'
+                    }
+                  : {
+                      background: 'var(--surface-2)',
+                      color: 'var(--text)',
+                      borderColor: 'var(--border)'
+                    }
 
-              const badgeStyles = [
-                'bg-emerald-500/20 border-emerald-500/40 text-emerald-100',
-                'bg-cyan-500/20 border-cyan-500/40 text-cyan-100',
-                'bg-indigo-500/20 border-indigo-500/40 text-indigo-100'
-              ]
-              const cardStyles = [
-                'border-emerald-500/40 bg-emerald-500/10',
-                'border-cyan-500/40 bg-cyan-500/10',
-                'border-indigo-500/40 bg-indigo-500/10'
-              ]
-              const colorIndex = Math.min(idx, 2)
-
-              return (
-                <div
-                  key={client.clientId + idx}
-                  className={`relative min-w-[200px] rounded-xl p-3 flex-1 shadow-sm border ${cardStyles[colorIndex]}`}
-                >
-                  <span
-                    className={`absolute top-2 right-2 text-[10px] font-extrabold rounded-full px-2 py-0.5 ${badgeStyles[colorIndex]}`}
+                return (
+                  <div
+                    key={client.clientId + idx}
+                    className='flat-card relative min-w-[200px] p-3 flex-1 shadow-sm border'
+                    style={cardStyle}
                   >
-                    {idx + 1}
-                  </span>
-                  <div className='flex items-center gap-3'>
-                    <div className='h-11 w-11 rounded-full bg-slate-900/40 border border-slate-600 flex items-center justify-center text-slate-100 shrink-0 overflow-hidden'>
-                      {client.avatar ? (
-                        <img
-                          src={client.avatar}
-                          alt={client.name}
-                          className='h-full w-full object-cover'
-                        />
-                      ) : (
-                        <span className='text-sm font-bold'>{initials}</span>
-                      )}
-                    </div>
-                    <div className='space-y-1 min-w-0'>
-                      <p className='text-white font-semibold truncate'>{client.name}</p>
-                      <p className='text-sm text-slate-200 font-semibold'>
-                        {formatCurrency(client.totalValue)}
-                      </p>
-                      <p className='text-xs text-slate-400'>
-                        {client.totalLiters.toLocaleString('pt-BR')} L
-                      </p>
+                    <span
+                      className='absolute top-2 right-2 text-[10px] font-extrabold rounded-full px-2 py-0.5 border'
+                      style={badgeStyle}
+                    >
+                      #{idx + 1}
+                    </span>
+                    <div className='flex items-center gap-3'>
+                      <div
+                        className='h-11 w-11 rounded-full border flex items-center justify-center shrink-0 overflow-hidden'
+                        style={{
+                          backgroundColor: colors.bg,
+                          color: colors.text,
+                          borderColor: 'var(--border)'
+                        }}
+                      >
+                        {client.avatar ? (
+                          <img
+                            src={client.avatar}
+                            alt={client.name}
+                            className='h-full w-full object-cover'
+                          />
+                        ) : (
+                          <span className='text-sm font-bold'>{initials}</span>
+                        )}
+                      </div>
+                      <div className='space-y-1 min-w-0'>
+                        <p
+                          className='text-sm font-semibold truncate'
+                          style={{ color: 'var(--text)' }}
+                          title={client.name}
+                        >
+                          {client.name}
+                        </p>
+                        <p
+                          className='text-sm font-semibold'
+                          style={{ color: isLeader ? 'var(--accent)' : 'var(--text)' }}
+                        >
+                          {formatCurrency(client.totalValue)}
+                        </p>
+                        <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                          {client.totalLiters.toLocaleString('pt-BR')} L
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
           </div>
         )}
       </div>
 
       {isRankingOpen && (
-        <div className='fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center px-4'>
-          <div className='w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden'>
-            <div className='flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/80'>
-              <div className='flex flex-col gap-1 text-slate-200'>
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center px-4'
+          style={{ background: 'rgba(2, 6, 23, 0.72)' }}
+        >
+          <div
+            className='w-full max-w-lg rounded-3xl border overflow-hidden'
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border)',
+              boxShadow: '0 30px 60px -40px var(--shadow)'
+            }}
+          >
+            <div
+              className='flex items-center justify-between px-5 py-4 border-b'
+              style={{
+                borderColor: 'var(--border)',
+                background:
+                  'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(11, 15, 20, 0.98) 100%)'
+              }}
+            >
+              <div className='flex flex-col gap-1'>
                 <div className='flex items-center gap-2'>
-                  <Users size={16} className='text-slate-400' />
-                  <h3 className='text-sm font-semibold'>Ranking de clientes</h3>
+                  <Users size={16} style={{ color: 'var(--muted)' }} />
+                  <h3 className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                    Ranking de clientes
+                  </h3>
                 </div>
-                <div className='flex items-center gap-2 text-xs text-slate-400'>
+                <div className='flex items-center gap-2 text-xs' style={{ color: 'var(--muted)' }}>
                   <span>{MONTHS_FULL[reportMonth]}</span>
-                  <span className='text-slate-600'>•</span>
-                  <span>por Valor (R$)</span>
+                  <span>•</span>
+                  <span>por valor (R$)</span>
                 </div>
               </div>
               <button
                 type='button'
                 onClick={() => setIsRankingOpen(false)}
-                className='h-10 w-10 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors'
+                className='h-9 w-9 rounded-full flex items-center justify-center border transition-colors hover:brightness-110'
+                style={{
+                  borderColor: 'var(--border)',
+                  background: 'var(--surface-2)',
+                  color: 'var(--muted)'
+                }}
                 aria-label='Fechar'
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className='max-h-[70vh] overflow-y-auto custom-scrollbar p-4 space-y-2'>
+            <div className='max-h-[70vh] overflow-y-auto custom-scrollbar p-4 space-y-3'>
               {monthlyRanking.length === 0 ? (
-                <div className='text-center text-slate-500 py-8'>
+                <div
+                  className='flat-card p-6 text-center text-sm'
+                  style={{ borderStyle: 'dashed', borderColor: 'var(--border)', color: 'var(--muted)' }}
+                >
                   Nenhuma venda registrada neste período.
                 </div>
               ) : (
@@ -841,35 +1065,64 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                     .join('')
                   const colors = getAvatarColors(client.clientId || client.name)
                   const isTopThree = idx < 3
-                  const rowHighlight =
-                    idx === 0
-                      ? 'border-emerald-500/40 bg-emerald-500/10'
-                      : idx === 1
-                      ? 'border-cyan-500/40 bg-cyan-500/10'
-                      : idx === 2
-                      ? 'border-indigo-500/40 bg-indigo-500/10'
-                      : ''
-                  const numberColor =
-                    idx === 0
-                      ? 'text-emerald-300'
-                      : idx === 1
-                      ? 'text-cyan-300'
-                      : idx === 2
-                      ? 'text-indigo-300'
-                      : 'text-slate-400'
-
                   const primaryValue = formatCurrency(client.totalValue)
                   const secondaryValue = `${client.totalLiters.toLocaleString('pt-BR')} L`
+                  const sharePct =
+                    rankingTotalValue > 0
+                      ? Math.round((client.totalValue / rankingTotalValue) * 100)
+                      : 0
+                  const barWidth =
+                    maxRankingValue > 0
+                      ? Math.min((client.totalValue / maxRankingValue) * 100, 100)
+                      : 0
+                  const rowStyle = isTopThree
+                    ? {
+                        background: 'rgba(184, 255, 44, 0.06)',
+                        borderColor: 'rgba(184, 255, 44, 0.28)'
+                      }
+                    : {
+                        background: 'var(--surface-2)',
+                        borderColor: 'var(--border)'
+                      }
+                  const badgeStyle = isTopThree
+                    ? {
+                        background: 'rgba(184, 255, 44, 0.18)',
+                        color: 'var(--accent)',
+                        borderColor: 'rgba(184, 255, 44, 0.35)'
+                      }
+                    : {
+                        background: 'var(--surface)',
+                        color: 'var(--text)',
+                        borderColor: 'var(--border)'
+                      }
 
                   return (
-                    <React.Fragment key={client.clientId + idx}>
+                    <div
+                      key={client.clientId + idx}
+                      className='relative overflow-hidden rounded-xl border p-3'
+                      style={rowStyle}
+                    >
                       <div
-                        className={`flex items-start gap-3 py-3 ${isTopThree ? `px-3 rounded-xl border ${rowHighlight}` : ''}`}
-                      >
-                        <span className={`text-xl font-extrabold mt-0.5 ${numberColor}`}>{idx + 1}</span>
+                        className='absolute inset-y-0 left-0'
+                        style={{
+                          width: `${barWidth}%`,
+                          background: 'rgba(184, 255, 44, 0.12)'
+                        }}
+                      />
+                      <div className='relative z-10 flex items-center gap-3'>
                         <div
-                          className='h-9 w-9 rounded-full border border-slate-700 flex items-center justify-center text-slate-100 shrink-0 overflow-hidden'
-                          style={{ backgroundColor: colors.bg, color: colors.text }}
+                          className='h-8 w-8 rounded-full border flex items-center justify-center text-[11px] font-bold shrink-0'
+                          style={badgeStyle}
+                        >
+                          {idx + 1}
+                        </div>
+                        <div
+                          className='h-9 w-9 rounded-full border flex items-center justify-center shrink-0 overflow-hidden'
+                          style={{
+                            backgroundColor: colors.bg,
+                            color: colors.text,
+                            borderColor: 'var(--border)'
+                          }}
                         >
                           {client.avatar ? (
                             <img src={client.avatar} alt={client.name} className='h-full w-full object-cover' />
@@ -877,40 +1130,55 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                             <span className='text-[11px] font-bold'>{initials}</span>
                           )}
                         </div>
-                        <div className='min-w-0 flex-1 space-y-1'>
-                          <p className='text-white font-semibold truncate'>{client.name}</p>
-                          <div className='flex items-center gap-2 text-sm text-slate-200 font-semibold'>
-                            <span>{primaryValue}</span>
-                            <span className='text-slate-500'>•</span>
-                            <span className='text-xs text-slate-400'>{secondaryValue}</span>
-                          </div>
+                        <div className='min-w-0 flex-1'>
+                          <p
+                            className='text-sm font-semibold truncate'
+                            style={{ color: 'var(--text)' }}
+                            title={client.name}
+                          >
+                            {client.name}
+                          </p>
+                          <p className='text-xs' style={{ color: 'var(--muted)' }}>
+                            {secondaryValue}
+                          </p>
                         </div>
-                        {idx === 0 && (
-                          <span className='text-lg mr-1' role='img' aria-label='Top 1'>
-            🏆
-                          </span>
-                        )}
+                        <div className='text-right'>
+                          <p
+                            className='text-sm font-semibold'
+                            style={{ color: isTopThree ? 'var(--accent)' : 'var(--text)' }}
+                          >
+                            {primaryValue}
+                          </p>
+                          <p className='text-[10px]' style={{ color: 'var(--muted)' }}>
+                            {sharePct > 0 ? `${sharePct}% do total` : '-'}
+                          </p>
+                        </div>
                       </div>
-                      {idx !== monthlyRanking.length - 1 && <div className='h-px bg-slate-800 my-1' />}
-                    </React.Fragment>
+                    </div>
                   )
                 })
               )}
             </div>
 
-            <div className='border-t border-slate-800 px-4 py-3 text-sm text-slate-200 flex items-center justify-between'>
-              <div className='flex items-center gap-2'>
-                <span className='font-semibold'>Total do mês:</span>
-                <span className='text-white font-bold'>
-                  {formatCurrency(monthlyTotals[reportMonth]?.totalValue || 0)}
+            <div
+              className='border-t px-5 py-4 flex items-center justify-between'
+              style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
+            >
+              <div className='flex items-center gap-2 text-xs font-semibold' style={{ color: 'var(--muted)' }}>
+                <span>Total do mês:</span>
+                <span style={{ color: 'var(--accent)' }}>
+                  {formatCurrency(rankingTotalValue)}
                 </span>
-                <span className='text-slate-500'>•</span>
-                <span className='text-slate-300'>
-                  {(monthlyTotals[reportMonth]?.totalLiters || 0).toLocaleString('pt-BR')} L
+                <span>•</span>
+                <span style={{ color: 'var(--muted)' }}>
+                  {rankingTotalLiters.toLocaleString('pt-BR')} L
                 </span>
               </div>
-              <div className='text-xs text-slate-400'>
-                Clientes ativos: <span className='text-slate-200 font-semibold'>{monthlyRanking.length}</span>
+              <div className='text-xs' style={{ color: 'var(--muted)' }}>
+                Clientes ativos:{' '}
+                <span style={{ color: 'var(--text)', fontWeight: 600 }}>
+                  {monthlyRanking.length}
+                </span>
               </div>
             </div>
           </div>

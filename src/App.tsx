@@ -1200,7 +1200,12 @@ function App() {
   const notePreviewMatch = location.pathname.match(/^\/clientes\/([^/]+)\/nota/)
   const notePreviewClientId = notePreviewMatch?.[1] || null
   const appTheme =
-    activeTab === 'CLIENTS' || activeTab === 'PAYMENTS' ? 'flat-lime' : undefined
+      activeTab === 'CLIENTS' ||
+      activeTab === 'PAYMENTS' ||
+      activeTab === 'REPORTS' ||
+      activeTab === 'SETTINGS'
+        ? 'flat-lime'
+        : undefined
 
   return (
     <div
@@ -1237,3 +1242,4 @@ function App() {
 }
 
 export default App
+
