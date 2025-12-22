@@ -25,7 +25,7 @@ import {
 import { createReceiptFile } from './services/pdfGenerator'
 import type { ReceiptFileRef } from './services/pdfGenerator'
 import { PdfViewerModal } from './components/PdfViewerModal'
-import { Milk, Settings as SettingsIcon, TrendingUp, Users } from 'lucide-react'
+import { BarChart3, Milk, Settings as SettingsIcon, Users } from 'lucide-react'
 import { PendingQueueModal } from './components/PendingQueueModal'
 import { optimisticStore } from './services/optimisticStore'
 
@@ -845,7 +845,7 @@ function App() {
       case 'CLIENTS':
         return 'Meus Clientes'
       case 'REPORTS':
-        return 'Relatorios'
+        return 'Relatórios'
       case 'SETTINGS':
         return 'Ajustes'
       case 'PAYMENTS':
@@ -894,7 +894,7 @@ function App() {
     }
 
     if (activeTab === 'REPORTS') {
-      return renderMinimalHeader('Relatorios')
+      return renderMinimalHeader('Relatórios')
     }
 
     if (activeTab === 'SETTINGS') {
@@ -1017,13 +1017,13 @@ function App() {
               }}
             />
           )}
-          <TrendingUp
+          <BarChart3
             size={24}
             strokeWidth={activeTab === 'REPORTS' ? 2.5 : 1.5}
             className='mb-1 transition-transform group-active:scale-90'
           />
           <span className='text-[10px] font-medium tracking-wide'>
-            Relatorios
+            Relatórios
           </span>
         </button>
 
