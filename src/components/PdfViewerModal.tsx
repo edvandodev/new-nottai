@@ -166,47 +166,102 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({ open, onClose, f
   if (!open || !file) return null
 
   return (
-    <div className='fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4'>
-      <div className='relative w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden'>
-        <div className='flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/80'>
+    <div
+      data-theme='flat-lime'
+      className='fixed inset-0 z-50 flex items-center justify-center p-4'
+      style={{
+        background: 'rgba(11, 15, 20, 0.72)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)'
+      }}
+    >
+      <div
+        className='relative w-full max-w-5xl rounded-2xl overflow-hidden border'
+        style={{
+          background: 'var(--surface)',
+          borderColor: 'var(--border)',
+          boxShadow: '0 28px 60px -36px rgba(0, 0, 0, 0.6)'
+        }}
+      >
+        <div
+          className='flex items-center justify-between px-4 py-3 border-b'
+          style={{ borderColor: 'var(--border)' }}
+        >
           <div className='min-w-0'>
-            <p className='text-sm font-semibold text-white truncate'>{title || 'Visualizar PDF'}</p>
-            <p className='text-xs text-slate-400 truncate'>{fileName}</p>
+            <p className='text-sm font-semibold truncate' style={{ color: 'var(--text)' }}>
+              {title || 'Visualizar PDF'}
+            </p>
+            <p className='text-xs truncate' style={{ color: 'var(--muted)' }}>
+              {fileName}
+            </p>
           </div>
           <div className='flex items-center gap-2'>
             <button
               onClick={() => adjustScale(0.15)}
-              className='h-9 w-9 rounded-full bg-slate-800 text-slate-100 hover:bg-slate-700 flex items-center justify-center'
+              className='h-9 w-9 rounded-full flex items-center justify-center transition-colors'
               aria-label='Mais zoom'
+              style={{
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)'
+              }}
             >
               <ZoomIn size={16} />
             </button>
             <button
               onClick={() => adjustScale(-0.15)}
-              className='h-9 w-9 rounded-full bg-slate-800 text-slate-100 hover:bg-slate-700 flex items-center justify-center'
+              className='h-9 w-9 rounded-full flex items-center justify-center transition-colors'
               aria-label='Menos zoom'
+              style={{
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)'
+              }}
             >
               <ZoomOut size={16} />
             </button>
             <button
               type='button'
               onClick={onClose}
-              className='h-10 w-10 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors'
+              className='h-10 w-10 rounded-full flex items-center justify-center transition-colors'
               aria-label='Fechar'
+              style={{
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                color: 'var(--muted)'
+              }}
             >
               <X size={18} />
             </button>
           </div>
         </div>
 
-        <div className='p-4 bg-slate-950'>
-          {loading && <p className='text-sm text-slate-400'>Carregando PDF...</p>}
+        <div className='p-4' style={{ background: 'var(--bg)' }}>
+          {loading && (
+            <p className='text-sm inline-flex items-center gap-2' style={{ color: 'var(--muted)' }}>
+              <span className='h-4 w-4 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin' />
+              Carregando PDF...
+            </p>
+          )}
           {error && (
-            <div className='text-sm text-red-400 space-y-2'>
+            <div
+              className='text-sm space-y-2 mt-2 p-3 rounded-lg border'
+              style={{
+                background: 'rgba(255, 90, 106, 0.12)',
+                borderColor: 'rgba(255, 90, 106, 0.35)',
+                color: 'var(--danger)'
+              }}
+            >
               <p>{error}</p>
             </div>
           )}
-          <div className='overflow-auto max-h-[70vh] border border-slate-800 rounded-xl bg-slate-900/60 flex flex-col gap-4 p-4'>
+          <div
+            className='overflow-auto max-h-[70vh] border rounded-xl flex flex-col gap-4 p-4 mt-3'
+            style={{
+              background: 'var(--surface-2)',
+              borderColor: 'var(--border)'
+            }}
+          >
             {Array.from({ length: numPages }, (_, i) => (
               <canvas
                 key={i}
@@ -219,17 +274,29 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({ open, onClose, f
           </div>
         </div>
 
-        <div className='flex items-center justify-end gap-3 px-4 py-3 border-t border-slate-800 bg-slate-900/80'>
+        <div
+          className='flex items-center justify-end gap-3 px-4 py-3 border-t'
+          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+        >
           <button
             onClick={handleShare}
-            className='flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 text-slate-100 hover:bg-slate-700 transition'
+            className='flex items-center gap-2 px-3 py-2 rounded-lg transition-colors'
+            style={{
+              background: 'var(--accent)',
+              color: 'var(--accent-ink)'
+            }}
           >
             <ShareIcon size={16} />
             Compartilhar
           </button>
           <button
             onClick={handleSaveExport}
-            className='flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 text-slate-100 hover:bg-slate-700 transition'
+            className='flex items-center gap-2 px-3 py-2 rounded-lg transition-colors'
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)'
+            }}
           >
             <Download size={16} />
             Salvar/Exportar
