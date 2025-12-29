@@ -13,6 +13,8 @@ import {
   PriceSettings,
   PriceType,
   PaymentStatus,
+  Cow,
+  CalvingEvent,
   TabState
 } from './types'
 import {
@@ -25,7 +27,7 @@ import {
 import { createReceiptFile } from './services/pdfGenerator'
 import type { ReceiptFileRef } from './services/pdfGenerator'
 import { PdfViewerModal } from './components/PdfViewerModal'
-import { BarChart3, Milk, Settings as SettingsIcon, Users } from 'lucide-react'
+import { BarChart3, Milk, Settings as SettingsIcon, Users, Baby } from 'lucide-react'
 import { PendingQueueModal } from './components/PendingQueueModal'
 import { optimisticStore } from './services/optimisticStore'
 
@@ -33,6 +35,7 @@ import { optimisticStore } from './services/optimisticStore'
 import { ClientsPage } from './pages/clients'
 import { CustomerNotePreviewPage } from './pages/clients/CustomerNotePreviewPage'
 import { ReportsPage } from './pages/reports'
+import { ReproductionPage } from './pages/reproduction'
 import { SettingsPage } from './pages/settings'
 import { PaymentsPage } from './pages/payments'
 import { AuthPage } from './pages/auth'
@@ -102,6 +105,8 @@ function App() {
   const [clients, setClients] = useState<Client[]>([])
   const [sales, setSales] = useState<Sale[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
+  const [cows, setCows] = useState<Cow[]>([])
+  const [calvings, setCalvings] = useState<CalvingEvent[]>([])
   const [priceSettings, setPriceSettings] =
     useState<PriceSettings>(DEFAULT_SETTINGS)
 
@@ -175,6 +180,8 @@ function App() {
       setClients([])
       setSales([])
       setPayments([])
+      setCows([])
+      setCalvings([])
       setPriceSettings(DEFAULT_SETTINGS)
     }
   }, [user])
@@ -320,6 +327,39 @@ function App() {
             setPriceSettings(action.payload)
             break
           }
+          case 'UPSERT_COW': {
+            setCows((prev) => {
+              const idx = prev.findIndex((c) => c.id === action.payload.id)
+              if (idx >= 0) {
+                const next = [...prev]
+                next[idx] = { ...prev[idx], ...action.payload }
+                return next
+              }
+              return [...prev, action.payload]
+            })
+            break
+          }
+          case 'DELETE_COW': {
+            setCows((prev) => prev.filter((c) => c.id !== action.payload))
+            setCalvings((prev) => prev.filter((e) => e.cowId !== action.payload))
+            break
+          }
+          case 'UPSERT_CALVING': {
+            setCalvings((prev) => {
+              const idx = prev.findIndex((e) => e.id === action.payload.id)
+              if (idx >= 0) {
+                const next = [...prev]
+                next[idx] = { ...prev[idx], ...action.payload }
+                return next
+              }
+              return [...prev, action.payload]
+            })
+            break
+          }
+          case 'DELETE_CALVING': {
+            setCalvings((prev) => prev.filter((e) => e.id !== action.payload))
+            break
+          }
           default:
             break
         }
@@ -352,6 +392,16 @@ function App() {
         if (cancelled) return
         setPayments((prev) =>
           mergeWithPending(remotePayments, prev, (p) => `payment:${p.id}`)
+        )
+      }),
+      firestoreService.listenToCows((remoteCows) => {
+        if (cancelled) return
+        setCows((prev) => mergeWithPending(remoteCows, prev, (c) => `cow:${c.id}`))
+      }),
+      firestoreService.listenToCalvings((remoteCalvings) => {
+        if (cancelled) return
+        setCalvings((prev) =>
+          mergeWithPending(remoteCalvings, prev, (e) => `calving:${e.id}`)
         )
       }),
       firestoreService.listenToPriceSettings((settings) => {
@@ -808,6 +858,8 @@ function App() {
         )
       case 'REPORTS':
         return <ReportsPage sales={sales} payments={payments} clients={clients} />
+      case 'REPRODUCTION':
+        return <ReproductionPage cows={cows} calvings={calvings} />
       case 'SETTINGS':
         return (
           <SettingsPage
@@ -852,6 +904,8 @@ function App() {
         return 'Meus Clientes'
       case 'REPORTS':
         return 'Relatórios'
+      case 'REPRODUCTION':
+        return 'Reprodução'
       case 'SETTINGS':
         return 'Ajustes'
       case 'PAYMENTS':
@@ -864,6 +918,7 @@ function App() {
   const minimalHeaderActive =
     (activeTab === 'CLIENTS' && !isClientDetailsView) ||
     activeTab === 'REPORTS' ||
+    activeTab === 'REPRODUCTION' ||
     activeTab === 'SETTINGS'
 
   const renderHeader = () => {
@@ -901,6 +956,10 @@ function App() {
 
     if (activeTab === 'REPORTS') {
       return renderMinimalHeader('Relatórios')
+    }
+
+    if (activeTab === 'REPRODUCTION') {
+      return renderMinimalHeader('Reprodução')
     }
 
     if (activeTab === 'SETTINGS') {
@@ -1030,6 +1089,37 @@ function App() {
           />
           <span className='text-[10px] font-medium tracking-wide'>
             Relatórios
+          </span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveTab('REPRODUCTION')
+            setIsClientDetailsView(false)
+          }}
+          className={`${navItemBase} ${
+            activeTab === 'REPRODUCTION' ? navActive : navInactive
+          }`}
+          style={
+            activeTab === 'REPRODUCTION' ? navActiveStyle : navInactiveStyle
+          }
+        >
+          {activeTab === 'REPRODUCTION' && (
+            <span
+              className={navIndicator}
+              style={{
+                background: 'var(--accent, var(--primary, #b8ff2c))',
+                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
+              }}
+            />
+          )}
+          <Baby
+            size={24}
+            strokeWidth={activeTab === 'REPRODUCTION' ? 2.5 : 1.5}
+            className='mb-1 transition-transform group-active:scale-90'
+          />
+          <span className='text-[10px] font-medium tracking-wide'>
+            Reprodução
           </span>
         </button>
 
@@ -1209,6 +1299,7 @@ function App() {
       activeTab === 'CLIENTS' ||
       activeTab === 'PAYMENTS' ||
       activeTab === 'REPORTS' ||
+      activeTab === 'REPRODUCTION' ||
       activeTab === 'SETTINGS'
         ? 'flat-lime'
         : undefined

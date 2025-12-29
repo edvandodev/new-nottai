@@ -1,0 +1,916 @@
+import React, { useMemo, useState } from 'react'
+import { CalendarDays, Edit3, ImagePlus, Plus, Search } from 'lucide-react'
+
+import type { CalvingEvent, CalvingSex, Cow } from '@/types'
+import { Modal } from '@/components/Modal'
+import { StatCard } from '@/components/payments/StatCard'
+import { offlineWrites } from '@/services/offlineWrites'
+import '../../styles/theme-flat.css'
+
+type ReproductionPageProps = {
+  cows: Cow[]
+  calvings: CalvingEvent[]
+}
+
+const formatDateBR = (iso: string) => {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleDateString('pt-BR')
+}
+
+const toDateTime = (dateStr: string) => {
+  const now = new Date()
+  const [year, month, day] = dateStr.split('-').map(Number)
+  if ([year, month, day].some((v) => Number.isNaN(v))) return now.toISOString()
+  const dt = new Date(
+    year,
+    (month || 1) - 1,
+    day || 1,
+    now.getHours(),
+    now.getMinutes(),
+    now.getSeconds(),
+    now.getMilliseconds()
+  )
+  return dt.toISOString()
+}
+
+const readFileAsDataUrl = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.onerror = () => reject(new Error('Falha ao ler imagem'))
+    reader.readAsDataURL(file)
+  })
+
+const compressImageDataUrl = async (
+  dataUrl: string,
+  opts: { maxDim?: number; quality?: number } = {}
+): Promise<string> => {
+  const maxDim = opts.maxDim ?? 1024
+  const quality = opts.quality ?? 0.78
+
+  // Se não for imagem, retorna como está.
+  if (!dataUrl.startsWith('data:image/')) return dataUrl
+
+  const img = new Image()
+  const loaded = new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve()
+    img.onerror = () => reject(new Error('Imagem inválida'))
+  })
+  img.src = dataUrl
+  await loaded
+
+  const { width, height } = img
+  if (!width || !height) return dataUrl
+
+  const scale = Math.min(1, maxDim / Math.max(width, height))
+  const targetW = Math.max(1, Math.round(width * scale))
+  const targetH = Math.max(1, Math.round(height * scale))
+
+  const canvas = document.createElement('canvas')
+  canvas.width = targetW
+  canvas.height = targetH
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return dataUrl
+
+  ctx.drawImage(img, 0, 0, targetW, targetH)
+
+  // JPEG costuma ficar bem menor e é o esperado para foto.
+  try {
+    return canvas.toDataURL('image/jpeg', quality)
+  } catch {
+    return dataUrl
+  }
+}
+
+const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'Fêmea')
+
+export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
+  const [search, setSearch] = useState('')
+  const [selectedCow, setSelectedCow] = useState<Cow | null>(null)
+  const [isCowModalOpen, setIsCowModalOpen] = useState(false)
+  const [isNewMenuOpen, setIsNewMenuOpen] = useState(false)
+  const [isNewCowOpen, setIsNewCowOpen] = useState(false)
+  const [isNewCalvingOpen, setIsNewCalvingOpen] = useState(false)
+  const [editingCalving, setEditingCalving] = useState<CalvingEvent | null>(null)
+
+  const calvingsByCow = useMemo(() => {
+    const map = new Map<string, CalvingEvent[]>()
+    for (const ev of calvings) {
+      const list = map.get(ev.cowId) || []
+      list.push(ev)
+      map.set(ev.cowId, list)
+    }
+    for (const [cowId, list] of map.entries()) {
+      list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      map.set(cowId, list)
+    }
+    return map
+  }, [calvings])
+
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const withMeta = cows
+      .map((cow) => {
+        const list = calvingsByCow.get(cow.id) || []
+        const last = list[0]
+        return {
+          cow,
+          lastDate: last ? new Date(last.date).getTime() : 0,
+          lastEvent: last,
+          count: list.length
+        }
+      })
+      .filter((r) => (q ? r.cow.name.toLowerCase().includes(q) : true))
+      .sort((a, b) => {
+        if (b.lastDate !== a.lastDate) return b.lastDate - a.lastDate
+        return a.cow.name.localeCompare(b.cow.name)
+      })
+    return withMeta
+  }, [cows, calvingsByCow, search])
+
+  const calvingsLast30Days = useMemo(() => {
+    const now = Date.now()
+    const cutoff = now - 30 * 24 * 60 * 60 * 1000
+
+    return calvings.reduce((count, calving) => {
+      const time = new Date(calving.date).getTime()
+      if (Number.isNaN(time)) return count
+      return time >= cutoff ? count + 1 : count
+    }, 0)
+  }, [calvings])
+
+  const openCow = (cow: Cow) => {
+    setSelectedCow(cow)
+    setIsCowModalOpen(true)
+  }
+
+  const cowEvents = useMemo(() => {
+    if (!selectedCow) return []
+    return calvingsByCow.get(selectedCow.id) || []
+  }, [selectedCow, calvingsByCow])
+
+  return (
+    <div className='max-w-2xl mx-auto space-y-4'>
+      <div
+        className='rounded-2xl p-4 border'
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+      >
+        <div className='flex items-center justify-between gap-3'>
+          <div className='flex items-center gap-2'>
+            <div
+              className='h-10 w-10 rounded-xl flex items-center justify-center border'
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+            >
+              <CalendarDays size={18} style={{ color: 'var(--muted)' }} />
+            </div>
+            <div>
+              <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                Reprodução
+              </div>
+              <div className='text-xs' style={{ color: 'var(--muted)' }}>
+                Anote partos por vaca, com data, sexo e foto.
+              </div>
+            </div>
+          </div>
+
+          <button
+            type='button'
+            onClick={() => {
+              setEditingCalving(null)
+              setIsNewMenuOpen(true)
+            }}
+            className='inline-flex items-center gap-2 px-3 h-10 rounded-xl border text-sm font-semibold transition hover:brightness-110'
+            style={{
+              background: 'var(--accent, var(--primary, #b8ff2c))',
+              borderColor: 'transparent',
+              color: 'var(--accentText, #07110a)'
+            }}
+          >
+            <Plus size={16} />
+            Novo
+          </button>
+        </div>
+
+        <div className='mt-4 relative'>
+          <Search
+            size={16}
+            className='absolute left-3 top-1/2 -translate-y-1/2'
+            style={{ color: 'var(--muted)' }}
+          />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder='Buscar vaca pelo nome...'
+            className='w-full h-11 pl-10 pr-3 rounded-xl border outline-none'
+            style={{
+              background: 'var(--surface-2)',
+              borderColor: 'var(--border)',
+              color: 'var(--text)'
+            }}
+          />
+        </div>
+
+        <div className='mt-4 grid grid-cols-2 gap-3'>
+          <StatCard label='Total de Vacas' value={String(cows.length)} />
+          <StatCard label='Partos (30 dias)' value={String(calvingsLast30Days)} />
+        </div>
+      </div>
+
+      <div className='space-y-2'>
+        {rows.length === 0 ? (
+          <div
+            className='rounded-2xl p-5 border text-sm'
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+          >
+            Nenhuma vaca encontrada. Toque em <b>Novo</b> para cadastrar o primeiro.
+          </div>
+        ) : (
+          rows.map((r) => (
+            <button
+              key={r.cow.id}
+              type='button'
+              onClick={() => openCow(r.cow)}
+              className='w-full text-left rounded-2xl p-4 border transition hover:brightness-110'
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+            >
+              <div className='flex items-center justify-between gap-3'>
+                <div>
+                  <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                    {r.cow.name}
+                  </div>
+                  <div className='text-xs' style={{ color: 'var(--muted)' }}>
+                    {r.count === 0
+                      ? 'Sem partos registrados'
+                      : `${r.count} parto${r.count > 1 ? 's' : ''} · Último: ${formatDateBR(
+                          r.lastEvent!.date
+                        )} · ${sexLabel(r.lastEvent!.sex)}`}
+                  </div>
+                </div>
+                <div
+                  className='h-10 w-10 rounded-xl border flex items-center justify-center'
+                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+                >
+                  <span className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
+                    {r.count}
+                  </span>
+                </div>
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+
+      <Modal
+        open={isNewMenuOpen}
+        title='Novo'
+        onClose={() => setIsNewMenuOpen(false)}
+      >
+        <div className='grid grid-cols-2 gap-3'>
+          <button
+            type='button'
+            onClick={() => {
+              setIsNewMenuOpen(false)
+              setEditingCalving(null)
+              setIsNewCalvingOpen(true)
+            }}
+            className='flat-card rounded-2xl border p-4 text-left transition hover:brightness-110'
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+          >
+            <div className='text-sm font-semibold'>Parto</div>
+            <div className='text-xs' style={{ color: 'var(--muted)' }}>
+              Registrar parto
+            </div>
+          </button>
+          <button
+            type='button'
+            onClick={() => {
+              setIsNewMenuOpen(false)
+              setIsNewCowOpen(true)
+            }}
+            className='flat-card rounded-2xl border p-4 text-left transition hover:brightness-110'
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+          >
+            <div className='text-sm font-semibold'>Vaca</div>
+            <div className='text-xs' style={{ color: 'var(--muted)' }}>
+              Cadastrar sem parto
+            </div>
+          </button>
+        </div>
+      </Modal>
+
+      <CowDetailsModal
+        open={isCowModalOpen}
+        cow={selectedCow}
+        events={cowEvents}
+        onClose={() => {
+          setIsCowModalOpen(false)
+          setSelectedCow(null)
+        }}
+        onEditCalving={(ev) => {
+          setEditingCalving(ev)
+          setIsNewCalvingOpen(true)
+        }}
+        onNewCalving={() => {
+          setEditingCalving(null)
+          setIsNewCalvingOpen(true)
+        }}
+      />
+
+      <CalvingModal
+        open={isNewCalvingOpen}
+        cows={cows}
+        initialCowId={editingCalving?.cowId || selectedCow?.id || null}
+        editing={editingCalving}
+        onClose={() => {
+          setIsNewCalvingOpen(false)
+          setEditingCalving(null)
+        }}
+        onSaved={() => {
+          setIsNewCalvingOpen(false)
+          setEditingCalving(null)
+        }}
+      />
+
+      <NewCowModal
+        open={isNewCowOpen}
+        onClose={() => setIsNewCowOpen(false)}
+        onSaved={(cow) => {
+          setIsNewCowOpen(false)
+          openCow(cow)
+        }}
+      />
+    </div>
+  )
+}
+
+function CowDetailsModal({
+  open,
+  cow,
+  events,
+  onClose,
+  onNewCalving,
+  onEditCalving
+}: {
+  open: boolean
+  cow: Cow | null
+  events: CalvingEvent[]
+  onClose: () => void
+  onNewCalving: () => void
+  onEditCalving: (ev: CalvingEvent) => void
+}) {
+  const [name, setName] = useState('')
+  const [savingName, setSavingName] = useState(false)
+
+  React.useEffect(() => {
+    setName(cow?.name || '')
+  }, [cow?.id])
+
+  const canSaveName = cow && name.trim() && name.trim() !== cow.name
+
+  const saveName = async () => {
+    if (!cow) return
+    const nextName = name.trim()
+    if (!nextName) return
+    setSavingName(true)
+    try {
+      await offlineWrites.saveCow({ ...cow, name: nextName })
+    } catch (e) {
+      console.error('Falha ao salvar nome da vaca', e)
+      alert('Não foi possível salvar. Tente novamente.')
+    } finally {
+      setSavingName(false)
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      title={cow ? cow.name : 'Vaca'}
+      onClose={onClose}
+    >
+      {!cow ? (
+        <div className='text-sm' style={{ color: 'var(--muted)' }}>
+          Nenhuma vaca selecionada.
+        </div>
+      ) : (
+        <div className='space-y-4'>
+          <div className='space-y-2'>
+            <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
+              Nome da vaca (editar)
+            </div>
+            <div className='flex gap-2'>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className='flex-1 h-11 rounded-xl border px-3 outline-none'
+                style={{
+                  background: 'var(--surface-2)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              />
+              <button
+                type='button'
+                disabled={!canSaveName || savingName}
+                onClick={saveName}
+                className='h-11 px-4 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
+                style={{
+                  background: 'var(--surface)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                {savingName ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+
+          <div className='flex items-center justify-between'>
+            <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+              Histórico de partos
+            </div>
+            <button
+              type='button'
+              onClick={onNewCalving}
+              className='inline-flex items-center gap-2 h-9 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+              style={{
+                background: 'var(--accent, var(--primary, #b8ff2c))',
+                borderColor: 'transparent',
+                color: 'var(--accentText, #07110a)'
+              }}
+            >
+              <Plus size={14} />
+              Novo
+            </button>
+          </div>
+
+          {events.length === 0 ? (
+            <div
+              className='rounded-2xl p-4 border text-sm'
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+            >
+              Ainda não há partos registrados para essa vaca.
+            </div>
+          ) : (
+            <div className='space-y-2'>
+              {events.map((ev) => (
+                <div
+                  key={ev.id}
+                  className='rounded-2xl p-3 border flex items-center justify-between gap-3'
+                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+                >
+                  <div className='flex items-center gap-3'>
+                    <div
+                      className='h-12 w-12 rounded-xl border overflow-hidden flex items-center justify-center'
+                      style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+                    >
+                      {ev.photoDataUrl ? (
+                        <img
+                          src={ev.photoDataUrl}
+                          alt='Foto do parto'
+                          className='h-full w-full object-cover'
+                        />
+                      ) : (
+                        <span className='text-[10px] font-semibold' style={{ color: 'var(--muted)' }}>
+                          {sexLabel(ev.sex)}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                        {formatDateBR(ev.date)}
+                      </div>
+                      <div className='text-xs' style={{ color: 'var(--muted)' }}>
+                        {sexLabel(ev.sex)}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type='button'
+                    onClick={() => onEditCalving(ev)}
+                    className='h-9 w-9 rounded-xl border flex items-center justify-center transition hover:brightness-110'
+                    style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                  >
+                    <Edit3 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </Modal>
+  )
+}
+
+function CalvingModal({
+  open,
+  cows,
+  initialCowId,
+  editing,
+  onClose,
+  onSaved
+}: {
+  open: boolean
+  cows: Cow[]
+  initialCowId: string | null
+  editing: CalvingEvent | null
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const [mode, setMode] = useState<'existing' | 'new'>('existing')
+  const [selectedCowId, setSelectedCowId] = useState<string>('')
+  const [newCowName, setNewCowName] = useState<string>('')
+  const [date, setDate] = useState<string>('')
+  const [sex, setSex] = useState<CalvingSex>('FEMEA')
+  const [photoDataUrl, setPhotoDataUrl] = useState<string | undefined>(undefined)
+  const [saving, setSaving] = useState(false)
+
+  React.useEffect(() => {
+    if (!open) return
+
+    // Reset
+    if (editing) {
+      setMode('existing')
+      setSelectedCowId(editing.cowId)
+      setNewCowName('')
+      setSex(editing.sex)
+      setPhotoDataUrl(editing.photoDataUrl)
+      const d = new Date(editing.date)
+      if (!Number.isNaN(d.getTime())) {
+        const yyyy = d.getFullYear()
+        const mm = String(d.getMonth() + 1).padStart(2, '0')
+        const dd = String(d.getDate()).padStart(2, '0')
+        setDate(`${yyyy}-${mm}-${dd}`)
+      } else {
+        setDate('')
+      }
+      return
+    }
+
+    const today = new Date()
+    const yyyy = today.getFullYear()
+    const mm = String(today.getMonth() + 1).padStart(2, '0')
+    const dd = String(today.getDate()).padStart(2, '0')
+    setDate(`${yyyy}-${mm}-${dd}`)
+    setSex('FEMEA')
+    setPhotoDataUrl(undefined)
+    setNewCowName('')
+
+    if (initialCowId) {
+      setMode('existing')
+      setSelectedCowId(initialCowId)
+    } else {
+      setMode('existing')
+      setSelectedCowId(cows[0]?.id || '')
+    }
+  }, [open, editing?.id, initialCowId, cows])
+
+  const title = editing ? 'Editar parto' : 'Cadastrar novo parto'
+
+  const handlePickPhoto = async (file?: File | null) => {
+    if (!file) return
+    try {
+      const raw = await readFileAsDataUrl(file)
+      const compressed = await compressImageDataUrl(raw, { maxDim: 1024, quality: 0.78 })
+      setPhotoDataUrl(compressed)
+    } catch (e) {
+      console.error('Falha ao preparar imagem', e)
+      alert('Não foi possível carregar a imagem.')
+    }
+  }
+
+  const canSave = (() => {
+    if (!date) return false
+    if (mode === 'new') return !!newCowName.trim()
+    return !!selectedCowId
+  })()
+
+  const save = async () => {
+    if (!canSave) return
+    setSaving(true)
+
+    try {
+      let cowId = selectedCowId
+
+      if (mode === 'new') {
+        const name = newCowName.trim()
+        cowId = crypto.randomUUID()
+        await offlineWrites.saveCow({ id: cowId, name })
+      }
+
+      const evId = editing?.id || crypto.randomUUID()
+      const ev: CalvingEvent = {
+        ...(editing || {}),
+        id: evId,
+        cowId,
+        date: toDateTime(date),
+        sex,
+        photoDataUrl: photoDataUrl ?? null
+      }
+      await offlineWrites.saveCalving(ev)
+      onSaved()
+    } catch (e) {
+      console.error('Falha ao salvar parto', e)
+      alert('Não foi possível salvar. Tente novamente.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal open={open} title={title} onClose={onClose}>
+      <div className='space-y-4'>
+        {!editing && (
+          <div className='space-y-2'>
+            <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
+              Vaca
+            </div>
+            <div className='flex gap-2'>
+              <button
+                type='button'
+                onClick={() => setMode('existing')}
+                className='h-10 px-3 rounded-xl text-sm font-semibold border transition'
+                style={{
+                  background: mode === 'existing' ? 'var(--surface)' : 'var(--surface-2)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                Selecionar
+              </button>
+              <button
+                type='button'
+                onClick={() => setMode('new')}
+                className='h-10 px-3 rounded-xl text-sm font-semibold border transition'
+                style={{
+                  background: mode === 'new' ? 'var(--surface)' : 'var(--surface-2)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                Nova vaca
+              </button>
+            </div>
+
+            {mode === 'existing' ? (
+              <select
+                value={selectedCowId}
+                onChange={(e) => setSelectedCowId(e.target.value)}
+                className='w-full h-11 rounded-xl border px-3 outline-none'
+                style={{
+                  background: 'var(--surface-2)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                {cows.map((cow) => (
+                  <option key={cow.id} value={cow.id}>
+                    {cow.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                value={newCowName}
+                onChange={(e) => setNewCowName(e.target.value)}
+                placeholder='Nome da vaca...'
+                className='w-full h-11 rounded-xl border px-3 outline-none'
+                style={{
+                  background: 'var(--surface-2)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              />
+            )}
+          </div>
+        )}
+
+        {editing && (
+          <div className='text-xs' style={{ color: 'var(--muted)' }}>
+            Vaca do registro: <b>{cows.find((c) => c.id === editing.cowId)?.name || 'Vaca'}</b>
+          </div>
+        )}
+
+        <div className='grid grid-cols-2 gap-3'>
+          <div className='space-y-2'>
+            <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
+              Data
+            </div>
+            <input
+              type='date'
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className='w-full h-11 rounded-xl border px-3 outline-none'
+              style={{
+                background: 'var(--surface-2)',
+                borderColor: 'var(--border)',
+                color: 'var(--text)'
+              }}
+            />
+          </div>
+
+          <div className='space-y-2'>
+            <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
+              Sexo
+            </div>
+            <div className='flex gap-2'>
+              <button
+                type='button'
+                onClick={() => setSex('MACHO')}
+                className='flex-1 h-11 rounded-xl text-sm font-semibold border transition'
+                style={{
+                  background: sex === 'MACHO' ? 'var(--surface)' : 'var(--surface-2)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                Macho
+              </button>
+              <button
+                type='button'
+                onClick={() => setSex('FEMEA')}
+                className='flex-1 h-11 rounded-xl text-sm font-semibold border transition'
+                style={{
+                  background: sex === 'FEMEA' ? 'var(--surface)' : 'var(--surface-2)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                Fêmea
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className='space-y-2'>
+          <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
+            Foto (opcional)
+          </div>
+
+          <div className='flex items-center gap-3'>
+            <label
+              className='h-11 px-4 rounded-xl text-sm font-semibold border inline-flex items-center gap-2 cursor-pointer transition hover:brightness-110'
+              style={{
+                background: 'var(--surface)',
+                borderColor: 'var(--border)',
+                color: 'var(--text)'
+              }}
+            >
+              <ImagePlus size={16} />
+              Selecionar foto
+              <input
+                type='file'
+                accept='image/*'
+                capture='environment'
+                className='hidden'
+                onChange={(e) => handlePickPhoto(e.target.files?.[0])}
+              />
+            </label>
+
+            {photoDataUrl && (
+              <button
+                type='button'
+                onClick={() => setPhotoDataUrl(undefined)}
+                className='h-11 px-4 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+                style={{
+                  background: 'var(--surface-2)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                Remover
+              </button>
+            )}
+          </div>
+
+          {photoDataUrl && (
+            <div
+              className='rounded-2xl border overflow-hidden'
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+            >
+              <img src={photoDataUrl} alt='Preview da foto' className='w-full h-48 object-cover' />
+            </div>
+          )}
+        </div>
+
+        <div className='flex gap-2 pt-2'>
+          <button
+            type='button'
+            onClick={save}
+            disabled={!canSave || saving}
+            className='flex-1 h-11 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
+            style={{
+              background: 'var(--accent, var(--primary, #b8ff2c))',
+              borderColor: 'transparent',
+              color: 'var(--accentText, #07110a)'
+            }}
+          >
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+          <button
+            type='button'
+            onClick={onClose}
+            className='h-11 px-4 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border)',
+              color: 'var(--text)'
+            }}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function NewCowModal({
+  open,
+  onClose,
+  onSaved
+}: {
+  open: boolean
+  onClose: () => void
+  onSaved: (cow: Cow) => void
+}) {
+  const [name, setName] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  React.useEffect(() => {
+    if (open) setName('')
+  }, [open])
+
+  const canSave = Boolean(name.trim())
+
+  const save = async () => {
+    const trimmedName = name.trim()
+    if (!trimmedName) return
+    setSaving(true)
+    try {
+      const newCow: Cow = { id: crypto.randomUUID(), name: trimmedName }
+      await offlineWrites.saveCow(newCow)
+      onSaved(newCow)
+    } catch (e) {
+      console.error('Falha ao salvar vaca', e)
+      alert('Não foi possível salvar. Tente novamente.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal open={open} title='Nova vaca' onClose={onClose}>
+      <div className='space-y-4'>
+        <div className='space-y-2'>
+          <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
+            Nome da vaca
+          </div>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder='Nome da vaca...'
+            className='w-full h-11 rounded-xl border px-3 outline-none'
+            style={{
+              background: 'var(--surface-2)',
+              borderColor: 'var(--border)',
+              color: 'var(--text)'
+            }}
+          />
+        </div>
+
+        <div className='flex gap-2 pt-2'>
+          <button
+            type='button'
+            onClick={save}
+            disabled={!canSave || saving}
+            className='flex-1 h-11 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
+            style={{
+              background: 'var(--accent, var(--primary, #b8ff2c))',
+              borderColor: 'transparent',
+              color: 'var(--accentText, #07110a)'
+            }}
+          >
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+          <button
+            type='button'
+            onClick={onClose}
+            className='h-11 px-4 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border)',
+              color: 'var(--text)'
+            }}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+

@@ -14,6 +14,10 @@ export type QueueItem = {
     | 'UPSERT_PAYMENT'
     | 'DELETE_PAYMENT'
     | 'SAVE_PRICE_SETTINGS'
+    | 'UPSERT_COW'
+    | 'DELETE_COW'
+    | 'UPSERT_CALVING'
+    | 'DELETE_CALVING'
   key: string
   payload: any
   createdAt: number
@@ -108,6 +112,14 @@ const execAction = async (item: QueueItem) => {
       return firestoreService.deletePayment(item.payload)
     case 'SAVE_PRICE_SETTINGS':
       return firestoreService.savePriceSettings(item.payload)
+    case 'UPSERT_COW':
+      return firestoreService.saveCow(item.payload)
+    case 'DELETE_COW':
+      return firestoreService.deleteCow(item.payload)
+    case 'UPSERT_CALVING':
+      return firestoreService.saveCalving(item.payload)
+    case 'DELETE_CALVING':
+      return firestoreService.deleteCalving(item.payload)
     default:
       throw new Error('Tipo de acao desconhecido')
   }

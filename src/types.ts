@@ -57,7 +57,37 @@ export const DEFAULT_SETTINGS: PriceSettings = {
 }
 
 export type ViewState = 'LIST' | 'DETAILS'
-export type TabState = 'CLIENTS' | 'PAYMENTS' | 'REPORTS' | 'SETTINGS'
+export type TabState =
+  | 'CLIENTS'
+  | 'PAYMENTS'
+  | 'REPORTS'
+  | 'REPRODUCTION'
+  | 'SETTINGS'
+
+export type Cow = {
+  id: string
+  name: string
+  createdAt?: number
+  updatedAt?: number
+  updatedBy?: string
+  deviceId?: string
+}
+
+export type CalvingSex = 'MACHO' | 'FEMEA'
+
+export type CalvingEvent = {
+  id: string
+  cowId: string
+  /** ISO string */
+  date: string
+  sex: CalvingSex
+  /** data URL (ex.: data:image/jpeg;base64,...) */
+  photoDataUrl?: string | null
+  createdAt?: number
+  updatedAt?: number
+  updatedBy?: string
+  deviceId?: string
+}
 
 export type FormErrors = {
   [key: string]: string

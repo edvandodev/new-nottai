@@ -1,5 +1,5 @@
 import { FirebaseFirestore } from '@capacitor-firebase/firestore'
-import type { Client, Sale, Payment, PriceSettings } from '@/types'
+import type { Client, Sale, Payment, PriceSettings, Cow, CalvingEvent } from '@/types'
 import { getDeviceId } from './device'
 
 let currentUid: string | null = null
@@ -9,6 +9,8 @@ const syncCallbacks = new Set<(ts: number) => void>()
 const backfilledClients = new Set<string>()
 const backfilledSales = new Set<string>()
 const backfilledPayments = new Set<string>()
+const backfilledCows = new Set<string>()
+const backfilledCalvings = new Set<string>()
 
 const requireUid = (): string => {
   if (!currentUid) {
@@ -20,6 +22,8 @@ const requireUid = (): string => {
 const clientPath = () => `users/${requireUid()}/clients`
 const salesPath = () => `users/${requireUid()}/sales`
 const paymentsPath = () => `users/${requireUid()}/payments`
+const cowsPath = () => `users/${requireUid()}/cows`
+const calvingsPath = () => `users/${requireUid()}/calvings`
 const settingsPath = () => `users/${requireUid()}/settings`
 
 const stripUndefined = <T extends Record<string, any>>(obj: T): Partial<T> =>
@@ -341,6 +345,121 @@ export const firestoreService = {
     const reference = paymentsPath()
     await FirebaseFirestore.deleteDocument({
       reference: `${reference}/${paymentId}`
+    })
+  },
+
+  // --- Reprodução (Vacas / Partos) ---
+  listenToCows: (callback: (cows: Cow[]) => void) => {
+    let cancelled = false
+    const reference = cowsPath()
+
+    const callbackIdPromise = FirebaseFirestore.addCollectionSnapshotListener(
+      { reference },
+      (event, error) => {
+        if (cancelled) return
+        if (error || !event) {
+          console.error('listenToCows falhou', error)
+          return
+        }
+        const cows = event.snapshots.map((s) => {
+          const data = s.data ?? {}
+          void backfillMeta(reference, s.id, data, backfilledCows)
+          return { ...data, id: s.id }
+        })
+        callback(cows as Cow[])
+        noteSync()
+      }
+    )
+
+    return async () => {
+      cancelled = true
+      try {
+        const callbackId = await callbackIdPromise
+        await FirebaseFirestore.removeSnapshotListener({ callbackId })
+      } catch (e) {
+        console.error('Falha ao remover listener de cows', e)
+      }
+    }
+  },
+
+  async getCowById(cowId: string): Promise<Cow | null> {
+    return firestoreService.getDoc<Cow>(`${cowsPath()}/${cowId}`)
+  },
+
+  saveCow: async (cow: Cow) => {
+    const uid = requireUid()
+    const { id, ...cowDataRaw } = cow
+
+    const meta = cow.createdAt ? getMetaForUpdate(uid) : getMetaForCreate(uid)
+    const cowData = { ...stripUndefined(cowDataRaw), ...meta }
+
+    const reference = cowsPath()
+    await FirebaseFirestore.setDocument({
+      reference: `${reference}/${id}`,
+      data: cowData,
+      merge: true
+    })
+  },
+
+  deleteCow: async (cowId: string) => {
+    const reference = cowsPath()
+    await FirebaseFirestore.deleteDocument({
+      reference: `${reference}/${cowId}`
+    })
+  },
+
+  listenToCalvings: (callback: (calvings: CalvingEvent[]) => void) => {
+    let cancelled = false
+    const reference = calvingsPath()
+
+    const callbackIdPromise = FirebaseFirestore.addCollectionSnapshotListener(
+      { reference },
+      (event, error) => {
+        if (cancelled) return
+        if (error || !event) {
+          console.error('listenToCalvings falhou', error)
+          return
+        }
+        const calvings = event.snapshots.map((s) => {
+          const data = s.data ?? {}
+          void backfillMeta(reference, s.id, data, backfilledCalvings)
+          return { ...data, id: s.id }
+        })
+        callback(calvings as CalvingEvent[])
+        noteSync()
+      }
+    )
+
+    return async () => {
+      cancelled = true
+      try {
+        const callbackId = await callbackIdPromise
+        await FirebaseFirestore.removeSnapshotListener({ callbackId })
+      } catch (e) {
+        console.error('Falha ao remover listener de calvings', e)
+      }
+    }
+  },
+
+  saveCalving: async (calving: CalvingEvent) => {
+    const uid = requireUid()
+    const { id, ...calvingDataRaw } = calving
+
+    const meta = calving.createdAt ? getMetaForUpdate(uid) : getMetaForCreate(uid)
+    const calvingData = { ...stripUndefined(calvingDataRaw), ...meta }
+
+    const reference = calvingsPath()
+    await FirebaseFirestore.setDocument({
+      reference: `${reference}/${id}`,
+      data: calvingData,
+      merge: true
+    })
+  },
+
+  deleteCalving: async (calvingId: string) => {
+    const reference = calvingsPath()
+    await FirebaseFirestore.deleteDocument({
+      reference: `${reference}/${calvingId}`
     })
   },
 

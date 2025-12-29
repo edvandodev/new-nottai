@@ -1,7 +1,7 @@
 import { firestoreService } from './firestore'
 import { pendingQueue } from './pendingQueue'
 import { optimisticStore } from './optimisticStore'
-import type { Client, Payment, PriceSettings, Sale } from '@/types'
+import type { Client, Payment, PriceSettings, Sale, Cow, CalvingEvent } from '@/types'
 
 const isOnline = () => (typeof navigator === 'undefined' ? true : navigator.onLine)
 
@@ -139,6 +139,79 @@ export const offlineWrites = {
     }
   },
 
+  // --- Reprodução ---
+  async saveCow(cow: Cow) {
+    const action = {
+      type: 'UPSERT_COW' as const,
+      key: `cow:${cow.id}`,
+      payload: cow,
+      createdAt: Date.now()
+    }
+    optimisticStore.apply(action)
+    try {
+      if (!isOnline()) throw new Error('offline')
+      await firestoreService.saveCow(cow)
+      optimisticStore.confirm(action.key)
+    } catch (error) {
+      await enqueue(action.type, action.key, action.payload)
+      optimisticStore.fail(action.key, messageFromError(error))
+    }
+  },
+
+  async deleteCow(cowId: string) {
+    const action = {
+      type: 'DELETE_COW' as const,
+      key: `cow:${cowId}`,
+      payload: cowId,
+      createdAt: Date.now()
+    }
+    optimisticStore.apply(action)
+    try {
+      if (!isOnline()) throw new Error('offline')
+      await firestoreService.deleteCow(cowId)
+      optimisticStore.confirm(action.key)
+    } catch (error) {
+      await enqueue(action.type, action.key, action.payload)
+      optimisticStore.fail(action.key, messageFromError(error))
+    }
+  },
+
+  async saveCalving(calving: CalvingEvent) {
+    const action = {
+      type: 'UPSERT_CALVING' as const,
+      key: `calving:${calving.id}`,
+      payload: calving,
+      createdAt: Date.now()
+    }
+    optimisticStore.apply(action)
+    try {
+      if (!isOnline()) throw new Error('offline')
+      await firestoreService.saveCalving(calving)
+      optimisticStore.confirm(action.key)
+    } catch (error) {
+      await enqueue(action.type, action.key, action.payload)
+      optimisticStore.fail(action.key, messageFromError(error))
+    }
+  },
+
+  async deleteCalving(calvingId: string) {
+    const action = {
+      type: 'DELETE_CALVING' as const,
+      key: `calving:${calvingId}`,
+      payload: calvingId,
+      createdAt: Date.now()
+    }
+    optimisticStore.apply(action)
+    try {
+      if (!isOnline()) throw new Error('offline')
+      await firestoreService.deleteCalving(calvingId)
+      optimisticStore.confirm(action.key)
+    } catch (error) {
+      await enqueue(action.type, action.key, action.payload)
+      optimisticStore.fail(action.key, messageFromError(error))
+    }
+  },
+
   _direct: {
     saveClient: (client: Client) => firestoreService.saveClient(client),
     deleteClient: (id: string) => firestoreService.deleteClient(id),
@@ -148,6 +221,10 @@ export const offlineWrites = {
       firestoreService.savePayment(payment, sales),
     deletePayment: (id: string) => firestoreService.deletePayment(id),
     savePriceSettings: (settings: PriceSettings) =>
-      firestoreService.savePriceSettings(settings)
+      firestoreService.savePriceSettings(settings),
+    saveCow: (cow: Cow) => firestoreService.saveCow(cow),
+    deleteCow: (id: string) => firestoreService.deleteCow(id),
+    saveCalving: (calving: CalvingEvent) => firestoreService.saveCalving(calving),
+    deleteCalving: (id: string) => firestoreService.deleteCalving(id)
   }
 }

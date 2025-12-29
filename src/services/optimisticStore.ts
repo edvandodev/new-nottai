@@ -8,6 +8,10 @@ type QueueAction =
         | 'UPSERT_PAYMENT'
         | 'DELETE_PAYMENT'
         | 'SAVE_PRICE_SETTINGS'
+        | 'UPSERT_COW'
+        | 'DELETE_COW'
+        | 'UPSERT_CALVING'
+        | 'DELETE_CALVING'
       key: string
       payload: any
       createdAt: number
