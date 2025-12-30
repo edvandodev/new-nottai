@@ -516,23 +516,18 @@ function CowDetailsModal({
   const [isActionsOpen, setIsActionsOpen] = useState(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const [deleteInput, setDeleteInput] = useState('')
-  const [cowPhoto, setCowPhoto] = useState<string | null>(null)
-  const [photoLoading, setPhotoLoading] = useState(false)
   const [photoViewer, setPhotoViewer] = useState<{
     src: string | null
     title: string
-    kind: 'cow' | 'event'
     event?: CalvingEvent
   }>({
     src: null,
-    title: '',
-    kind: 'cow'
+    title: ''
   })
 
   React.useEffect(() => {
     setName(cow?.name || '')
-    setCowPhoto(cow?.photoDataUrl ?? null)
-  }, [cow?.id, cow?.photoDataUrl])
+  }, [cow?.id, cow?.name])
 
   const canSaveName = cow && name.trim() && name.trim() !== cow.name
 
@@ -542,7 +537,7 @@ function CowDetailsModal({
     if (!nextName) return
     setSavingName(true)
     try {
-      await offlineWrites.saveCow({ ...cow, name: nextName, photoDataUrl: cowPhoto ?? null })
+      await offlineWrites.saveCow({ ...cow, name: nextName })
     } catch (e) {
       console.error('Falha ao salvar nome da vaca', e)
       alert('Não foi possível salvar. Tente novamente.')
@@ -565,47 +560,12 @@ function CowDetailsModal({
     }
   }
 
-  const handlePickCowPhoto = async (file?: File | null) => {
-    if (!cow || !file) return
-    setPhotoLoading(true)
-    try {
-      const raw = await readFileAsDataUrl(file)
-      const compressed = await compressImageDataUrl(raw, { maxDim: 1024, quality: 0.78 })
-      setCowPhoto(compressed)
-      if (photoViewer.kind === 'cow') {
-        setPhotoViewer((prev) => ({ ...prev, src: compressed }))
-      }
-      await offlineWrites.saveCow({ ...cow, name: name || cow.name, photoDataUrl: compressed })
-    } catch (e) {
-      console.error('Falha ao salvar foto da vaca', e)
-      alert('Nao foi possivel salvar a foto. Tente novamente.')
-    } finally {
-      setPhotoLoading(false)
-    }
-  }
-
-  const handleRemoveCowPhoto = async () => {
-    if (!cow || !cowPhoto) return
-    const confirmRemove = window.confirm('Remover a foto da vaca?')
-    if (!confirmRemove) return
-    setPhotoLoading(true)
-    try {
-      setCowPhoto(null)
-      await offlineWrites.saveCow({ ...cow, name: name || cow.name, photoDataUrl: null })
-    } catch (e) {
-      console.error('Falha ao remover foto da vaca', e)
-      alert('Nao foi possivel remover. Tente novamente.')
-    } finally {
-      setPhotoLoading(false)
-    }
-  }
-
-  const openPhotoViewer = (src: string, kind: 'cow' | 'event', title: string, event?: CalvingEvent) => {
-    setPhotoViewer({ src, title, kind, event })
+  const openPhotoViewer = (src: string, title: string, event?: CalvingEvent) => {
+    setPhotoViewer({ src, title, event })
   }
 
   const closePhotoViewer = () => {
-    setPhotoViewer({ src: null, title: '', kind: 'cow' })
+    setPhotoViewer({ src: null, title: '', event: undefined })
   }
 
   const updateEventPhoto = async (event: CalvingEvent, nextPhoto: string | null) => {
@@ -618,31 +578,19 @@ function CowDetailsModal({
   }
 
   const handleReplacePhotoFromViewer = async (file?: File | null) => {
-    if (!file || !photoViewer.src) return
-    if (photoViewer.kind === 'cow') {
-      await handlePickCowPhoto(file)
-      return
-    }
-    if (photoViewer.kind === 'event' && photoViewer.event) {
-      const raw = await readFileAsDataUrl(file)
-      const compressed = await compressImageDataUrl(raw, { maxDim: 1024, quality: 0.78 })
-      await updateEventPhoto(photoViewer.event, compressed)
-      setPhotoViewer((prev) => ({ ...prev, src: compressed }))
-    }
+    if (!file || !photoViewer.src || !photoViewer.event) return
+    const raw = await readFileAsDataUrl(file)
+    const compressed = await compressImageDataUrl(raw, { maxDim: 1024, quality: 0.78 })
+    await updateEventPhoto(photoViewer.event, compressed)
+    setPhotoViewer((prev) => ({ ...prev, src: compressed }))
   }
 
   const handleRemovePhotoFromViewer = async () => {
-    if (photoViewer.kind === 'cow') {
-      await handleRemoveCowPhoto()
-      closePhotoViewer()
-      return
-    }
-    if (photoViewer.kind === 'event' && photoViewer.event?.photoDataUrl) {
-      const confirmRemove = window.confirm('Remover a foto deste parto?')
-      if (!confirmRemove) return
-      await updateEventPhoto(photoViewer.event, null)
-      closePhotoViewer()
-    }
+    if (!photoViewer.event?.photoDataUrl) return
+    const confirmRemove = window.confirm('Remover a foto deste parto?')
+    if (!confirmRemove) return
+    await updateEventPhoto(photoViewer.event, null)
+    closePhotoViewer()
   }
 
   const openDeleteFlow = () => {
@@ -726,81 +674,6 @@ function CowDetailsModal({
             </div>
           </div>
   
-          <div
-            className='rounded-2xl border p-3 space-y-3'
-            style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-          >
-            <div className='flex items-center justify-between'>
-              <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                Foto
-              </div>
-              {cowPhoto ? (
-                <div className='text-xs' style={{ color: 'var(--muted)' }}>
-                  Toque para ampliar
-                </div>
-              ) : null}
-            </div>
-            {cowPhoto ? (
-              <button
-                type='button'
-                onClick={() => openPhotoViewer(cowPhoto, 'cow', cow.name || 'Vaca')}
-                className='w-full overflow-hidden rounded-xl border'
-                style={{ borderColor: 'var(--border)' }}
-              >
-                <img
-                  src={cowPhoto}
-                  alt='Foto da vaca'
-                  className='w-full h-48 object-cover'
-                  style={{ objectFit: 'cover' }}
-                />
-              </button>
-            ) : (
-              <div
-                className='w-full h-32 rounded-xl border border-dashed flex items-center justify-center text-sm'
-                style={{ borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--surface)' }}
-              >
-                Nenhuma foto. Adicione uma foto da vaca.
-              </div>
-            )}
-            <div className='flex flex-wrap items-center gap-2'>
-              <label
-                className='h-10 px-3 rounded-xl text-sm font-semibold border inline-flex items-center gap-2 cursor-pointer transition hover:brightness-110'
-                style={{
-                  background: 'var(--surface)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)',
-                  opacity: photoLoading ? 0.7 : 1
-                }}
-              >
-                <ImagePlus size={16} />
-                {cowPhoto ? 'Trocar foto' : 'Adicionar foto'}
-                <input
-                  type='file'
-                  accept='image/*'
-                  capture='environment'
-                  className='hidden'
-                  onChange={(e) => handlePickCowPhoto(e.target.files?.[0])}
-                  disabled={photoLoading}
-                />
-              </label>
-              {cowPhoto && (
-                <button
-                  type='button'
-                  onClick={handleRemoveCowPhoto}
-                  disabled={photoLoading}
-                  className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110 disabled:opacity-60'
-                  style={{
-                    background: 'var(--surface)',
-                    borderColor: 'var(--border)',
-                    color: 'var(--danger)'
-                  }}
-                >
-                  Remover
-                </button>
-              )}
-            </div>
-          </div>
-
           <div className='flex items-center justify-between'>
             <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
               Historico de partos
@@ -843,7 +716,7 @@ function CowDetailsModal({
                       {ev.photoDataUrl ? (
                         <button
                           type='button'
-                          onClick={() => openPhotoViewer(ev.photoDataUrl as string, 'event', `Parto ${formatDateBR(ev.date)}`, ev)}
+                          onClick={() => openPhotoViewer(ev.photoDataUrl as string, `Parto ${formatDateBR(ev.date)}`, ev)}
                           className='h-full w-full'
                           style={{ display: 'block' }}
                         >
@@ -968,11 +841,9 @@ function CowDetailsModal({
         src={photoViewer.src}
         title={photoViewer.title}
         onClose={closePhotoViewer}
-        onReplace={handleReplacePhotoFromViewer}
-        onRemove={handleRemovePhotoFromViewer}
-        canRemove={
-          photoViewer.kind === 'cow' ? Boolean(cowPhoto) : Boolean(photoViewer.event?.photoDataUrl)
-        }
+        onReplace={photoViewer.event ? handleReplacePhotoFromViewer : undefined}
+        onRemove={photoViewer.event ? handleRemovePhotoFromViewer : undefined}
+        canRemove={Boolean(photoViewer.event?.photoDataUrl)}
       />
     </>
   )
