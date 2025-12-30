@@ -1,5 +1,16 @@
 import React, { useMemo, useState } from 'react'
-import { CalendarDays, Edit3, ImagePlus, Milk, MoreVertical, Plus, Search, X } from 'lucide-react'
+import {
+  CalendarDays,
+  Camera,
+  Circle,
+  CircleDot,
+  Edit3,
+  Milk,
+  MoreVertical,
+  Plus,
+  Search,
+  X
+} from 'lucide-react'
 import calfIcon from '../../../assets/icon/icon-bezerro-3.svg'
 import cowIcon from '../../../assets/icon/icon-vaca.svg'
 
@@ -971,6 +982,25 @@ function CalvingModal({
   const [photoDataUrl, setPhotoDataUrl] = useState<string | undefined>(undefined)
   const [saving, setSaving] = useState(false)
 
+  const formatInputDate = (value: Date) => {
+    const yyyy = value.getFullYear()
+    const mm = String(value.getMonth() + 1).padStart(2, '0')
+    const dd = String(value.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }
+
+  const setQuickDate = (offsetDays: number) => {
+    const base = new Date()
+    base.setHours(12, 0, 0, 0)
+    base.setDate(base.getDate() - offsetDays)
+    setDate(formatInputDate(base))
+  }
+
+  const todayValue = formatInputDate(new Date())
+  const yesterdayRef = new Date()
+  yesterdayRef.setDate(yesterdayRef.getDate() - 1)
+  const yesterdayValue = formatInputDate(yesterdayRef)
+
   React.useEffect(() => {
     if (!open) return
 
@@ -982,34 +1012,26 @@ function CalvingModal({
       setSex(editing.sex)
       setPhotoDataUrl(editing.photoDataUrl)
       const d = new Date(editing.date)
-      if (!Number.isNaN(d.getTime())) {
-        const yyyy = d.getFullYear()
-        const mm = String(d.getMonth() + 1).padStart(2, '0')
-        const dd = String(d.getDate()).padStart(2, '0')
-        setDate(`${yyyy}-${mm}-${dd}`)
-      } else {
-        setDate('')
-      }
+      setDate(!Number.isNaN(d.getTime()) ? formatInputDate(d) : '')
       return
     }
 
     const today = new Date()
-    const yyyy = today.getFullYear()
-    const mm = String(today.getMonth() + 1).padStart(2, '0')
-    const dd = String(today.getDate()).padStart(2, '0')
-    setDate(`${yyyy}-${mm}-${dd}`)
+    setDate(formatInputDate(today))
     setSex('FEMEA')
     setPhotoDataUrl(undefined)
     setNewCowName('')
+    setMode('existing')
 
     if (initialCowId) {
-      setMode('existing')
       setSelectedCowId(initialCowId)
     } else {
-      setMode('existing')
       setSelectedCowId(cows[0]?.id || '')
     }
   }, [open, editing?.id, initialCowId, cows])
+
+  const isTodaySelected = date === todayValue
+  const isYesterdaySelected = date === yesterdayValue
 
   const title = editing ? 'Editar parto' : 'Cadastrar novo parto'
 
@@ -1063,153 +1085,296 @@ function CalvingModal({
     }
   }
 
-  return (
-    <Modal open={open} title={title} onClose={onClose} closeOnBackdrop>
-      <div className='space-y-4'>
-        {!editing && (
-          <div className='space-y-2'>
-            <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
-              Vaca
-            </div>
-            <div
-              className='flex items-center gap-1 rounded-full border p-1'
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-            >
-              <button
-                type='button'
-                onClick={() => setMode('existing')}
-                className='h-10 px-3 rounded-xl text-sm font-semibold border transition'
-                style={{
-                  background: mode === 'existing' ? 'var(--surface)' : 'var(--surface-2)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              >
-                Selecionar
-              </button>
-              <button
-                type='button'
-                onClick={() => setMode('new')}
-                className='h-10 px-3 rounded-xl text-sm font-semibold border transition'
-                style={{
-                  background: mode === 'new' ? 'var(--surface)' : 'var(--surface-2)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              >
-                Nova vaca
-              </button>
-            </div>
+  const primaryLabel = editing ? 'Salvar alteracoes' : 'Registrar parto'
 
-            {mode === 'existing' ? (
-              <select
-                value={selectedCowId}
-                onChange={(e) => setSelectedCowId(e.target.value)}
-                className='w-full h-11 rounded-xl border px-3 outline-none'
+  return (
+    <Modal
+      open={open}
+      title={title}
+      onClose={onClose}
+      closeOnBackdrop
+      closeLabel={<X size={14} />}
+      closeAriaLabel='Fechar'
+    >
+      <div className='space-y-4'>
+        <div
+          className='rounded-2xl border p-4 space-y-3'
+          style={{
+            background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+            borderColor: 'var(--border)',
+            boxShadow: '0 18px 40px -32px var(--shadow)'
+          }}
+        >
+          <div className='flex items-center justify-between gap-2'>
+            <div
+              className='text-[11px] font-semibold uppercase tracking-wide'
+              style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
+            >
+              Vaca (obrigatorio)
+            </div>
+            {!editing && (
+              <button
+                type='button'
+                onClick={() => {
+                  if (mode === 'existing') {
+                    setMode('new')
+                    setNewCowName('')
+                    setSelectedCowId('')
+                  } else {
+                    setMode('existing')
+                  }
+                }}
+                className='h-9 px-3 rounded-full text-xs font-semibold border inline-flex items-center gap-2 transition hover:brightness-110'
                 style={{
-                  background: 'var(--surface-2)',
+                  background: 'var(--surface)',
                   borderColor: 'var(--border)',
                   color: 'var(--text)'
                 }}
               >
-                {cows.map((cow) => (
-                  <option key={cow.id} value={cow.id}>
-                    {cow.name}
-                  </option>
-                ))}
-              </select>
+                {mode === 'new' ? (
+                  'Selecionar vaca'
+                ) : (
+                  <>
+                    <Plus size={14} />
+                    Nova vaca
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
+          {!editing ? (
+            mode === 'existing' ? (
+              <div className='relative'>
+                <Search
+                  size={16}
+                  className='absolute left-3 top-1/2 -translate-y-1/2'
+                  style={{ color: 'var(--muted)' }}
+                />
+                <select
+                  value={selectedCowId}
+                  onChange={(e) => setSelectedCowId(e.target.value)}
+                  className='w-full h-11 rounded-xl border pl-9 pr-3 outline-none appearance-none'
+                  style={{
+                    background: 'var(--surface-2)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--text)'
+                  }}
+                >
+                  {cows.map((cow) => (
+                    <option key={cow.id} value={cow.id}>
+                      {cow.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             ) : (
+              <div className='relative'>
+                <Search
+                  size={16}
+                  className='absolute left-3 top-1/2 -translate-y-1/2'
+                  style={{ color: 'var(--muted)' }}
+                />
+                <input
+                  value={newCowName}
+                  onChange={(e) => setNewCowName(e.target.value)}
+                  placeholder='Nome da vaca...'
+                  className='w-full h-11 rounded-xl border pl-9 pr-3 outline-none'
+                  style={{
+                    background: 'var(--surface-2)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--text)'
+                  }}
+                />
+              </div>
+            )
+          ) : (
+            <div
+              className='rounded-xl border px-3 py-2 text-sm'
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+            >
+              Vaca do registro:{' '}
+              <b style={{ color: 'var(--text)' }}>{cows.find((c) => c.id === editing.cowId)?.name || 'Vaca'}</b>
+            </div>
+          )}
+        </div>
+
+        <div
+          className='rounded-2xl border p-4 space-y-4'
+          style={{
+            background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+            borderColor: 'var(--border)',
+            boxShadow: '0 18px 40px -32px var(--shadow)'
+          }}
+        >
+          <div
+            className='text-[11px] font-semibold uppercase tracking-wide'
+            style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
+          >
+            Informacoes do parto
+          </div>
+
+          <div className='space-y-2'>
+            <div className='flex items-center justify-between gap-3 flex-wrap'>
+              <div
+                className='text-[11px] font-semibold uppercase tracking-wide'
+                style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
+              >
+                Data do parto (obrigatorio)
+              </div>
+              <div className='flex items-center gap-2'>
+                <button
+                  type='button'
+                  onClick={() => setQuickDate(0)}
+                  className='h-9 px-4 rounded-full text-xs font-semibold border transition'
+                  style={{
+                    background: isTodaySelected ? 'var(--accent)' : 'var(--surface)',
+                    borderColor: isTodaySelected ? 'var(--accent)' : 'var(--border)',
+                    color: isTodaySelected ? '#0a120a' : 'var(--text)',
+                    boxShadow: isTodaySelected ? '0 12px 32px -22px var(--shadow)' : 'none'
+                  }}
+                >
+                  Hoje
+                </button>
+                <button
+                  type='button'
+                  onClick={() => setQuickDate(1)}
+                  className='h-9 px-4 rounded-full text-xs font-semibold border transition'
+                  style={{
+                    background: isYesterdaySelected ? 'var(--accent)' : 'var(--surface)',
+                    borderColor: isYesterdaySelected ? 'var(--accent)' : 'var(--border)',
+                    color: isYesterdaySelected ? '#0a120a' : 'var(--text)',
+                    boxShadow: isYesterdaySelected ? '0 12px 32px -22px var(--shadow)' : 'none'
+                  }}
+                >
+                  Ontem
+                </button>
+              </div>
+            </div>
+            <div className='relative'>
+              <CalendarDays
+                size={16}
+                className='absolute left-3 top-1/2 -translate-y-1/2'
+                style={{ color: 'var(--muted)' }}
+              />
               <input
-                value={newCowName}
-                onChange={(e) => setNewCowName(e.target.value)}
-                placeholder='Nome da vaca...'
-                className='w-full h-11 rounded-xl border px-3 outline-none'
+                type='date'
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className='w-full h-12 rounded-xl border pl-10 pr-3 outline-none text-sm'
                 style={{
                   background: 'var(--surface-2)',
                   borderColor: 'var(--border)',
                   color: 'var(--text)'
                 }}
               />
-            )}
-          </div>
-        )}
-
-        {editing && (
-          <div className='text-xs' style={{ color: 'var(--muted)' }}>
-            Vaca do registro: <b>{cows.find((c) => c.id === editing.cowId)?.name || 'Vaca'}</b>
-          </div>
-        )}
-
-        <div className='grid grid-cols-2 gap-3'>
-          <div className='space-y-2'>
-            <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
-              Data
             </div>
-            <input
-              type='date'
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className='w-full h-11 rounded-xl border px-3 outline-none'
-              style={{
-                background: 'var(--surface-2)',
-                borderColor: 'var(--border)',
-                color: 'var(--text)'
-              }}
-            />
           </div>
 
           <div className='space-y-2'>
-            <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
+            <div
+              className='text-[11px] font-semibold uppercase tracking-wide'
+              style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
+            >
               Sexo
             </div>
-            <div
-              className='flex items-center gap-1 rounded-full border p-1'
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-            >
+            <div className='grid grid-cols-2 gap-2'>
               <button
                 type='button'
                 onClick={() => setSex('MACHO')}
-                className='flex-1 h-10 rounded-full text-sm font-semibold transition'
+                className='h-12 rounded-full border px-4 text-sm font-semibold flex items-center justify-center gap-2 transition'
                 style={{
-                  background: sex === 'MACHO' ? 'var(--accent, var(--primary, #b8ff2c))' : 'transparent',
-                  color: sex === 'MACHO' ? 'var(--accentText, #07110a)' : 'var(--muted)',
-                  boxShadow: sex === 'MACHO' ? '0 8px 24px -14px var(--shadow)' : 'none'
+                  background: sex === 'MACHO' ? 'rgba(184, 255, 44, 0.12)' : 'var(--surface-2)',
+                  borderColor: sex === 'MACHO' ? 'var(--accent)' : 'var(--border)',
+                  color: sex === 'MACHO' ? 'var(--text)' : 'var(--muted)',
+                  boxShadow: sex === 'MACHO' ? '0 12px 32px -22px var(--shadow)' : 'none'
                 }}
               >
+                <CircleDot size={16} />
                 Macho
               </button>
               <button
                 type='button'
                 onClick={() => setSex('FEMEA')}
-                className='flex-1 h-10 rounded-full text-sm font-semibold transition'
+                className='h-12 rounded-full border px-4 text-sm font-semibold flex items-center justify-center gap-2 transition'
                 style={{
-                  background: sex === 'FEMEA' ? 'var(--accent, var(--primary, #b8ff2c))' : 'transparent',
-                  color: sex === 'FEMEA' ? 'var(--accentText, #07110a)' : 'var(--muted)',
-                  boxShadow: sex === 'FEMEA' ? '0 8px 24px -14px var(--shadow)' : 'none'
+                  background: sex === 'FEMEA' ? 'rgba(184, 255, 44, 0.12)' : 'var(--surface-2)',
+                  borderColor: sex === 'FEMEA' ? 'var(--accent)' : 'var(--border)',
+                  color: sex === 'FEMEA' ? 'var(--text)' : 'var(--muted)',
+                  boxShadow: sex === 'FEMEA' ? '0 12px 32px -22px var(--shadow)' : 'none'
                 }}
               >
-                Fêmea
+                <Circle size={16} />
+                Femea
               </button>
             </div>
           </div>
         </div>
 
-        <div className='space-y-2'>
-          <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
-            Foto (opcional)
+        <div
+          className='rounded-2xl border p-4 space-y-3'
+          style={{
+            background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+            borderColor: 'var(--border)',
+            boxShadow: '0 18px 40px -32px var(--shadow)'
+          }}
+        >
+          <div
+            className='text-[11px] font-semibold uppercase tracking-wide'
+            style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
+          >
+            Foto
           </div>
 
-          <div className='flex items-center gap-3'>
+          {photoDataUrl ? (
+            <div
+              className='rounded-xl border overflow-hidden relative'
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+            >
+              <img src={photoDataUrl} alt='Preview da foto' className='w-full h-48 object-cover' />
+              <div className='absolute inset-x-3 bottom-3 flex justify-end gap-2'>
+                <label
+                  className='h-10 px-4 rounded-full text-sm font-semibold border inline-flex items-center gap-2 cursor-pointer transition hover:brightness-110'
+                  style={{
+                    background: 'var(--surface)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--text)'
+                  }}
+                >
+                  Trocar
+                  <input
+                    type='file'
+                    accept='image/*'
+                    capture='environment'
+                    className='hidden'
+                    onChange={(e) => handlePickPhoto(e.target.files?.[0])}
+                  />
+                </label>
+                <button
+                  type='button'
+                  onClick={() => setPhotoDataUrl(undefined)}
+                  className='h-10 px-4 rounded-full text-sm font-semibold border transition hover:brightness-110'
+                  style={{
+                    background: 'rgba(255, 90, 106, 0.16)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--danger)'
+                  }}
+                >
+                  Remover
+                </button>
+              </div>
+            </div>
+          ) : (
             <label
-              className='h-11 px-4 rounded-xl text-sm font-semibold border inline-flex items-center gap-2 cursor-pointer transition hover:brightness-110'
+              className='h-12 px-4 rounded-xl border inline-flex items-center gap-2 cursor-pointer transition hover:brightness-110 text-sm font-semibold'
               style={{
-                background: 'var(--surface)',
+                background: 'var(--surface-2)',
                 borderColor: 'var(--border)',
                 color: 'var(--text)'
               }}
             >
-              <ImagePlus size={16} />
-              Selecionar foto
+              <Camera size={18} />
+              Adicionar foto (opcional)
               <input
                 type='file'
                 accept='image/*'
@@ -1218,55 +1383,32 @@ function CalvingModal({
                 onChange={(e) => handlePickPhoto(e.target.files?.[0])}
               />
             </label>
-
-            {photoDataUrl && (
-              <button
-                type='button'
-                onClick={() => setPhotoDataUrl(undefined)}
-                className='h-11 px-4 rounded-xl text-sm font-semibold border transition hover:brightness-110'
-                style={{
-                  background: 'var(--surface-2)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              >
-                Remover
-              </button>
-            )}
-          </div>
-
-          {photoDataUrl && (
-            <div
-              className='rounded-2xl border overflow-hidden'
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-            >
-              <img src={photoDataUrl} alt='Preview da foto' className='w-full h-48 object-cover' />
-            </div>
           )}
         </div>
 
-        <div className='flex gap-2 pt-2'>
+        <div className='space-y-2 pt-1'>
           <button
             type='button'
             onClick={save}
             disabled={!canSave || saving}
-            className='flex-1 h-11 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
+            className='w-full h-12 rounded-full text-sm font-semibold border transition disabled:opacity-60'
             style={{
-              background: 'var(--accent, var(--primary, #b8ff2c))',
-              borderColor: 'transparent',
-              color: 'var(--accentText, #07110a)'
+              background: '#95c11f',
+              borderColor: '#95c11f',
+              color: '#0c120b',
+              boxShadow: '0 16px 40px -26px var(--shadow)'
             }}
           >
-            {saving ? 'Salvando...' : 'Salvar'}
+            {saving ? 'Salvando...' : primaryLabel}
           </button>
           <button
             type='button'
             onClick={onClose}
-            className='h-11 px-4 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+            className='w-full h-11 rounded-full text-sm font-semibold border transition hover:brightness-110'
             style={{
-              background: 'var(--surface)',
+              background: 'transparent',
               borderColor: 'var(--border)',
-              color: 'var(--text)'
+              color: 'var(--muted)'
             }}
           >
             Cancelar
