@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { CalendarDays, Edit3, ImagePlus, Milk, Plus, Search } from 'lucide-react'
+import { CalendarDays, Edit3, ImagePlus, Milk, MoreVertical, Plus, Search, X } from 'lucide-react'
 
 import type { CalvingEvent, CalvingSex, Cow } from '@/types'
 import { Modal } from '@/components/Modal'
@@ -23,6 +23,57 @@ const birthsCardColors = {
   background: 'rgba(53, 230, 181, 0.12)',
   border: 'rgba(53, 230, 181, 0.32)'
 }
+
+type HeadIconProps = {
+  size?: number
+  color?: string
+}
+
+const CalfHeadIcon = ({ size = 56, color = 'var(--muted)' }: HeadIconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox='0 0 72 72'
+    fill='none'
+    xmlns='http://www.w3.org/2000/svg'
+    stroke={color}
+    strokeWidth='2.6'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+    aria-hidden
+    focusable='false'
+  >
+    <path d='M36 13.5c-3.6 0-6.8 1.2-9.6 3.6l-7.2-3c-4.8-2-9.9 1.8-9.9 7.2 0 4.6 2.9 8.6 7.3 10l-.2 2.2c0 5.9 2 11.8 5.8 16.3 3.2 3.9 7.7 6.2 12.8 6.2s9.6-2.3 12.8-6.2c3.8-4.5 5.8-10.4 5.8-16.3l-.2-2.2c4.4-1.4 7.3-5.4 7.3-10 0-5.4-5.1-9.2-9.9-7.2l-7.2 3C42.8 14.7 39.6 13.5 36 13.5Z' />
+    <circle cx='27.5' cy='35' r='1.4' />
+    <circle cx='44.5' cy='35' r='1.4' />
+    <path d='M30 40.5c1.7 1.2 3.6 1.8 6 1.8s4.3-.6 6-1.8' />
+    <path d='M32.5 44.5c2.1 2.2 4.9 2.2 7 0' />
+  </svg>
+)
+
+const CowHeadIcon = ({ size = 56, color = 'var(--muted)' }: HeadIconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox='0 0 72 72'
+    fill='none'
+    xmlns='http://www.w3.org/2000/svg'
+    stroke={color}
+    strokeWidth='2.6'
+    strokeLinecap='round'
+    strokeLinejoin='round'
+    aria-hidden
+    focusable='false'
+  >
+    <path d='M19 18.5c-1.2-4-4.4-7.5-8.7-9L5 7.7C4.7 12.7 7 18 11.6 21' />
+    <path d='M53 18.5c1.2-4 4.4-7.5 8.7-9l5.3-1.8c.3 5-2 10.3-6.6 13.3' />
+    <path d='M36 13.5c-3.6 0-6.8 1.2-9.6 3.6l-7.2-3c-4.8-2-9.9 1.8-9.9 7.2 0 4.6 2.9 8.6 7.3 10l-.2 2.2c0 5.9 2 11.8 5.8 16.3 3.2 3.9 7.7 6.2 12.8 6.2s9.6-2.3 12.8-6.2c3.8-4.5 5.8-10.4 5.8-16.3l-.2-2.2c4.4-1.4 7.3-5.4 7.3-10 0-5.4-5.1-9.2-9.9-7.2l-7.2 3C42.8 14.7 39.6 13.5 36 13.5Z' />
+    <circle cx='27.5' cy='35' r='1.4' />
+    <circle cx='44.5' cy='35' r='1.4' />
+    <path d='M30 40.5c1.7 1.2 3.6 1.8 6 1.8s4.3-.6 6-1.8' />
+    <path d='M32.5 44.5c2.1 2.2 4.9 2.2 7 0' />
+  </svg>
+)
 
 const formatDateBR = (iso: string) => {
   const d = new Date(iso)
@@ -342,7 +393,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
         title='Novo'
         onClose={() => setIsNewMenuOpen(false)}
       >
-        <div className='grid grid-cols-2 gap-3'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
           <button
             type='button'
             onClick={() => {
@@ -350,12 +401,24 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
               setEditingCalving(null)
               setIsNewCalvingOpen(true)
             }}
-            className='flat-card rounded-2xl border p-4 text-left transition hover:brightness-110'
-            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+            className='w-full rounded-3xl border flex flex-col items-center justify-center text-center transition hover:brightness-110'
+            style={{
+              background: 'var(--surface-2)',
+              borderColor: 'var(--border)',
+              color: 'var(--text)',
+              padding: '18px 16px',
+              minHeight: 148,
+              boxShadow: '0 16px 40px -32px var(--shadow)'
+            }}
           >
-            <div className='text-sm font-semibold'>Parto</div>
-            <div className='text-xs' style={{ color: 'var(--muted)' }}>
-              Registrar parto
+            <div className='flex flex-col items-center gap-3'>
+              <CalfHeadIcon />
+              <div className='space-y-1'>
+                <div className='text-base font-semibold'>Parto</div>
+                <div className='text-xs' style={{ color: 'var(--muted)' }}>
+                  Registrar parto
+                </div>
+              </div>
             </div>
           </button>
           <button
@@ -364,12 +427,24 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
               setIsNewMenuOpen(false)
               setIsNewCowOpen(true)
             }}
-            className='flat-card rounded-2xl border p-4 text-left transition hover:brightness-110'
-            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+            className='w-full rounded-3xl border flex flex-col items-center justify-center text-center transition hover:brightness-110'
+            style={{
+              background: 'var(--surface-2)',
+              borderColor: 'var(--border)',
+              color: 'var(--text)',
+              padding: '18px 16px',
+              minHeight: 148,
+              boxShadow: '0 16px 40px -32px var(--shadow)'
+            }}
           >
-            <div className='text-sm font-semibold'>Vaca</div>
-            <div className='text-xs' style={{ color: 'var(--muted)' }}>
-              Cadastrar sem parto
+            <div className='flex flex-col items-center gap-3'>
+              <CowHeadIcon />
+              <div className='space-y-1'>
+                <div className='text-base font-semibold'>Vaca</div>
+                <div className='text-xs' style={{ color: 'var(--muted)' }}>
+                  Cadastrar sem parto
+                </div>
+              </div>
             </div>
           </button>
         </div>
@@ -437,10 +512,27 @@ function CowDetailsModal({
 }) {
   const [name, setName] = useState('')
   const [savingName, setSavingName] = useState(false)
+  const [deletingCow, setDeletingCow] = useState(false)
+  const [isActionsOpen, setIsActionsOpen] = useState(false)
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+  const [deleteInput, setDeleteInput] = useState('')
+  const [cowPhoto, setCowPhoto] = useState<string | null>(null)
+  const [photoLoading, setPhotoLoading] = useState(false)
+  const [photoViewer, setPhotoViewer] = useState<{
+    src: string | null
+    title: string
+    kind: 'cow' | 'event'
+    event?: CalvingEvent
+  }>({
+    src: null,
+    title: '',
+    kind: 'cow'
+  })
 
   React.useEffect(() => {
     setName(cow?.name || '')
-  }, [cow?.id])
+    setCowPhoto(cow?.photoDataUrl ?? null)
+  }, [cow?.id, cow?.photoDataUrl])
 
   const canSaveName = cow && name.trim() && name.trim() !== cow.name
 
@@ -450,7 +542,7 @@ function CowDetailsModal({
     if (!nextName) return
     setSavingName(true)
     try {
-      await offlineWrites.saveCow({ ...cow, name: nextName })
+      await offlineWrites.saveCow({ ...cow, name: nextName, photoDataUrl: cowPhoto ?? null })
     } catch (e) {
       console.error('Falha ao salvar nome da vaca', e)
       alert('Não foi possível salvar. Tente novamente.')
@@ -459,12 +551,141 @@ function CowDetailsModal({
     }
   }
 
+  const handleDeleteCow = async () => {
+    if (!cow) return
+    setDeletingCow(true)
+    try {
+      await offlineWrites.deleteCow(cow.id)
+      onClose()
+    } catch (e) {
+      console.error('Falha ao apagar vaca', e)
+      alert('Nao foi possivel apagar. Tente novamente.')
+    } finally {
+      setDeletingCow(false)
+    }
+  }
+
+  const handlePickCowPhoto = async (file?: File | null) => {
+    if (!cow || !file) return
+    setPhotoLoading(true)
+    try {
+      const raw = await readFileAsDataUrl(file)
+      const compressed = await compressImageDataUrl(raw, { maxDim: 1024, quality: 0.78 })
+      setCowPhoto(compressed)
+      if (photoViewer.kind === 'cow') {
+        setPhotoViewer((prev) => ({ ...prev, src: compressed }))
+      }
+      await offlineWrites.saveCow({ ...cow, name: name || cow.name, photoDataUrl: compressed })
+    } catch (e) {
+      console.error('Falha ao salvar foto da vaca', e)
+      alert('Nao foi possivel salvar a foto. Tente novamente.')
+    } finally {
+      setPhotoLoading(false)
+    }
+  }
+
+  const handleRemoveCowPhoto = async () => {
+    if (!cow || !cowPhoto) return
+    const confirmRemove = window.confirm('Remover a foto da vaca?')
+    if (!confirmRemove) return
+    setPhotoLoading(true)
+    try {
+      setCowPhoto(null)
+      await offlineWrites.saveCow({ ...cow, name: name || cow.name, photoDataUrl: null })
+    } catch (e) {
+      console.error('Falha ao remover foto da vaca', e)
+      alert('Nao foi possivel remover. Tente novamente.')
+    } finally {
+      setPhotoLoading(false)
+    }
+  }
+
+  const openPhotoViewer = (src: string, kind: 'cow' | 'event', title: string, event?: CalvingEvent) => {
+    setPhotoViewer({ src, title, kind, event })
+  }
+
+  const closePhotoViewer = () => {
+    setPhotoViewer({ src: null, title: '', kind: 'cow' })
+  }
+
+  const updateEventPhoto = async (event: CalvingEvent, nextPhoto: string | null) => {
+    try {
+      await offlineWrites.saveCalving({ ...event, photoDataUrl: nextPhoto })
+    } catch (e) {
+      console.error('Falha ao atualizar foto do parto', e)
+      alert('Nao foi possivel atualizar a foto. Tente novamente.')
+    }
+  }
+
+  const handleReplacePhotoFromViewer = async (file?: File | null) => {
+    if (!file || !photoViewer.src) return
+    if (photoViewer.kind === 'cow') {
+      await handlePickCowPhoto(file)
+      return
+    }
+    if (photoViewer.kind === 'event' && photoViewer.event) {
+      const raw = await readFileAsDataUrl(file)
+      const compressed = await compressImageDataUrl(raw, { maxDim: 1024, quality: 0.78 })
+      await updateEventPhoto(photoViewer.event, compressed)
+      setPhotoViewer((prev) => ({ ...prev, src: compressed }))
+    }
+  }
+
+  const handleRemovePhotoFromViewer = async () => {
+    if (photoViewer.kind === 'cow') {
+      await handleRemoveCowPhoto()
+      closePhotoViewer()
+      return
+    }
+    if (photoViewer.kind === 'event' && photoViewer.event?.photoDataUrl) {
+      const confirmRemove = window.confirm('Remover a foto deste parto?')
+      if (!confirmRemove) return
+      await updateEventPhoto(photoViewer.event, null)
+      closePhotoViewer()
+    }
+  }
+
+  const openDeleteFlow = () => {
+    setDeleteInput('')
+    setIsActionsOpen(false)
+    setIsDeleteConfirmOpen(true)
+  }
+
+  const handleArchiveCow = () => {
+    alert('TODO: Arquivar vaca ainda nao implementado.')
+    setIsActionsOpen(false)
+  }
+
+  const canDelete = cow && deleteInput.trim() === cow.name.trim()
+
+  const confirmDeleteCow = async () => {
+    if (!cow || !canDelete) return
+    await handleDeleteCow()
+    setIsDeleteConfirmOpen(false)
+  }
+
   return (
-    <Modal
-      open={open}
-      title={cow ? cow.name : 'Vaca'}
-      onClose={onClose}
-    >
+    <>
+      <Modal
+        open={open}
+        title={cow ? cow.name : 'Vaca'}
+        onClose={onClose}
+        closeLabel={<X size={14} />}
+        closeAriaLabel='Fechar'
+        actions={
+          cow ? (
+            <button
+              type='button'
+              onClick={() => setIsActionsOpen(true)}
+              aria-label='Acoes da vaca'
+              className='h-9 w-9 rounded-full border flex items-center justify-center transition hover:brightness-110'
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+            >
+              <MoreVertical size={16} />
+            </button>
+          ) : null
+        }
+      >
       {!cow ? (
         <div className='text-sm' style={{ color: 'var(--muted)' }}>
           Nenhuma vaca selecionada.
@@ -475,7 +696,10 @@ function CowDetailsModal({
             <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
               Nome da vaca (editar)
             </div>
-            <div className='flex gap-2'>
+            <div
+              className='flex items-center gap-1 rounded-full border p-1'
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+            >
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -501,10 +725,85 @@ function CowDetailsModal({
               </button>
             </div>
           </div>
+  
+          <div
+            className='rounded-2xl border p-3 space-y-3'
+            style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+          >
+            <div className='flex items-center justify-between'>
+              <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                Foto
+              </div>
+              {cowPhoto ? (
+                <div className='text-xs' style={{ color: 'var(--muted)' }}>
+                  Toque para ampliar
+                </div>
+              ) : null}
+            </div>
+            {cowPhoto ? (
+              <button
+                type='button'
+                onClick={() => openPhotoViewer(cowPhoto, 'cow', cow.name || 'Vaca')}
+                className='w-full overflow-hidden rounded-xl border'
+                style={{ borderColor: 'var(--border)' }}
+              >
+                <img
+                  src={cowPhoto}
+                  alt='Foto da vaca'
+                  className='w-full h-48 object-cover'
+                  style={{ objectFit: 'cover' }}
+                />
+              </button>
+            ) : (
+              <div
+                className='w-full h-32 rounded-xl border border-dashed flex items-center justify-center text-sm'
+                style={{ borderColor: 'var(--border)', color: 'var(--muted)', background: 'var(--surface)' }}
+              >
+                Nenhuma foto. Adicione uma foto da vaca.
+              </div>
+            )}
+            <div className='flex flex-wrap items-center gap-2'>
+              <label
+                className='h-10 px-3 rounded-xl text-sm font-semibold border inline-flex items-center gap-2 cursor-pointer transition hover:brightness-110'
+                style={{
+                  background: 'var(--surface)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)',
+                  opacity: photoLoading ? 0.7 : 1
+                }}
+              >
+                <ImagePlus size={16} />
+                {cowPhoto ? 'Trocar foto' : 'Adicionar foto'}
+                <input
+                  type='file'
+                  accept='image/*'
+                  capture='environment'
+                  className='hidden'
+                  onChange={(e) => handlePickCowPhoto(e.target.files?.[0])}
+                  disabled={photoLoading}
+                />
+              </label>
+              {cowPhoto && (
+                <button
+                  type='button'
+                  onClick={handleRemoveCowPhoto}
+                  disabled={photoLoading}
+                  className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110 disabled:opacity-60'
+                  style={{
+                    background: 'var(--surface)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--danger)'
+                  }}
+                >
+                  Remover
+                </button>
+              )}
+            </div>
+          </div>
 
           <div className='flex items-center justify-between'>
             <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-              Histórico de partos
+              Historico de partos
             </div>
             <button
               type='button'
@@ -526,7 +825,7 @@ function CowDetailsModal({
               className='rounded-2xl p-4 border text-sm'
               style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
             >
-              Ainda não há partos registrados para essa vaca.
+              Ainda nao ha partos registrados para essa vaca.
             </div>
           ) : (
             <div className='space-y-2'>
@@ -542,11 +841,18 @@ function CowDetailsModal({
                       style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
                     >
                       {ev.photoDataUrl ? (
-                        <img
-                          src={ev.photoDataUrl}
-                          alt='Foto do parto'
-                          className='h-full w-full object-cover'
-                        />
+                        <button
+                          type='button'
+                          onClick={() => openPhotoViewer(ev.photoDataUrl as string, 'event', `Parto ${formatDateBR(ev.date)}`, ev)}
+                          className='h-full w-full'
+                          style={{ display: 'block' }}
+                        >
+                          <img
+                            src={ev.photoDataUrl}
+                            alt='Foto do parto'
+                            className='h-full w-full object-cover'
+                          />
+                        </button>
                       ) : (
                         <span className='text-[10px] font-semibold' style={{ color: 'var(--muted)' }}>
                           {sexLabel(ev.sex)}
@@ -576,7 +882,210 @@ function CowDetailsModal({
           )}
         </div>
       )}
-    </Modal>
+      </Modal>
+
+      <ActionSheet open={isActionsOpen} onClose={() => setIsActionsOpen(false)}>
+        <div className='flex flex-col'>
+          <button
+            type='button'
+            onClick={handleArchiveCow}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110'
+            style={{ color: 'var(--text)' }}
+          >
+            Arquivar vaca
+          </button>
+          <button
+            type='button'
+            onClick={openDeleteFlow}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110'
+            style={{ color: 'var(--danger)' }}
+          >
+            Apagar vaca...
+          </button>
+        </div>
+      </ActionSheet>
+
+      <Modal
+        open={isDeleteConfirmOpen}
+        title={cow ? `Apagar ${cow.name}?` : 'Apagar vaca?'}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        closeLabel={<X size={14} />}
+        closeAriaLabel='Fechar'
+      >
+        <div className='space-y-3'>
+          <div className='text-sm' style={{ color: 'var(--muted)' }}>
+            Essa acao remove a vaca e o historico de partos. Nao pode ser desfeita.
+          </div>
+          <div className='space-y-2'>
+            <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
+              Digite o nome da vaca para confirmar
+            </div>
+            <input
+              value={deleteInput}
+              onChange={(e) => setDeleteInput(e.target.value)}
+              autoFocus
+              className='w-full h-11 rounded-xl border px-3 outline-none'
+              style={{
+                background: 'var(--surface-2)',
+                borderColor: 'var(--border)',
+                color: 'var(--text)'
+              }}
+              placeholder={cow?.name || 'Nome da vaca'}
+            />
+          </div>
+          <div className='flex justify-end gap-2 pt-1'>
+            <button
+              type='button'
+              onClick={() => setIsDeleteConfirmOpen(false)}
+              className='h-10 px-4 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+              style={{
+                background: 'var(--surface)',
+                borderColor: 'var(--border)',
+                color: 'var(--text)'
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              type='button'
+              onClick={confirmDeleteCow}
+              disabled={!canDelete || deletingCow}
+              className='h-10 px-4 rounded-xl text-sm font-semibold border transition hover:brightness-110 disabled:opacity-60'
+              style={{
+                background: 'rgba(255, 90, 106, 0.16)',
+                borderColor: 'var(--border)',
+                color: 'var(--danger)'
+              }}
+            >
+              {deletingCow ? 'Apagando...' : 'Apagar definitivamente'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <ImageViewerModal
+        open={Boolean(photoViewer.src)}
+        src={photoViewer.src}
+        title={photoViewer.title}
+        onClose={closePhotoViewer}
+        onReplace={handleReplacePhotoFromViewer}
+        onRemove={handleRemovePhotoFromViewer}
+        canRemove={
+          photoViewer.kind === 'cow' ? Boolean(cowPhoto) : Boolean(photoViewer.event?.photoDataUrl)
+        }
+      />
+    </>
+  )
+}
+
+function ActionSheet({
+  open,
+  onClose,
+  children
+}: {
+  open: boolean
+  onClose: () => void
+  children: React.ReactNode
+}) {
+  if (!open) return null
+  return (
+    <div
+      className='fixed inset-0 z-50 flex items-end justify-center px-4 pb-6'
+      style={{ background: 'rgba(0,0,0,0.4)' }}
+      onClick={onClose}
+    >
+      <div
+        className='w-full max-w-lg rounded-2xl border p-2'
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function ImageViewerModal({
+  open,
+  src,
+  title,
+  onClose,
+  onReplace,
+  onRemove,
+  canRemove = true
+}: {
+  open: boolean
+  src: string | null
+  title: string
+  onClose: () => void
+  onReplace?: (file?: File | null) => void
+  onRemove?: () => void
+  canRemove?: boolean
+}) {
+  if (!open || !src) return null
+  return (
+    <div
+      className='fixed inset-0 z-50 flex flex-col'
+      style={{ background: 'rgba(0, 0, 0, 0.85)' }}
+    >
+      <div className='flex items-center justify-between gap-2 p-4'>
+        <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+          {title}
+        </div>
+        <div className='flex items-center gap-2'>
+          {onReplace && (
+            <label
+              className='h-10 px-3 rounded-xl text-sm font-semibold border inline-flex items-center gap-2 cursor-pointer transition hover:brightness-110'
+              style={{
+                background: 'var(--surface)',
+                borderColor: 'var(--border)',
+                color: 'var(--text)'
+              }}
+            >
+              Trocar
+              <input
+                type='file'
+                accept='image/*'
+                capture='environment'
+                className='hidden'
+                onChange={(e) => onReplace(e.target.files?.[0])}
+              />
+            </label>
+          )}
+          {onRemove && canRemove && (
+            <button
+              type='button'
+              onClick={onRemove}
+              className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+              style={{
+                background: 'rgba(255, 90, 106, 0.16)',
+                borderColor: 'var(--border)',
+                color: 'var(--danger)'
+              }}
+            >
+              Remover
+            </button>
+          )}
+          <button
+            type='button'
+            onClick={onClose}
+            className='h-10 w-10 rounded-full border flex items-center justify-center transition hover:brightness-110'
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+            aria-label='Fechar visualizacao'
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+      <div className='flex-1 flex items-center justify-center p-4'>
+        <img
+          src={src}
+          alt={title}
+          className='max-h-full max-w-full object-contain rounded-2xl border'
+          style={{ borderColor: 'var(--border)' }}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -703,7 +1212,10 @@ function CalvingModal({
             <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
               Vaca
             </div>
-            <div className='flex gap-2'>
+            <div
+              className='flex items-center gap-1 rounded-full border p-1'
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+            >
               <button
                 type='button'
                 onClick={() => setMode('existing')}
@@ -791,15 +1303,18 @@ function CalvingModal({
             <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
               Sexo
             </div>
-            <div className='flex gap-2'>
+            <div
+              className='flex items-center gap-1 rounded-full border p-1'
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+            >
               <button
                 type='button'
                 onClick={() => setSex('MACHO')}
-                className='flex-1 h-11 rounded-xl text-sm font-semibold border transition'
+                className='flex-1 h-10 rounded-full text-sm font-semibold transition'
                 style={{
-                  background: sex === 'MACHO' ? 'var(--surface)' : 'var(--surface-2)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
+                  background: sex === 'MACHO' ? 'var(--accent, var(--primary, #b8ff2c))' : 'transparent',
+                  color: sex === 'MACHO' ? 'var(--accentText, #07110a)' : 'var(--muted)',
+                  boxShadow: sex === 'MACHO' ? '0 8px 24px -14px var(--shadow)' : 'none'
                 }}
               >
                 Macho
@@ -807,11 +1322,11 @@ function CalvingModal({
               <button
                 type='button'
                 onClick={() => setSex('FEMEA')}
-                className='flex-1 h-11 rounded-xl text-sm font-semibold border transition'
+                className='flex-1 h-10 rounded-full text-sm font-semibold transition'
                 style={{
-                  background: sex === 'FEMEA' ? 'var(--surface)' : 'var(--surface-2)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
+                  background: sex === 'FEMEA' ? 'var(--accent, var(--primary, #b8ff2c))' : 'transparent',
+                  color: sex === 'FEMEA' ? 'var(--accentText, #07110a)' : 'var(--muted)',
+                  boxShadow: sex === 'FEMEA' ? '0 8px 24px -14px var(--shadow)' : 'none'
                 }}
               >
                 Fêmea
@@ -988,6 +1503,7 @@ function NewCowModal({
     </Modal>
   )
 }
+
 
 
 

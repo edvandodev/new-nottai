@@ -4,12 +4,18 @@ export function Modal({
   open,
   title,
   onClose,
-  children
+  children,
+  actions,
+  closeLabel = 'Fechar',
+  closeAriaLabel = 'Fechar'
 }: {
   open: boolean
   title: string
   onClose: () => void
   children: React.ReactNode
+  actions?: React.ReactNode
+  closeLabel?: React.ReactNode
+  closeAriaLabel?: string
 }) {
   if (!open) return null
   return (
@@ -30,21 +36,25 @@ export function Modal({
           boxShadow: '0 24px 50px -34px var(--shadow)'
         }}
       >
-        <div className='flex items-center justify-between'>
+        <div className='flex items-center justify-between gap-3'>
           <h2 className='text-lg font-semibold' style={{ color: 'var(--text)' }}>
             {title}
           </h2>
-          <button
-            onClick={onClose}
-            className='h-9 w-9 rounded-full flex items-center justify-center text-sm'
-            style={{
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              color: 'var(--muted)'
-            }}
-          >
-            Fechar
-          </button>
+          <div className='flex items-center gap-2'>
+            {actions}
+            <button
+              onClick={onClose}
+              aria-label={closeAriaLabel}
+              className='h-9 w-9 rounded-full flex items-center justify-center text-sm'
+              style={{
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                color: 'var(--muted)'
+              }}
+            >
+              {closeLabel}
+            </button>
+          </div>
         </div>
         {children}
       </div>
