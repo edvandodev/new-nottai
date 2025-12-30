@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { CalendarDays, Edit3, ImagePlus, Milk, Plus, Search } from 'lucide-react'
 
 import type { CalvingEvent, CalvingSex, Cow } from '@/types'
@@ -95,13 +95,13 @@ const compressImageDataUrl = async (
   const maxDim = opts.maxDim ?? 1024
   const quality = opts.quality ?? 0.78
 
-  // Se nÃ£o for imagem, retorna como estÃ¡.
+  // Se não for imagem, retorna como está.
   if (!dataUrl.startsWith('data:image/')) return dataUrl
 
   const img = new Image()
   const loaded = new Promise<void>((resolve, reject) => {
     img.onload = () => resolve()
-    img.onerror = () => reject(new Error('Imagem invÃ¡lida'))
+    img.onerror = () => reject(new Error('Imagem inválida'))
   })
   img.src = dataUrl
   await loaded
@@ -121,7 +121,7 @@ const compressImageDataUrl = async (
 
   ctx.drawImage(img, 0, 0, targetW, targetH)
 
-  // JPEG costuma ficar bem menor e Ã© o esperado para foto.
+  // JPEG costuma ficar bem menor e é o esperado para foto.
   try {
     return canvas.toDataURL('image/jpeg', quality)
   } catch {
@@ -129,7 +129,8 @@ const compressImageDataUrl = async (
   }
 }
 
-const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'FÃªmea')
+
+const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'Fêmea')
 
 export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
   const [search, setSearch] = useState('')
@@ -212,8 +213,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
             </div>
             <div>
               <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                ReproduÃ§Ã£o
-              </div>
+                Reprodução</div>
               <div className='text-xs' style={{ color: 'var(--muted)' }}>
                 Anote partos por vaca, com data, sexo e foto.
               </div>
@@ -453,7 +453,7 @@ function CowDetailsModal({
       await offlineWrites.saveCow({ ...cow, name: nextName })
     } catch (e) {
       console.error('Falha ao salvar nome da vaca', e)
-      alert('NÃ£o foi possÃ­vel salvar. Tente novamente.')
+      alert('Não foi possível salvar. Tente novamente.')
     } finally {
       setSavingName(false)
     }
@@ -504,7 +504,7 @@ function CowDetailsModal({
 
           <div className='flex items-center justify-between'>
             <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-              HistÃ³rico de partos
+              Histórico de partos
             </div>
             <button
               type='button'
@@ -526,7 +526,7 @@ function CowDetailsModal({
               className='rounded-2xl p-4 border text-sm'
               style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
             >
-              Ainda nÃ£o hÃ¡ partos registrados para essa vaca.
+              Ainda não há partos registrados para essa vaca.
             </div>
           ) : (
             <div className='space-y-2'>
@@ -653,7 +653,7 @@ function CalvingModal({
       setPhotoDataUrl(compressed)
     } catch (e) {
       console.error('Falha ao preparar imagem', e)
-      alert('NÃ£o foi possÃ­vel carregar a imagem.')
+      alert('Não foi possível carregar a imagem.')
     }
   }
 
@@ -689,7 +689,7 @@ function CalvingModal({
       onSaved()
     } catch (e) {
       console.error('Falha ao salvar parto', e)
-      alert('NÃ£o foi possÃ­vel salvar. Tente novamente.')
+      alert('Não foi possível salvar. Tente novamente.')
     } finally {
       setSaving(false)
     }
@@ -814,7 +814,7 @@ function CalvingModal({
                   color: 'var(--text)'
                 }}
               >
-                FÃªmea
+                Fêmea
               </button>
             </div>
           </div>
@@ -931,7 +931,7 @@ function NewCowModal({
       onSaved(newCow)
     } catch (e) {
       console.error('Falha ao salvar vaca', e)
-      alert('NÃ£o foi possÃ­vel salvar. Tente novamente.')
+      alert('Não foi possível salvar. Tente novamente.')
     } finally {
       setSaving(false)
     }
@@ -988,6 +988,14 @@ function NewCowModal({
     </Modal>
   )
 }
+
+
+
+
+
+
+
+
 
 
 
