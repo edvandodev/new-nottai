@@ -3,11 +3,15 @@ import React from 'react'
 type StatCardProps = {
   label: string
   value: string
-  variant?: 'accent' | 'neutral'
+  variant?: 'accent' | 'neutral' | 'tinted'
   valueTone?: 'accent' | 'neutral'
   headerAction?: React.ReactNode
   helperText?: string
   accentTone?: 'green' | 'lime'
+  accentColor?: string
+  backgroundTintColor?: string
+  borderColor?: string
+  icon?: React.ReactNode
 }
 
 export function StatCard({
@@ -17,12 +21,63 @@ export function StatCard({
   valueTone,
   headerAction,
   helperText,
-  accentTone
+  accentTone,
+  accentColor,
+  backgroundTintColor,
+  borderColor,
+  icon
 }: StatCardProps) {
+  const isTinted =
+    variant === 'tinted' || accentColor || backgroundTintColor || borderColor || icon
   const isAccent = variant === 'accent'
   const hasHeaderAction = Boolean(headerAction)
   const resolvedTone = valueTone ?? 'neutral'
-  const valueColor = resolvedTone === 'accent' ? 'var(--accent)' : 'var(--text)'
+  const accentBase = accentColor ?? 'var(--accent, #b8ff2c)'
+  const valueColor = resolvedTone === 'accent' ? accentBase : 'var(--text)'
+
+  if (isTinted) {
+    const bgTint = backgroundTintColor ?? 'rgba(184, 255, 44, 0.12)'
+    const borderTint = borderColor ?? 'rgba(184, 255, 44, 0.32)'
+
+    return (
+      <div
+        className='rounded-2xl border p-4 flex flex-col'
+        style={{
+          background: bgTint,
+          borderColor: borderTint,
+          boxShadow: `0 12px 28px -26px ${accentBase}`,
+          color: 'var(--text)'
+        }}
+      >
+        <div className='flex items-center justify-between gap-3'>
+          <div className='flex items-center gap-2 min-w-0'>
+            {icon && <div className='shrink-0'>{icon}</div>}
+            <span
+              className='text-[13px] font-semibold truncate'
+              style={{ color: accentBase }}
+            >
+              {label}
+            </span>
+          </div>
+          {headerAction && <div className='shrink-0'>{headerAction}</div>}
+        </div>
+
+        <span
+          className='block mt-2 text-[28px] font-extrabold leading-tight'
+          style={{ color: valueColor }}
+        >
+          {value}
+        </span>
+
+        {helperText && (
+          <span className='text-xs mt-1' style={{ color: 'var(--muted)' }}>
+            {helperText}
+          </span>
+        )}
+      </div>
+    )
+  }
+
   const accentColors =
     accentTone === 'lime'
       ? {

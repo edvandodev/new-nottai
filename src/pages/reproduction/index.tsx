@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react'
-import { CalendarDays, Edit3, ImagePlus, Plus, Search } from 'lucide-react'
+﻿import React, { useMemo, useState } from 'react'
+import { CalendarDays, Edit3, ImagePlus, Milk, Plus, Search } from 'lucide-react'
 
 import type { CalvingEvent, CalvingSex, Cow } from '@/types'
 import { Modal } from '@/components/Modal'
@@ -12,10 +12,56 @@ type ReproductionPageProps = {
   calvings: CalvingEvent[]
 }
 
+const cowCardColors = {
+  accent: '#b9ff45',
+  background: 'rgba(185, 255, 69, 0.12)',
+  border: 'rgba(185, 255, 69, 0.32)'
+}
+
+const birthsCardColors = {
+  accent: '#35e6b5',
+  background: 'rgba(53, 230, 181, 0.12)',
+  border: 'rgba(53, 230, 181, 0.32)'
+}
+
 const formatDateBR = (iso: string) => {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
   return d.toLocaleDateString('pt-BR')
+}
+
+const daysSince = (iso: string) => {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  const diffMs = Date.now() - d.getTime()
+  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
+}
+
+const plural = (n: number, singular: string, pluralForm: string) =>
+  n === 1 ? singular : pluralForm
+
+const formatElapsed = (days: number) => {
+  if (days <= 30) {
+    return `Há ${days} ${plural(days, 'dia', 'dias')}`
+  }
+
+  if (days < 360) {
+    const months = Math.floor(days / 30)
+    const remainingDays = days % 30
+    if (remainingDays === 0) {
+      return `Há ${months} ${plural(months, 'mês', 'meses')}`
+    }
+    return `Há ${months} ${plural(months, 'mês', 'meses')} e ${remainingDays} ${plural(remainingDays, 'dia', 'dias')}`
+  }
+
+  const years = Math.floor(days / 360)
+  const rest = days % 360
+  const months = Math.floor(rest / 30)
+  const remainingDays = rest % 30
+  const parts: string[] = [`Há ${years} ${plural(years, 'ano', 'anos')}`]
+  if (months > 0) parts.push(`${months} ${plural(months, 'mês', 'meses')}`)
+  if (remainingDays > 0) parts.push(`${remainingDays} ${plural(remainingDays, 'dia', 'dias')}`)
+  return parts.join(' e ')
 }
 
 const toDateTime = (dateStr: string) => {
@@ -49,13 +95,13 @@ const compressImageDataUrl = async (
   const maxDim = opts.maxDim ?? 1024
   const quality = opts.quality ?? 0.78
 
-  // Se não for imagem, retorna como está.
+  // Se nÃ£o for imagem, retorna como estÃ¡.
   if (!dataUrl.startsWith('data:image/')) return dataUrl
 
   const img = new Image()
   const loaded = new Promise<void>((resolve, reject) => {
     img.onload = () => resolve()
-    img.onerror = () => reject(new Error('Imagem inválida'))
+    img.onerror = () => reject(new Error('Imagem invÃ¡lida'))
   })
   img.src = dataUrl
   await loaded
@@ -75,7 +121,7 @@ const compressImageDataUrl = async (
 
   ctx.drawImage(img, 0, 0, targetW, targetH)
 
-  // JPEG costuma ficar bem menor e é o esperado para foto.
+  // JPEG costuma ficar bem menor e Ã© o esperado para foto.
   try {
     return canvas.toDataURL('image/jpeg', quality)
   } catch {
@@ -83,7 +129,7 @@ const compressImageDataUrl = async (
   }
 }
 
-const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'Fêmea')
+const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'FÃªmea')
 
 export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
   const [search, setSearch] = useState('')
@@ -166,7 +212,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
             </div>
             <div>
               <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                Reprodução
+                ReproduÃ§Ã£o
               </div>
               <div className='text-xs' style={{ color: 'var(--muted)' }}>
                 Anote partos por vaca, com data, sexo e foto.
@@ -212,8 +258,24 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
         </div>
 
         <div className='mt-4 grid grid-cols-2 gap-3'>
-          <StatCard label='Total de Vacas' value={String(cows.length)} />
-          <StatCard label='Partos (30 dias)' value={String(calvingsLast30Days)} />
+          <StatCard
+            label='Total de Vacas'
+            value={String(cows.length)}
+            variant='tinted'
+            accentColor={cowCardColors.accent}
+            backgroundTintColor={cowCardColors.background}
+            borderColor={cowCardColors.border}
+            icon={<Milk size={20} color={cowCardColors.accent} />}
+          />
+          <StatCard
+            label='Partos (30 dias)'
+            value={String(calvingsLast30Days)}
+            variant='tinted'
+            accentColor={birthsCardColors.accent}
+            backgroundTintColor={birthsCardColors.background}
+            borderColor={birthsCardColors.border}
+            icon={<CalendarDays size={20} color={birthsCardColors.accent} />}
+          />
         </div>
       </div>
 
@@ -226,38 +288,52 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
             Nenhuma vaca encontrada. Toque em <b>Novo</b> para cadastrar o primeiro.
           </div>
         ) : (
-          rows.map((r) => (
-            <button
-              key={r.cow.id}
-              type='button'
-              onClick={() => openCow(r.cow)}
-              className='w-full text-left rounded-2xl p-4 border transition hover:brightness-110'
-              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-            >
-              <div className='flex items-center justify-between gap-3'>
-                <div>
-                  <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                    {r.cow.name}
+          rows.map((r) => {
+            const lastEvent = r.lastEvent
+            const lastDateLabel = lastEvent ? formatDateBR(lastEvent.date) : null
+            const lastSexLabel = lastEvent ? sexLabel(lastEvent.sex) : null
+            const daysSinceLast = lastEvent ? daysSince(lastEvent.date) : null
+            const elapsedLabel = daysSinceLast !== null ? formatElapsed(daysSinceLast) : null
+
+            return (
+              <button
+                key={r.cow.id}
+                type="button"
+                onClick={() => openCow(r.cow)}
+                className="w-full text-left rounded-2xl p-4 border transition hover:brightness-110"
+                style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                      {r.cow.name}
+                    </div>
+                    <div className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+                      {lastEvent
+                        ? `Último parto: ${lastDateLabel}${lastSexLabel ? ` · ${lastSexLabel}` : ''}`
+                        : 'Nenhum parto registrado'}
+                    </div>
+                    {elapsedLabel && (
+                      <div
+                        className="text-xs font-semibold mt-1"
+                        style={{ color: "var(--accent, #b8ff2c)" }}
+                      >
+                        {elapsedLabel}
+                      </div>
+                    )}
                   </div>
-                  <div className='text-xs' style={{ color: 'var(--muted)' }}>
-                    {r.count === 0
-                      ? 'Sem partos registrados'
-                      : `${r.count} parto${r.count > 1 ? 's' : ''} · Último: ${formatDateBR(
-                          r.lastEvent!.date
-                        )} · ${sexLabel(r.lastEvent!.sex)}`}
+                  <div
+                    className="h-10 w-10 rounded-xl border flex items-center justify-center"
+                    style={{ background: "var(--surface-2)", borderColor: "var(--border)" }}
+                  >
+                    <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
+                      {r.count}
+                    </span>
                   </div>
                 </div>
-                <div
-                  className='h-10 w-10 rounded-xl border flex items-center justify-center'
-                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-                >
-                  <span className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
-                    {r.count}
-                  </span>
-                </div>
-              </div>
-            </button>
-          ))
+              </button>
+            )
+          })
         )}
       </div>
 
@@ -377,7 +453,7 @@ function CowDetailsModal({
       await offlineWrites.saveCow({ ...cow, name: nextName })
     } catch (e) {
       console.error('Falha ao salvar nome da vaca', e)
-      alert('Não foi possível salvar. Tente novamente.')
+      alert('NÃ£o foi possÃ­vel salvar. Tente novamente.')
     } finally {
       setSavingName(false)
     }
@@ -428,7 +504,7 @@ function CowDetailsModal({
 
           <div className='flex items-center justify-between'>
             <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-              Histórico de partos
+              HistÃ³rico de partos
             </div>
             <button
               type='button'
@@ -450,7 +526,7 @@ function CowDetailsModal({
               className='rounded-2xl p-4 border text-sm'
               style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
             >
-              Ainda não há partos registrados para essa vaca.
+              Ainda nÃ£o hÃ¡ partos registrados para essa vaca.
             </div>
           ) : (
             <div className='space-y-2'>
@@ -577,7 +653,7 @@ function CalvingModal({
       setPhotoDataUrl(compressed)
     } catch (e) {
       console.error('Falha ao preparar imagem', e)
-      alert('Não foi possível carregar a imagem.')
+      alert('NÃ£o foi possÃ­vel carregar a imagem.')
     }
   }
 
@@ -613,7 +689,7 @@ function CalvingModal({
       onSaved()
     } catch (e) {
       console.error('Falha ao salvar parto', e)
-      alert('Não foi possível salvar. Tente novamente.')
+      alert('NÃ£o foi possÃ­vel salvar. Tente novamente.')
     } finally {
       setSaving(false)
     }
@@ -738,7 +814,7 @@ function CalvingModal({
                   color: 'var(--text)'
                 }}
               >
-                Fêmea
+                FÃªmea
               </button>
             </div>
           </div>
@@ -855,7 +931,7 @@ function NewCowModal({
       onSaved(newCow)
     } catch (e) {
       console.error('Falha ao salvar vaca', e)
-      alert('Não foi possível salvar. Tente novamente.')
+      alert('NÃ£o foi possÃ­vel salvar. Tente novamente.')
     } finally {
       setSaving(false)
     }
@@ -912,5 +988,9 @@ function NewCowModal({
     </Modal>
   )
 }
+
+
+
+
 
 
