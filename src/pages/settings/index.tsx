@@ -47,6 +47,7 @@ export function SettingsPage({
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showPriceSheet, setShowPriceSheet] = useState(false)
+  const [priceSheetType, setPriceSheetType] = useState<'standard' | 'custom'>('standard')
 
   useEffect(() => {
     setCurrentPrice(priceSettings.standard ?? 0)
@@ -74,14 +75,14 @@ export function SettingsPage({
     return `Sincronizado h\u00e1 ${hours}h`
   }
 
-  const handleSavePrice = async (nextValue: number) => {
+  const handleSavePrice = async (type: 'standard' | 'custom', nextValue: number) => {
     const nextSettings: PriceSettings = {
-      standard: nextValue,
-      custom: priceSettings.custom ?? 0
+      standard: type === 'standard' ? nextValue : (priceSettings.standard ?? 0),
+      custom: type === 'custom' ? nextValue : (priceSettings.custom ?? 0)
     }
     try {
       await onSavePriceSettings(nextSettings)
-      setCurrentPrice(nextValue)
+      if (type === 'standard') setCurrentPrice(nextValue)
     } catch (error) {
       console.error('Falha ao salvar pre\u00e7os', error)
       throw error
@@ -480,7 +481,10 @@ export function SettingsPage({
           <div className='flat-card overflow-hidden'>
             <button
               type='button'
-              onClick={() => setShowPriceSheet(true)}
+              onClick={() => {
+                setPriceSheetType('standard')
+                setShowPriceSheet(true)
+              }}
               className='w-full flex items-center justify-between gap-4 px-4 py-4 text-left transition-transform active:scale-[0.99]'
             >
               <div className='flex items-center gap-3 min-w-0'>
@@ -513,7 +517,14 @@ export function SettingsPage({
               </span>
             </button>
             <div className='h-px' style={{ background: 'rgba(255, 255, 255, 0.06)' }} />
-            <div className='flex items-center justify-between gap-4 px-4 py-4'>
+            <button
+              type='button'
+              onClick={() => {
+                setPriceSheetType('custom')
+                setShowPriceSheet(true)
+              }}
+              className='w-full flex items-center justify-between gap-4 px-4 py-4 text-left transition-transform active:scale-[0.99]'
+            >
               <div className='flex items-center gap-3 min-w-0'>
                 <div
                   className='h-10 w-10 rounded-xl flex items-center justify-center'
@@ -544,7 +555,7 @@ export function SettingsPage({
               >
                 {customPriceLabel}
               </span>
-            </div>
+            </button>
           </div>
           <div className='mt-3 flex items-start gap-2 text-xs' style={{ color: 'var(--muted)' }}>
             <Info size={14} className='mt-0.5' />
@@ -793,9 +804,18 @@ export function SettingsPage({
       <DeleteModal />
       <EditPriceSheet
         open={showPriceSheet}
-        initialValue={currentPrice}
+        initialValue={
+          priceSheetType === 'standard'
+            ? priceSettings.standard ?? 0
+            : priceSettings.custom ?? 0
+        }
         onClose={() => setShowPriceSheet(false)}
-        onSave={handleSavePrice}
+        onSave={(value) => handleSavePrice(priceSheetType, value)}
+        title={
+          priceSheetType === 'standard'
+            ? 'Pre\u00e7o padr\u00e3o (R$/L)'
+            : 'Pre\u00e7o personalizado (R$/L)'
+        }
       />
     </div>
   )

@@ -5,9 +5,16 @@ type EditPriceSheetProps = {
   initialValue: number
   onClose: () => void
   onSave: (value: number) => Promise<void> | void
+  title?: string
 }
 
-export function EditPriceSheet({ open, initialValue, onClose, onSave }: EditPriceSheetProps) {
+export function EditPriceSheet({
+  open,
+  initialValue,
+  onClose,
+  onSave,
+  title
+}: EditPriceSheetProps) {
   const [value, setValue] = useState<string>(String(initialValue ?? 0))
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -46,6 +53,7 @@ export function EditPriceSheet({ open, initialValue, onClose, onSave }: EditPric
   }
 
   if (!open) return null
+  const heading = title ?? 'Pre\u00e7o padr\u00e3o (R$/L)'
 
   return (
     <div className='fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 backdrop-blur-sm px-3 pb-3'>
@@ -63,7 +71,7 @@ export function EditPriceSheet({ open, initialValue, onClose, onSave }: EditPric
               {'Editar pre\u00e7o'}
             </p>
             <h2 className='text-lg font-semibold text-white'>
-              {'Pre\u00e7o padr\u00e3o (R$/L)'}
+              {heading}
             </h2>
           </div>
           <button

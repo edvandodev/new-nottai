@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { CalendarDays, Edit3, ImagePlus, Milk, MoreVertical, Plus, Search, X } from 'lucide-react'
+import calfIcon from '../../../assets/icon/icon-bezerro-3.svg'
+import cowIcon from '../../../assets/icon/icon-vaca.svg'
 
 import type { CalvingEvent, CalvingSex, Cow } from '@/types'
 import { Modal } from '@/components/Modal'
@@ -24,55 +26,35 @@ const birthsCardColors = {
   border: 'rgba(53, 230, 181, 0.32)'
 }
 
-type HeadIconProps = {
+const iconColor = '#94a3b8'
+
+const MaskIcon = ({
+  src,
+  size = 64,
+  color = iconColor
+}: {
+  src: string
   size?: number
   color?: string
-}
-
-const CalfHeadIcon = ({ size = 56, color = 'var(--muted)' }: HeadIconProps) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox='0 0 72 72'
-    fill='none'
-    xmlns='http://www.w3.org/2000/svg'
-    stroke={color}
-    strokeWidth='2.6'
-    strokeLinecap='round'
-    strokeLinejoin='round'
+}) => (
+  <div
     aria-hidden
-    focusable='false'
-  >
-    <path d='M36 13.5c-3.6 0-6.8 1.2-9.6 3.6l-7.2-3c-4.8-2-9.9 1.8-9.9 7.2 0 4.6 2.9 8.6 7.3 10l-.2 2.2c0 5.9 2 11.8 5.8 16.3 3.2 3.9 7.7 6.2 12.8 6.2s9.6-2.3 12.8-6.2c3.8-4.5 5.8-10.4 5.8-16.3l-.2-2.2c4.4-1.4 7.3-5.4 7.3-10 0-5.4-5.1-9.2-9.9-7.2l-7.2 3C42.8 14.7 39.6 13.5 36 13.5Z' />
-    <circle cx='27.5' cy='35' r='1.4' />
-    <circle cx='44.5' cy='35' r='1.4' />
-    <path d='M30 40.5c1.7 1.2 3.6 1.8 6 1.8s4.3-.6 6-1.8' />
-    <path d='M32.5 44.5c2.1 2.2 4.9 2.2 7 0' />
-  </svg>
-)
-
-const CowHeadIcon = ({ size = 56, color = 'var(--muted)' }: HeadIconProps) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox='0 0 72 72'
-    fill='none'
-    xmlns='http://www.w3.org/2000/svg'
-    stroke={color}
-    strokeWidth='2.6'
-    strokeLinecap='round'
-    strokeLinejoin='round'
-    aria-hidden
-    focusable='false'
-  >
-    <path d='M19 18.5c-1.2-4-4.4-7.5-8.7-9L5 7.7C4.7 12.7 7 18 11.6 21' />
-    <path d='M53 18.5c1.2-4 4.4-7.5 8.7-9l5.3-1.8c.3 5-2 10.3-6.6 13.3' />
-    <path d='M36 13.5c-3.6 0-6.8 1.2-9.6 3.6l-7.2-3c-4.8-2-9.9 1.8-9.9 7.2 0 4.6 2.9 8.6 7.3 10l-.2 2.2c0 5.9 2 11.8 5.8 16.3 3.2 3.9 7.7 6.2 12.8 6.2s9.6-2.3 12.8-6.2c3.8-4.5 5.8-10.4 5.8-16.3l-.2-2.2c4.4-1.4 7.3-5.4 7.3-10 0-5.4-5.1-9.2-9.9-7.2l-7.2 3C42.8 14.7 39.6 13.5 36 13.5Z' />
-    <circle cx='27.5' cy='35' r='1.4' />
-    <circle cx='44.5' cy='35' r='1.4' />
-    <path d='M30 40.5c1.7 1.2 3.6 1.8 6 1.8s4.3-.6 6-1.8' />
-    <path d='M32.5 44.5c2.1 2.2 4.9 2.2 7 0' />
-  </svg>
+    style={{
+      display: 'block',
+      margin: '0 auto',
+      width: size,
+      height: size,
+      background: color,
+      WebkitMaskImage: `url(${src})`,
+      WebkitMaskRepeat: 'no-repeat',
+      WebkitMaskSize: 'contain',
+      WebkitMaskPosition: 'center',
+      maskImage: `url(${src})`,
+      maskRepeat: 'no-repeat',
+      maskSize: 'contain',
+      maskPosition: 'center'
+    }}
+  />
 )
 
 const formatDateBR = (iso: string) => {
@@ -316,7 +298,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
             accentColor={cowCardColors.accent}
             backgroundTintColor={cowCardColors.background}
             borderColor={cowCardColors.border}
-            icon={<Milk size={20} color={cowCardColors.accent} />}
+            icon={<MaskIcon src={cowIcon} size={26} color={cowCardColors.accent} />}
           />
           <StatCard
             label='Partos (30 dias)'
@@ -325,7 +307,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
             accentColor={birthsCardColors.accent}
             backgroundTintColor={birthsCardColors.background}
             borderColor={birthsCardColors.border}
-            icon={<CalendarDays size={20} color={birthsCardColors.accent} />}
+            icon={<MaskIcon src={calfIcon} size={26} color={birthsCardColors.accent} />}
           />
         </div>
       </div>
@@ -392,6 +374,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
         open={isNewMenuOpen}
         title='Novo'
         onClose={() => setIsNewMenuOpen(false)}
+        closeOnBackdrop
       >
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
           <button
@@ -411,8 +394,8 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
               boxShadow: '0 16px 40px -32px var(--shadow)'
             }}
           >
-            <div className='flex flex-col items-center gap-3'>
-              <CalfHeadIcon />
+            <div className='flex flex-col items-center gap-px'>
+              <MaskIcon src={calfIcon} size={80} />
               <div className='space-y-1'>
                 <div className='text-base font-semibold'>Parto</div>
                 <div className='text-xs' style={{ color: 'var(--muted)' }}>
@@ -437,8 +420,8 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
               boxShadow: '0 16px 40px -32px var(--shadow)'
             }}
           >
-            <div className='flex flex-col items-center gap-3'>
-              <CowHeadIcon />
+            <div className='flex flex-col items-center gap-px'>
+              <MaskIcon src={cowIcon} size={80} />
               <div className='space-y-1'>
                 <div className='text-base font-semibold'>Vaca</div>
                 <div className='text-xs' style={{ color: 'var(--muted)' }}>
@@ -620,6 +603,7 @@ function CowDetailsModal({
         onClose={onClose}
         closeLabel={<X size={14} />}
         closeAriaLabel='Fechar'
+        closeOnBackdrop
         actions={
           cow ? (
             <button
@@ -784,6 +768,7 @@ function CowDetailsModal({
         onClose={() => setIsDeleteConfirmOpen(false)}
         closeLabel={<X size={14} />}
         closeAriaLabel='Fechar'
+        closeOnBackdrop
       >
         <div className='space-y-3'>
           <div className='text-sm' style={{ color: 'var(--muted)' }}>
@@ -896,65 +881,68 @@ function ImageViewerModal({
   if (!open || !src) return null
   return (
     <div
-      className='fixed inset-0 z-50 flex flex-col'
+      className='fixed inset-0 z-50 flex flex-col p-4'
       style={{ background: 'rgba(0, 0, 0, 0.85)' }}
+      onClick={onClose}
     >
-      <div className='flex items-center justify-between gap-2 p-4'>
-        <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-          {title}
-        </div>
-        <div className='flex items-center gap-2'>
-          {onReplace && (
-            <label
-              className='h-10 px-3 rounded-xl text-sm font-semibold border inline-flex items-center gap-2 cursor-pointer transition hover:brightness-110'
-              style={{
-                background: 'var(--surface)',
-                borderColor: 'var(--border)',
-                color: 'var(--text)'
-              }}
-            >
-              Trocar
-              <input
-                type='file'
-                accept='image/*'
-                capture='environment'
-                className='hidden'
-                onChange={(e) => onReplace(e.target.files?.[0])}
-              />
-            </label>
-          )}
-          {onRemove && canRemove && (
+      <div className='flex flex-col h-full w-full max-w-5xl mx-auto' onClick={(e) => e.stopPropagation()}>
+        <div className='flex items-center justify-between gap-2 pb-3'>
+          <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+            {title}
+          </div>
+          <div className='flex items-center gap-2'>
+            {onReplace && (
+              <label
+                className='h-10 px-3 rounded-xl text-sm font-semibold border inline-flex items-center gap-2 cursor-pointer transition hover:brightness-110'
+                style={{
+                  background: 'var(--surface)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                Trocar
+                <input
+                  type='file'
+                  accept='image/*'
+                  capture='environment'
+                  className='hidden'
+                  onChange={(e) => onReplace(e.target.files?.[0])}
+                />
+              </label>
+            )}
+            {onRemove && canRemove && (
+              <button
+                type='button'
+                onClick={onRemove}
+                className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+                style={{
+                  background: 'rgba(255, 90, 106, 0.16)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--danger)'
+                }}
+              >
+                Remover
+              </button>
+            )}
             <button
               type='button'
-              onClick={onRemove}
-              className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
-              style={{
-                background: 'rgba(255, 90, 106, 0.16)',
-                borderColor: 'var(--border)',
-                color: 'var(--danger)'
-              }}
+              onClick={onClose}
+              className='h-10 w-10 rounded-full border flex items-center justify-center transition hover:brightness-110'
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              aria-label='Fechar visualizacao'
             >
-              Remover
+              <X size={16} />
             </button>
-          )}
-          <button
-            type='button'
-            onClick={onClose}
-            className='h-10 w-10 rounded-full border flex items-center justify-center transition hover:brightness-110'
-            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-            aria-label='Fechar visualizacao'
-          >
-            <X size={16} />
-          </button>
+          </div>
         </div>
-      </div>
-      <div className='flex-1 flex items-center justify-center p-4'>
-        <img
-          src={src}
-          alt={title}
-          className='max-h-full max-w-full object-contain rounded-2xl border'
-          style={{ borderColor: 'var(--border)' }}
-        />
+        <div className='flex-1 flex items-center justify-center'>
+          <img
+            src={src}
+            alt={title}
+            className='max-h-full max-w-full object-contain rounded-2xl border'
+            style={{ borderColor: 'var(--border)' }}
+          />
+        </div>
       </div>
     </div>
   )
@@ -1076,7 +1064,7 @@ function CalvingModal({
   }
 
   return (
-    <Modal open={open} title={title} onClose={onClose}>
+    <Modal open={open} title={title} onClose={onClose} closeOnBackdrop>
       <div className='space-y-4'>
         {!editing && (
           <div className='space-y-2'>
@@ -1324,7 +1312,7 @@ function NewCowModal({
   }
 
   return (
-    <Modal open={open} title='Nova vaca' onClose={onClose}>
+    <Modal open={open} title='Nova vaca' onClose={onClose} closeOnBackdrop>
       <div className='space-y-4'>
         <div className='space-y-2'>
           <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
