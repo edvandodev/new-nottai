@@ -937,7 +937,6 @@ function App() {
 
   const minimalHeaderActive =
     (activeTab === 'CLIENTS' && !isClientDetailsView) ||
-    activeTab === 'REPORTS' ||
     activeTab === 'REPRODUCTION' ||
     activeTab === 'SETTINGS'
 
@@ -975,7 +974,7 @@ function App() {
     }
 
     if (activeTab === 'REPORTS') {
-      return renderMinimalHeader('Relatórios')
+      return null
     }
 
     if (activeTab === 'REPRODUCTION') {
