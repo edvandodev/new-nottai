@@ -4,8 +4,10 @@ import {
   Camera,
   Circle,
   CircleDot,
+  Clock3,
   Edit3,
   Image,
+  List,
   Milk,
   MoreVertical,
   Plus,
@@ -85,30 +87,6 @@ const daysSince = (iso: string) => {
 const plural = (n: number, singular: string, pluralForm: string) =>
   n === 1 ? singular : pluralForm
 
-const formatElapsed = (days: number) => {
-  if (days <= 30) {
-    return `Há ${days} ${plural(days, 'dia', 'dias')}`
-  }
-
-  if (days < 360) {
-    const months = Math.floor(days / 30)
-    const remainingDays = days % 30
-    if (remainingDays === 0) {
-      return `Há ${months} ${plural(months, 'mês', 'meses')}`
-    }
-    return `Há ${months} ${plural(months, 'mês', 'meses')} e ${remainingDays} ${plural(remainingDays, 'dia', 'dias')}`
-  }
-
-  const years = Math.floor(days / 360)
-  const rest = days % 360
-  const months = Math.floor(rest / 30)
-  const remainingDays = rest % 30
-  const parts: string[] = [`Há ${years} ${plural(years, 'ano', 'anos')}`]
-  if (months > 0) parts.push(`${months} ${plural(months, 'mês', 'meses')}`)
-  if (remainingDays > 0) parts.push(`${remainingDays} ${plural(remainingDays, 'dia', 'dias')}`)
-  return parts.join(' e ')
-}
-
 const toDateTime = (dateStr: string) => {
   const now = new Date()
   const [year, month, day] = dateStr.split('-').map(Number)
@@ -123,6 +101,66 @@ const toDateTime = (dateStr: string) => {
     now.getMilliseconds()
   )
   return dt.toISOString()
+}
+
+const formatElapsedTime = (days: number | null) => {
+  if (days === null || Number.isNaN(days) || days < 0) return ''
+  if (days < 30) {
+    return `${days} ${plural(days, 'dia', 'dias')}`
+  }
+
+  const months = Math.floor(days / 30)
+  const remainingDays = days % 30
+
+  if (months < 12) {
+    if (remainingDays === 0) return `${months} ${plural(months, 'mes', 'meses')}`
+    return `${months} ${plural(months, 'mes', 'meses')} e ${remainingDays} ${plural(remainingDays, 'dia', 'dias')}`
+  }
+
+  const years = Math.floor(months / 12)
+  const restMonths = months % 12
+  const parts: string[] = [`${years} ${plural(years, 'ano', 'anos')}`]
+  if (restMonths > 0) parts.push(`${restMonths} ${plural(restMonths, 'mes', 'meses')}`)
+  return parts.join(' e ')
+}
+
+const computeStats = (events: CalvingEvent[]) => {
+  if (!events?.length) {
+    return {
+      total: 0,
+      lastEvent: null as CalvingEvent | null,
+      daysSinceLast: null as number | null,
+      averageIntervalDays: null as number | null
+    }
+  }
+
+  const sorted = [...events].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
+  const lastEvent = sorted[0]
+  const daysSinceLast = daysSince(lastEvent.date)
+
+  let averageIntervalDays: number | null = null
+  if (sorted.length > 1) {
+    let totalDiff = 0
+    let intervals = 0
+    for (let i = 0; i < sorted.length - 1; i += 1) {
+      const current = new Date(sorted[i].date).getTime()
+      const next = new Date(sorted[i + 1].date).getTime()
+      if (Number.isNaN(current) || Number.isNaN(next)) continue
+      const diff = Math.max(0, Math.round((current - next) / (1000 * 60 * 60 * 24)))
+      totalDiff += diff
+      intervals += 1
+    }
+    if (intervals > 0) averageIntervalDays = Math.round(totalDiff / intervals)
+  }
+
+  return {
+    total: sorted.length,
+    lastEvent,
+    daysSinceLast,
+    averageIntervalDays
+  }
 }
 
 const readFileAsDataUrl = (file: File): Promise<string> =>
@@ -391,7 +429,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
             const lastDateLabel = lastEvent ? formatDateBR(lastEvent.date) : null
             const lastSexLabel = lastEvent ? sexLabel(lastEvent.sex) : null
             const daysSinceLast = lastEvent ? daysSince(lastEvent.date) : null
-            const elapsedLabel = daysSinceLast !== null ? formatElapsed(daysSinceLast) : null
+            const elapsedLabel = daysSinceLast !== null ? formatElapsedTime(daysSinceLast) : null
 
             return (
               <button
@@ -416,7 +454,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
                         className="text-xs font-semibold mt-1"
                         style={{ color: "var(--accent, #b8ff2c)" }}
                       >
-                        {elapsedLabel}
+                        {elapsedLabel ? `Ha: ${elapsedLabel}` : null}
                       </div>
                     )}
                   </div>
@@ -558,7 +596,8 @@ function CowDetailsModal({
   onNewCalving: () => void
   onEditCalving: (ev: CalvingEvent) => void
 }) {
-  const [name, setName] = useState('')
+  const [nameDraft, setNameDraft] = useState('')
+  const [isEditingName, setIsEditingName] = useState(false)
   const [savingName, setSavingName] = useState(false)
   const [deletingCow, setDeletingCow] = useState(false)
   const [isActionsOpen, setIsActionsOpen] = useState(false)
@@ -568,27 +607,55 @@ function CowDetailsModal({
     src: string | null
     title: string
     event?: CalvingEvent
+    type?: 'cow' | 'event'
   }>({
     src: null,
     title: ''
   })
+  const [activeEventMenu, setActiveEventMenu] = useState<CalvingEvent | null>(null)
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null)
+  const [isCowPhotoPickerOpen, setIsCowPhotoPickerOpen] = useState(false)
+  const cowPhotoCameraInputRef = React.useRef<HTMLInputElement>(null)
+  const cowPhotoGalleryInputRef = React.useRef<HTMLInputElement>(null)
+  const stats = React.useMemo(() => computeStats(events), [events])
+  const toastTimeoutRef = React.useRef<number | null>(null)
+  const [toast, setToast] = useState<{ message: string; tone?: 'success' | 'error' } | null>(null)
 
   React.useEffect(() => {
-    setName(cow?.name || '')
+    setNameDraft(cow?.name || '')
+    setIsEditingName(false)
+    setDeleteInput('')
+    setIsActionsOpen(false)
   }, [cow?.id, cow?.name])
 
-  const canSaveName = cow && name.trim() && name.trim() !== cow.name
+  React.useEffect(
+    () => () => {
+      if (toastTimeoutRef.current) window.clearTimeout(toastTimeoutRef.current)
+    },
+    []
+  )
+
+  const showToast = (message: string, tone: 'success' | 'error' = 'success') => {
+    if (toastTimeoutRef.current) window.clearTimeout(toastTimeoutRef.current)
+    setToast({ message, tone })
+    toastTimeoutRef.current = window.setTimeout(() => setToast(null), 2600)
+  }
+
+  const canSaveName = cow && nameDraft.trim() && nameDraft.trim() !== cow.name
+  const canDelete = cow && deleteInput.trim().toLowerCase() === cow.name.trim().toLowerCase()
 
   const saveName = async () => {
-    if (!cow) return
-    const nextName = name.trim()
+    if (!cow || !canSaveName) return
+    const nextName = nameDraft.trim()
     if (!nextName) return
     setSavingName(true)
     try {
       await offlineWrites.saveCow({ ...cow, name: nextName })
+      setIsEditingName(false)
+      showToast('Nome atualizado')
     } catch (e) {
       console.error('Falha ao salvar nome da vaca', e)
-      alert('Não foi possível salvar. Tente novamente.')
+      showToast('Nao foi possivel salvar. Tente novamente.', 'error')
     } finally {
       setSavingName(false)
     }
@@ -599,21 +666,22 @@ function CowDetailsModal({
     setDeletingCow(true)
     try {
       await offlineWrites.deleteCow(cow.id)
+      showToast('Vaca excluida')
       onClose()
     } catch (e) {
       console.error('Falha ao apagar vaca', e)
-      alert('Nao foi possivel apagar. Tente novamente.')
+      showToast('Nao foi possivel apagar. Tente novamente.', 'error')
     } finally {
       setDeletingCow(false)
     }
   }
 
-  const openPhotoViewer = (src: string, title: string, event?: CalvingEvent) => {
-    setPhotoViewer({ src, title, event })
+  const openPhotoViewer = (src: string, title: string, event?: CalvingEvent, type: 'cow' | 'event' = 'event') => {
+    setPhotoViewer({ src, title, event, type })
   }
 
   const closePhotoViewer = () => {
-    setPhotoViewer({ src: null, title: '', event: undefined })
+    setPhotoViewer({ src: null, title: '', event: undefined, type: undefined })
   }
 
   const updateEventPhoto = async (event: CalvingEvent, nextPhoto: string | null) => {
@@ -621,23 +689,39 @@ function CowDetailsModal({
       await offlineWrites.saveCalving({ ...event, photoDataUrl: nextPhoto })
     } catch (e) {
       console.error('Falha ao atualizar foto do parto', e)
-      alert('Nao foi possivel atualizar a foto. Tente novamente.')
+      showToast('Nao foi possivel atualizar a foto.', 'error')
     }
   }
 
   const handleReplacePhotoFromViewer = async (file?: File | null) => {
-    if (!file || !photoViewer.src || !photoViewer.event) return
+    if (!file || !photoViewer.src) return
     const compressed = await preparePhotoFromFile(file)
-    await updateEventPhoto(photoViewer.event, compressed)
-    setPhotoViewer((prev) => ({ ...prev, src: compressed }))
+    if (photoViewer.type === 'cow' && cow) {
+      await offlineWrites.saveCow({ ...cow, photoDataUrl: compressed })
+      setPhotoViewer((prev) => ({ ...prev, src: compressed }))
+      showToast('Foto atualizada')
+      return
+    }
+    if (photoViewer.event) {
+      await updateEventPhoto(photoViewer.event, compressed)
+      setPhotoViewer((prev) => ({ ...prev, src: compressed }))
+      showToast('Foto atualizada')
+    }
   }
 
   const handleRemovePhotoFromViewer = async () => {
+    if ((photoViewer.type === 'cow' || !photoViewer.src) && cow?.photoDataUrl) {
+      await offlineWrites.saveCow({ ...cow, photoDataUrl: null })
+      if (photoViewer.type === 'cow') closePhotoViewer()
+      showToast('Foto removida')
+      return
+    }
     if (!photoViewer.event?.photoDataUrl) return
     const confirmRemove = window.confirm('Remover a foto deste parto?')
     if (!confirmRemove) return
     await updateEventPhoto(photoViewer.event, null)
     closePhotoViewer()
+    showToast('Foto removida')
   }
 
   const openDeleteFlow = () => {
@@ -646,24 +730,65 @@ function CowDetailsModal({
     setIsDeleteConfirmOpen(true)
   }
 
-  const handleArchiveCow = () => {
-    alert('TODO: Arquivar vaca ainda nao implementado.')
-    setIsActionsOpen(false)
-  }
-
-  const canDelete = cow && deleteInput.trim() === cow.name.trim()
-
   const confirmDeleteCow = async () => {
     if (!cow || !canDelete) return
     await handleDeleteCow()
     setIsDeleteConfirmOpen(false)
   }
 
+  const triggerCowPhotoPick = (mode: 'camera' | 'gallery') => {
+    const ref = mode === 'camera' ? cowPhotoCameraInputRef : cowPhotoGalleryInputRef
+    setIsCowPhotoPickerOpen(false)
+    const input = ref.current
+    if (input) {
+      input.value = ''
+      input.click()
+    }
+  }
+
+  const handlePickCowPhoto = async (file?: File | null) => {
+    if (!cow || !file) return
+    try {
+      const processed = await preparePhotoFromFile(file)
+      await offlineWrites.saveCow({ ...cow, photoDataUrl: processed })
+      showToast('Foto atualizada')
+    } catch (e) {
+      console.error('Falha ao trocar foto da vaca', e)
+      showToast('Nao foi possivel trocar a foto.', 'error')
+    }
+  }
+
+  const handleDeleteEvent = async (ev: CalvingEvent) => {
+    const confirmed = window.confirm('Excluir este parto?')
+    if (!confirmed) return
+    setDeletingEventId(ev.id)
+    try {
+      await offlineWrites.deleteCalving(ev.id)
+      showToast('Parto removido')
+    } catch (e) {
+      console.error('Falha ao excluir parto', e)
+      showToast('Nao foi possivel excluir.', 'error')
+    } finally {
+      setDeletingEventId(null)
+    }
+  }
+
+  const skeleton = (
+    <div className='space-y-3 animate-pulse'>
+      <div className='h-24 rounded-2xl border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
+      <div className='h-10 rounded-xl border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
+      <div className='h-32 rounded-2xl border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
+    </div>
+  )
+
+  const lastDateLabel = stats.lastEvent ? formatDateBR(stats.lastEvent.date) : 'Sem registro'
+  const sinceLastLabel = stats.daysSinceLast !== null ? formatElapsedTime(stats.daysSinceLast) : 'Sem registro'
+
   return (
     <>
       <Modal
         open={open}
-        title={cow ? cow.name : 'Vaca'}
+        title={cow ? cow.name : 'Perfil da vaca'}
         onClose={onClose}
         closeLabel={<X size={14} />}
         closeAriaLabel='Fechar'
@@ -682,138 +807,296 @@ function CowDetailsModal({
           ) : null
         }
       >
-      {!cow ? (
-        <div className='text-sm' style={{ color: 'var(--muted)' }}>
-          Nenhuma vaca selecionada.
-        </div>
-      ) : (
-        <div className='space-y-4'>
-          <div className='space-y-2'>
-            <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
-              Nome da vaca (editar)
-            </div>
-            <div
-              className='flex items-center gap-1 rounded-full border p-1'
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-            >
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className='flex-1 h-11 rounded-xl border px-3 outline-none'
-                style={{
-                  background: 'var(--surface-2)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              />
-              <button
-                type='button'
-                disabled={!canSaveName || savingName}
-                onClick={saveName}
-                className='h-11 px-4 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
-                style={{
-                  background: 'var(--surface)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              >
-                {savingName ? 'Salvando...' : 'Salvar'}
-              </button>
-            </div>
-          </div>
-  
-          <div className='flex items-center justify-between'>
-            <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-              Historico de partos
-            </div>
-            <button
-              type='button'
-              onClick={onNewCalving}
-              className='inline-flex items-center gap-2 h-9 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                borderColor: 'transparent',
-                color: 'var(--accentText, #07110a)'
-              }}
-            >
-              <Plus size={14} />
-              Novo
-            </button>
-          </div>
+        {!cow ? (
+          skeleton
+        ) : (
+          <div className='space-y-5'>
+            <div className='space-y-3' style={{ padding: '0 16px' }}>
+              <div className='flex items-center gap-3'>
+                <div className='relative'>
+                  <button
+                    type='button'
+                    onClick={() => {
+                      if (cow.photoDataUrl) {
+                        openPhotoViewer(cow.photoDataUrl, cow.name, undefined, 'cow')
+                      } else {
+                        setIsCowPhotoPickerOpen(true)
+                      }
+                    }}
+                    className='h-16 w-16 sm:h-[72px] sm:w-[72px] rounded-full border overflow-hidden flex items-center justify-center transition hover:brightness-110'
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+                  >
+                    {cow.photoDataUrl ? (
+                      <img src={cow.photoDataUrl} alt={`Foto de ${cow.name}`} className='h-full w-full object-cover' />
+                    ) : (
+                      <MaskIcon src={cowIcon} size={32} color='var(--muted)' />
+                    )}
+                  </button>
+                  <button
+                    type='button'
+                    onClick={() => setIsCowPhotoPickerOpen(true)}
+                    className='h-8 w-8 rounded-full border absolute -bottom-1 -right-1 flex items-center justify-center transition hover:brightness-110'
+                    style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                    aria-label='Trocar foto da vaca'
+                  >
+                    <Camera size={14} />
+                  </button>
+                </div>
 
-          {events.length === 0 ? (
-            <div
-              className='rounded-2xl p-4 border text-sm'
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
-            >
-              Ainda nao ha partos registrados para essa vaca.
+                <div className='flex-1 min-w-0 space-y-1'>
+                  <div className='flex items-center gap-2'>
+                    <div className='text-lg font-semibold leading-tight truncate' style={{ color: 'var(--text)' }}>
+                      {cow.name}
+                    </div>
+                    {!isEditingName && (
+                      <button
+                        type='button'
+                        onClick={() => setIsEditingName(true)}
+                        className='ml-auto h-8 px-3 rounded-full text-xs font-semibold border inline-flex items-center gap-2 transition hover:brightness-110'
+                        style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                      >
+                        <Edit3 size={14} />
+                        Editar
+                      </button>
+                    )}
+                  </div>
+                  {!isEditingName ? (
+                    <div className='text-xs' style={{ color: 'var(--muted)' }}>
+                      Perfil e historico
+                    </div>
+                  ) : null}
+
+                  {isEditingName ? (
+                    <div className='flex flex-col sm:flex-row gap-2 pt-1'>
+                      <input
+                        value={nameDraft}
+                        onChange={(e) => setNameDraft(e.target.value)}
+                        className='flex-1 h-10 rounded-xl border px-3 outline-none'
+                        placeholder='Nome da vaca'
+                        style={{
+                          background: 'var(--surface-2)',
+                          borderColor: 'var(--border)',
+                          color: 'var(--text)'
+                        }}
+                      />
+                      <div className='flex gap-2'>
+                        <button
+                          type='button'
+                          onClick={saveName}
+                          disabled={!canSaveName || savingName}
+                          className='h-10 px-4 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
+                          style={{
+                            background: '#95c11f',
+                            borderColor: '#95c11f',
+                            color: '#0c120b',
+                            boxShadow: '0 12px 32px -24px var(--shadow)'
+                          }}
+                        >
+                          {savingName ? 'Salvando...' : 'Salvar'}
+                        </button>
+                        <button
+                          type='button'
+                          onClick={() => {
+                            setIsEditingName(false)
+                            setNameDraft(cow.name)
+                          }}
+                          className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+                          style={{ background: 'transparent', borderColor: 'var(--border)', color: 'var(--muted)' }}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className='flex items-center gap-2 overflow-x-auto pb-1' style={{ WebkitOverflowScrolling: 'touch' }}>
+                <StatChip icon={<CalendarDays size={14} />} label='Ultimo parto' value={lastDateLabel} />
+                <StatChip
+                  icon={<Clock3 size={14} />}
+                  label='Tempo'
+                  value={stats.daysSinceLast === 0 ? 'Hoje' : sinceLastLabel || 'Sem registro'}
+                />
+                <StatChip icon={<List size={14} />} label='Partos' value={String(stats.total)} />
+              </div>
             </div>
-          ) : (
-            <div className='space-y-2'>
-              {events.map((ev) => (
+
+            <div className='space-y-3'>
+              <div className='flex items-center justify-between gap-2'>
+                <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                  Historico de partos
+                </div>
+                <button
+                  type='button'
+                  onClick={onNewCalving}
+                  className='inline-flex items-center gap-2 h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+                  style={{
+                    background: '#95c11f',
+                    borderColor: '#95c11f',
+                    color: '#0c120b',
+                    boxShadow: '0 16px 40px -26px var(--shadow)'
+                  }}
+                >
+                  <Plus size={14} />
+                  Novo parto
+                </button>
+              </div>
+
+              {events.length === 0 ? (
                 <div
-                  key={ev.id}
-                  className='rounded-2xl p-3 border flex items-center justify-between gap-3'
+                  className='rounded-2xl border p-4 flex items-center justify-between gap-3'
                   style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
                 >
                   <div className='flex items-center gap-3'>
                     <div
-                      className='h-12 w-12 rounded-xl border overflow-hidden flex items-center justify-center'
+                      className='h-12 w-12 rounded-xl border flex items-center justify-center'
                       style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
                     >
-                      {ev.photoDataUrl ? (
-                        <button
-                          type='button'
-                          onClick={() => openPhotoViewer(ev.photoDataUrl as string, `Parto ${formatDateBR(ev.date)}`, ev)}
-                          className='h-full w-full'
-                          style={{ display: 'block' }}
-                        >
-                          <img
-                            src={ev.photoDataUrl}
-                            alt='Foto do parto'
-                            className='h-full w-full object-cover'
-                          />
-                        </button>
-                      ) : (
-                        <span className='text-[10px] font-semibold' style={{ color: 'var(--muted)' }}>
-                          {sexLabel(ev.sex)}
-                        </span>
-                      )}
+                      <Milk size={18} style={{ color: 'var(--muted)' }} />
                     </div>
                     <div>
                       <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                        {formatDateBR(ev.date)}
+                        Nenhum parto registrado
                       </div>
                       <div className='text-xs' style={{ color: 'var(--muted)' }}>
-                        {sexLabel(ev.sex)}
+                        Adicione o primeiro para acompanhar intervalos
                       </div>
                     </div>
                   </div>
                   <button
                     type='button'
-                    onClick={() => onEditCalving(ev)}
-                    className='h-9 w-9 rounded-xl border flex items-center justify-center transition hover:brightness-110'
-                    style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                    onClick={onNewCalving}
+                    className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+                    style={{
+                      background: 'var(--surface)',
+                      borderColor: 'var(--border)',
+                      color: 'var(--text)'
+                    }}
                   >
-                    <Edit3 size={16} />
+                    Adicionar
                   </button>
                 </div>
-              ))}
+              ) : (
+                <div className='space-y-3 max-h-[60vh] overflow-auto pr-1'>
+                  {events.map((ev, index) => {
+                    const prev = events[index + 1]
+                    const sinceEvent = daysSince(ev.date)
+                    const sinceLabel = sinceEvent !== null ? formatElapsedTime(sinceEvent) : null
+                    const intervalDays = prev
+                      ? Math.max(
+                          0,
+                          Math.round(
+                            (new Date(ev.date).getTime() - new Date(prev.date).getTime()) / (1000 * 60 * 60 * 24)
+                          )
+                        )
+                      : null
+                    const intervalLabel = intervalDays !== null ? formatElapsedTime(intervalDays) : null
+                    const sexColor =
+                      ev.sex === 'FEMEA'
+                        ? { bg: 'rgba(255, 90, 106, 0.16)', text: 'var(--text)' }
+                        : { bg: 'rgba(53, 230, 181, 0.16)', text: 'var(--text)' }
+
+                    return (
+                      <div
+                        key={ev.id}
+                        role='button'
+                        tabIndex={0}
+                        onClick={() => onEditCalving(ev)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') onEditCalving(ev)
+                        }}
+                        className='rounded-2xl border p-3 flex gap-3 relative group transition hover:brightness-105'
+                        style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+                      >
+                        <button
+                          type='button'
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (ev.photoDataUrl) {
+                              openPhotoViewer(ev.photoDataUrl as string, `Parto ${formatDateBR(ev.date)}`, ev, 'event')
+                            }
+                          }}
+                          className='h-16 w-16 rounded-xl border overflow-hidden flex items-center justify-center'
+                          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+                        >
+                          {ev.photoDataUrl ? (
+                            <img src={ev.photoDataUrl} alt='Foto do parto' className='h-full w-full object-cover' />
+                          ) : (
+                            <div className='text-[11px] font-semibold text-center' style={{ color: 'var(--muted)' }}>
+                              Sem foto
+                            </div>
+                          )}
+                        </button>
+
+                        <div className='flex-1 space-y-1'>
+                          <div className='flex items-center gap-2 flex-wrap'>
+                            <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                              {formatDateBR(ev.date)}
+                            </div>
+                            <span
+                              className='inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold'
+                              style={{ background: sexColor.bg, color: sexColor.text, border: '1px solid var(--border)' }}
+                            >
+                              {ev.sex === 'FEMEA' ? <Circle size={12} /> : <CircleDot size={12} />}
+                              {sexLabel(ev.sex)}
+                            </span>
+                          </div>
+                          <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
+                            {sinceLabel ? `Ha: ${sinceLabel}` : 'Sem referencia'}
+                          </div>
+                          {intervalLabel ? (
+                            <div className='text-[11px]' style={{ color: 'var(--muted)' }}>
+                              Intervalo anterior: {intervalLabel}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <button
+                          type='button'
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActiveEventMenu(ev)
+                          }}
+                          aria-label='Acoes do parto'
+                          className='h-9 w-9 rounded-full border flex items-center justify-center transition absolute top-3 right-3 opacity-100 sm:opacity-80 sm:group-hover:opacity-100'
+                          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+                        >
+                          <MoreVertical size={15} />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
       </Modal>
 
       <ActionSheet open={isActionsOpen} onClose={() => setIsActionsOpen(false)}>
-        <div className='flex flex-col'>
+        <div className='flex flex-col gap-1'>
           <button
             type='button'
-            onClick={handleArchiveCow}
+            onClick={() => {
+              setIsActionsOpen(false)
+              setIsEditingName(true)
+            }}
             className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110'
             style={{ color: 'var(--text)' }}
           >
-            Arquivar vaca
+            Editar nome
+          </button>
+          <button
+            type='button'
+            onClick={() => {
+              setIsActionsOpen(false)
+              setIsCowPhotoPickerOpen(true)
+            }}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110'
+            style={{ color: 'var(--text)' }}
+          >
+            Trocar foto da vaca
           </button>
           <button
             type='button'
@@ -821,14 +1104,42 @@ function CowDetailsModal({
             className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110'
             style={{ color: 'var(--danger)' }}
           >
-            Apagar vaca...
+            Excluir vaca...
+          </button>
+        </div>
+      </ActionSheet>
+
+      <ActionSheet open={Boolean(activeEventMenu)} onClose={() => setActiveEventMenu(null)}>
+        <div className='flex flex-col gap-1'>
+          <button
+            type='button'
+            onClick={() => {
+              if (activeEventMenu) onEditCalving(activeEventMenu)
+              setActiveEventMenu(null)
+            }}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110'
+            style={{ color: 'var(--text)' }}
+          >
+            Editar parto
+          </button>
+          <button
+            type='button'
+            onClick={() => {
+              if (activeEventMenu) handleDeleteEvent(activeEventMenu)
+              setActiveEventMenu(null)
+            }}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 disabled:opacity-60'
+            disabled={Boolean(deletingEventId)}
+            style={{ color: 'var(--danger)' }}
+          >
+            {deletingEventId ? 'Excluindo...' : 'Excluir'}
           </button>
         </div>
       </ActionSheet>
 
       <Modal
         open={isDeleteConfirmOpen}
-        title={cow ? `Apagar ${cow.name}?` : 'Apagar vaca?'}
+        title={cow ? `Excluir ${cow.name}?` : 'Excluir vaca?'}
         onClose={() => setIsDeleteConfirmOpen(false)}
         closeLabel={<X size={14} />}
         closeAriaLabel='Fechar'
@@ -836,11 +1147,11 @@ function CowDetailsModal({
       >
         <div className='space-y-3'>
           <div className='text-sm' style={{ color: 'var(--muted)' }}>
-            Essa acao remove a vaca e o historico de partos. Nao pode ser desfeita.
+            Digite <b>{(cow?.name || '').toUpperCase()}</b> para confirmar a exclusao. Essa acao remove a vaca e todo o historico.
           </div>
           <div className='space-y-2'>
             <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
-              Digite o nome da vaca para confirmar
+              Confirmar nome
             </div>
             <input
               value={deleteInput}
@@ -879,22 +1190,127 @@ function CowDetailsModal({
                 color: 'var(--danger)'
               }}
             >
-              {deletingCow ? 'Apagando...' : 'Apagar definitivamente'}
+              {deletingCow ? 'Excluindo...' : 'Excluir'}
             </button>
           </div>
         </div>
       </Modal>
+
+      <ActionSheet open={isCowPhotoPickerOpen} onClose={() => setIsCowPhotoPickerOpen(false)}>
+        <div className='flex flex-col gap-1'>
+          <button
+            type='button'
+            onClick={() => triggerCowPhotoPick('camera')}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 flex items-center gap-2'
+            style={{ color: 'var(--text)' }}
+          >
+            <Camera size={16} />
+            Tirar foto
+          </button>
+          <button
+            type='button'
+            onClick={() => triggerCowPhotoPick('gallery')}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 flex items-center gap-2'
+            style={{ color: 'var(--text)' }}
+          >
+            <Image size={16} />
+            Escolher da galeria
+          </button>
+          {cow?.photoDataUrl ? (
+            <button
+              type='button'
+              onClick={() => {
+                setIsCowPhotoPickerOpen(false)
+                handleRemovePhotoFromViewer()
+              }}
+              className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110'
+              style={{ color: 'var(--danger)' }}
+            >
+              Remover foto
+            </button>
+          ) : null}
+          <button
+            type='button'
+            onClick={() => setIsCowPhotoPickerOpen(false)}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110'
+            style={{ color: 'var(--muted)' }}
+          >
+            Cancelar
+          </button>
+        </div>
+      </ActionSheet>
 
       <ImageViewerModal
         open={Boolean(photoViewer.src)}
         src={photoViewer.src}
         title={photoViewer.title}
         onClose={closePhotoViewer}
-        onReplace={photoViewer.event ? handleReplacePhotoFromViewer : undefined}
-        onRemove={photoViewer.event ? handleRemovePhotoFromViewer : undefined}
-        canRemove={Boolean(photoViewer.event?.photoDataUrl)}
+        onReplace={photoViewer.src ? handleReplacePhotoFromViewer : undefined}
+        onRemove={photoViewer.src ? handleRemovePhotoFromViewer : undefined}
+        canRemove={Boolean(photoViewer.type === 'cow' ? cow?.photoDataUrl : photoViewer.event?.photoDataUrl)}
+      />
+
+      {toast ? (
+        <div
+          className='fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full border text-sm font-semibold shadow-lg'
+          style={{
+            background: toast.tone === 'error' ? 'rgba(255, 90, 106, 0.16)' : 'var(--surface)',
+            borderColor: 'var(--border)',
+            color: toast.tone === 'error' ? 'var(--danger)' : 'var(--text)'
+          }}
+        >
+          {toast.message}
+        </div>
+      ) : null}
+
+      <input
+        ref={cowPhotoCameraInputRef}
+        type='file'
+        accept='image/*'
+        capture='environment'
+        className='hidden'
+        onChange={(e) => handlePickCowPhoto(e.target.files?.[0])}
+      />
+      <input
+        ref={cowPhotoGalleryInputRef}
+        type='file'
+        accept='image/*'
+        className='hidden'
+        onChange={(e) => handlePickCowPhoto(e.target.files?.[0])}
       />
     </>
+  )
+}
+
+function StatChip({
+  icon,
+  label,
+  value
+}: {
+  icon: React.ReactNode
+  label: string
+  value: string
+}) {
+  return (
+    <div
+      className='inline-flex items-center gap-2 rounded-full border px-3 py-2 h-10 flex-shrink-0'
+      style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+    >
+      <div
+        className='h-6 w-6 rounded-full border flex items-center justify-center'
+        style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+      >
+        {icon}
+      </div>
+      <div className='flex flex-col leading-tight'>
+        <span className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+          {value}
+        </span>
+        <span className='text-[11px]' style={{ color: 'var(--muted)' }}>
+          {label}
+        </span>
+      </div>
+    </div>
   )
 }
 
@@ -945,10 +1361,16 @@ function ImageViewerModal({
   const [isReplacePickerOpen, setIsReplacePickerOpen] = useState(false)
   const replaceCameraInputRef = React.useRef<HTMLInputElement>(null)
   const replaceGalleryInputRef = React.useRef<HTMLInputElement>(null)
+  const [zoom, setZoom] = useState(1)
+  const viewportRef = React.useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
     if (!open) setIsReplacePickerOpen(false)
   }, [open])
+
+  React.useEffect(() => {
+    if (open) setZoom(1)
+  }, [open, src])
 
   const triggerReplacePick = (mode: 'camera' | 'gallery') => {
     if (!onReplace) return
@@ -959,6 +1381,13 @@ function ImageViewerModal({
       input.value = ''
       input.click()
     }
+  }
+
+  const adjustZoom = (delta: number) => {
+    setZoom((current) => {
+      const next = Math.min(3, Math.max(1, Number((current + delta).toFixed(2))))
+      return next
+    })
   }
 
   if (!open || !src) return null
@@ -974,7 +1403,39 @@ function ImageViewerModal({
             <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
               {title}
             </div>
-            <div className='flex items-center gap-2'>
+            <div className='flex items-center gap-2 flex-wrap justify-end'>
+              <div
+                className='inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-semibold'
+                style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              >
+                <button
+                  type='button'
+                  onClick={() => adjustZoom(-0.2)}
+                  className='h-7 w-7 rounded-full border flex items-center justify-center'
+                  style={{ borderColor: 'var(--border)' }}
+                  aria-label='Diminuir zoom'
+                >
+                  -
+                </button>
+                <span>{`${Math.round(zoom * 100)}%`}</span>
+                <button
+                  type='button'
+                  onClick={() => adjustZoom(0.2)}
+                  className='h-7 w-7 rounded-full border flex items-center justify-center'
+                  style={{ borderColor: 'var(--border)' }}
+                  aria-label='Aumentar zoom'
+                >
+                  +
+                </button>
+                <button
+                  type='button'
+                  onClick={() => setZoom(1)}
+                  className='h-7 px-3 rounded-full border'
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  Reset
+                </button>
+              </div>
               {onReplace && (
                 <button
                   type='button'
@@ -1014,13 +1475,24 @@ function ImageViewerModal({
               </button>
             </div>
           </div>
-          <div className='flex-1 flex items-center justify-center'>
-            <img
-              src={src}
-              alt={title}
-              className='max-h-full max-w-full object-contain rounded-2xl border'
-              style={{ borderColor: 'var(--border)' }}
-            />
+          <div
+            ref={viewportRef}
+            className='flex-1 overflow-auto rounded-2xl border bg-[#0b111a]'
+            style={{ borderColor: 'var(--border)' }}
+            onWheel={(e) => {
+              if (!e.ctrlKey) return
+              e.preventDefault()
+              adjustZoom(e.deltaY > 0 ? -0.1 : 0.1)
+            }}
+          >
+            <div className='min-h-full min-w-full flex items-center justify-center p-3'>
+              <img
+                src={src}
+                alt={title}
+                className='object-contain rounded-2xl'
+                style={{ transform: `scale(${zoom})`, transformOrigin: 'center center', maxWidth: '100%', maxHeight: '100%' }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -1215,7 +1687,7 @@ function CalvingModal({
       onSaved()
     } catch (e) {
       console.error('Falha ao salvar parto', e)
-      alert('Não foi possível salvar. Tente novamente.')
+      showToast('Nao foi possivel salvar. Tente novamente.', 'error')
     } finally {
       setSaving(false)
     }
@@ -1622,7 +2094,7 @@ function NewCowModal({
       onSaved(newCow)
     } catch (e) {
       console.error('Falha ao salvar vaca', e)
-      alert('Não foi possível salvar. Tente novamente.')
+      showToast('Nao foi possivel salvar. Tente novamente.', 'error')
     } finally {
       setSaving(false)
     }
@@ -1679,6 +2151,8 @@ function NewCowModal({
     </Modal>
   )
 }
+
+
 
 
 
