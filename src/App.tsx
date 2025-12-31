@@ -936,73 +936,9 @@ function App() {
   }, [activeTab])
 
   const minimalHeaderActive =
-    (activeTab === 'CLIENTS' && !isClientDetailsView) ||
-    activeTab === 'REPRODUCTION' ||
-    activeTab === 'SETTINGS'
+    activeTab === 'CLIENTS' && !isClientDetailsView
 
-  const renderHeader = () => {
-    const renderMinimalHeader = (title: string) => {
-      const headerClasses = `sticky top-0 z-50 transition-all duration-200 ${
-        isMinimalHeaderScrolled
-          ? 'bg-slate-950/55 backdrop-blur-xl border-b border-white/10'
-          : 'bg-transparent border-b border-transparent'
-      }`
-
-      return (
-        <header
-          className={headerClasses}
-          style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-        >
-          <div className='px-4 pt-3 pb-3 max-w-2xl mx-auto'>
-            <div className='flex items-center justify-between gap-3'>
-              <h1 className='text-xl font-semibold tracking-tight text-white/95'>
-                {title}
-              </h1>
-            </div>
-          </div>
-        </header>
-      )
-    }
-
-        if (activeTab === 'CLIENTS') {
-      if (isClientDetailsView) return null
-      return null
-    }
-
-    if (activeTab === 'PAYMENTS') {
-      return null
-    }
-
-    if (activeTab === 'REPORTS') {
-      return null
-    }
-
-    if (activeTab === 'REPRODUCTION') {
-      return renderMinimalHeader('Reprodução')
-    }
-
-    if (activeTab === 'SETTINGS') {
-      return renderMinimalHeader('Ajustes')
-    }
-
-    return (
-      <header
-        className='sticky top-0 z-40 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 shadow-md'
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-      >
-        <div className='max-w-2xl mx-auto px-4 h-16 flex items-center justify-between gap-3 pt-[env(safe-area-inset-top,0px)]'>
-          <div className='flex items-center gap-3'>
-            <div className='bg-blue-600 p-2 rounded-lg'>
-              <Milk size={24} className='text-white' />
-            </div>
-            <h1 className='text-xl font-bold tracking-tight text-white'>
-              {tabTitle}
-            </h1>
-          </div>
-        </div>
-      </header>
-    )
-  }
+  const renderHeader = () => { return null }
 
   const navItemBase =
     'relative flex flex-col items-center justify-center w-16 h-16 transition-all duration-300 group'
@@ -1351,6 +1287,8 @@ function App() {
 }
 
 export default App
+
+
 
 
 
