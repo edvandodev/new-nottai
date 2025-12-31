@@ -562,6 +562,14 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
 
   return (
     <div className='space-y-6 animate-fade-in' style={{ color: 'var(--text)' }}>
+      <div className='mt-6 flex items-start justify-between gap-4 mb-4'>
+        <div>
+          <h1 className='text-[28px] font-semibold leading-none'>Relatorios</h1>
+          <p className='mt-2 text-xs' style={{ color: 'var(--muted)' }}>
+            Visao geral de vendas e pagamentos
+          </p>
+        </div>
+      </div>
       <div className='space-y-3'>
         <div className='flex items-center justify-between gap-4'>
           <div className='flex items-center gap-2'>

@@ -5,6 +5,7 @@ import {
   Circle,
   CircleDot,
   Edit3,
+  Image,
   Milk,
   MoreVertical,
   Plus,
@@ -148,7 +149,12 @@ const compressImageDataUrl = async (
     img.onerror = () => reject(new Error('Imagem inválida'))
   })
   img.src = dataUrl
-  await loaded
+  try {
+    await loaded
+  } catch (err) {
+    console.warn('Falha ao carregar imagem para compressao, usando original', err)
+    return dataUrl
+  }
 
   const { width, height } = img
   if (!width || !height) return dataUrl
@@ -163,7 +169,12 @@ const compressImageDataUrl = async (
   const ctx = canvas.getContext('2d')
   if (!ctx) return dataUrl
 
-  ctx.drawImage(img, 0, 0, targetW, targetH)
+  try {
+    ctx.drawImage(img, 0, 0, targetW, targetH)
+  } catch (err) {
+    console.warn('Falha ao reduzir imagem, usando original', err)
+    return dataUrl
+  }
 
   // JPEG costuma ficar bem menor e é o esperado para foto.
   try {
@@ -171,6 +182,49 @@ const compressImageDataUrl = async (
   } catch {
     return dataUrl
   }
+}
+
+const preparePhotoFromFile = async (file: File): Promise<string> => {
+  const mime = (file.type || '').toLowerCase()
+
+  if (mime.includes('heic') || mime.includes('heif')) {
+    return readFileAsDataUrl(file)
+  }
+
+  const objectUrl = URL.createObjectURL(file)
+  try {
+    const img = new Image()
+    const loaded = new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve()
+      img.onerror = () => reject(new Error('Imagem invalida'))
+    })
+    img.src = objectUrl
+    await loaded
+
+    const { width, height } = img
+    if (!width || !height) throw new Error('Sem dimensoes')
+
+    const maxDim = 1024
+    const quality = 0.78
+    const scale = Math.min(1, maxDim / Math.max(width, height))
+    const targetW = Math.max(1, Math.round(width * scale))
+    const targetH = Math.max(1, Math.round(height * scale))
+
+    const canvas = document.createElement('canvas')
+    canvas.width = targetW
+    canvas.height = targetH
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas nao disponivel')
+
+    ctx.drawImage(img, 0, 0, targetW, targetH)
+    return canvas.toDataURL('image/jpeg', quality)
+  } catch (err) {
+    console.warn('Compressao via object URL falhou, fallback para FileReader', err)
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
+
+  return readFileAsDataUrl(file)
 }
 
 
@@ -573,8 +627,7 @@ function CowDetailsModal({
 
   const handleReplacePhotoFromViewer = async (file?: File | null) => {
     if (!file || !photoViewer.src || !photoViewer.event) return
-    const raw = await readFileAsDataUrl(file)
-    const compressed = await compressImageDataUrl(raw, { maxDim: 1024, quality: 0.78 })
+    const compressed = await preparePhotoFromFile(file)
     await updateEventPhoto(photoViewer.event, compressed)
     setPhotoViewer((prev) => ({ ...prev, src: compressed }))
   }
@@ -889,73 +942,140 @@ function ImageViewerModal({
   onRemove?: () => void
   canRemove?: boolean
 }) {
+  const [isReplacePickerOpen, setIsReplacePickerOpen] = useState(false)
+  const replaceCameraInputRef = React.useRef<HTMLInputElement>(null)
+  const replaceGalleryInputRef = React.useRef<HTMLInputElement>(null)
+
+  React.useEffect(() => {
+    if (!open) setIsReplacePickerOpen(false)
+  }, [open])
+
+  const triggerReplacePick = (mode: 'camera' | 'gallery') => {
+    if (!onReplace) return
+    const targetRef = mode === 'camera' ? replaceCameraInputRef : replaceGalleryInputRef
+    setIsReplacePickerOpen(false)
+    const input = targetRef.current
+    if (input) {
+      input.value = ''
+      input.click()
+    }
+  }
+
   if (!open || !src) return null
   return (
-    <div
-      className='fixed inset-0 z-50 flex flex-col p-4'
-      style={{ background: 'rgba(0, 0, 0, 0.85)' }}
-      onClick={onClose}
-    >
-      <div className='flex flex-col h-full w-full max-w-5xl mx-auto' onClick={(e) => e.stopPropagation()}>
-        <div className='flex items-center justify-between gap-2 pb-3'>
-          <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-            {title}
-          </div>
-          <div className='flex items-center gap-2'>
-            {onReplace && (
-              <label
-                className='h-10 px-3 rounded-xl text-sm font-semibold border inline-flex items-center gap-2 cursor-pointer transition hover:brightness-110'
-                style={{
-                  background: 'var(--surface)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              >
-                Trocar
-                <input
-                  type='file'
-                  accept='image/*'
-                  capture='environment'
-                  className='hidden'
-                  onChange={(e) => onReplace(e.target.files?.[0])}
-                />
-              </label>
-            )}
-            {onRemove && canRemove && (
+    <>
+      <div
+        className='fixed inset-0 z-50 flex flex-col p-4'
+        style={{ background: 'rgba(0, 0, 0, 0.85)' }}
+        onClick={onClose}
+      >
+        <div className='flex flex-col h-full w-full max-w-5xl mx-auto' onClick={(e) => e.stopPropagation()}>
+          <div className='flex items-center justify-between gap-2 pb-3'>
+            <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+              {title}
+            </div>
+            <div className='flex items-center gap-2'>
+              {onReplace && (
+                <button
+                  type='button'
+                  onClick={() => setIsReplacePickerOpen(true)}
+                  className='h-10 px-3 rounded-xl text-sm font-semibold border inline-flex items-center gap-2 transition hover:brightness-110'
+                  style={{
+                    background: 'var(--surface)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--text)'
+                  }}
+                >
+                  Trocar
+                </button>
+              )}
+              {onRemove && canRemove && (
+                <button
+                  type='button'
+                  onClick={onRemove}
+                  className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+                  style={{
+                    background: 'rgba(255, 90, 106, 0.16)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--danger)'
+                  }}
+                >
+                  Remover
+                </button>
+              )}
               <button
                 type='button'
-                onClick={onRemove}
-                className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
-                style={{
-                  background: 'rgba(255, 90, 106, 0.16)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--danger)'
-                }}
+                onClick={onClose}
+                className='h-10 w-10 rounded-full border flex items-center justify-center transition hover:brightness-110'
+                style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                aria-label='Fechar visualizacao'
               >
-                Remover
+                <X size={16} />
               </button>
-            )}
-            <button
-              type='button'
-              onClick={onClose}
-              className='h-10 w-10 rounded-full border flex items-center justify-center transition hover:brightness-110'
-              style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              aria-label='Fechar visualizacao'
-            >
-              <X size={16} />
-            </button>
+            </div>
+          </div>
+          <div className='flex-1 flex items-center justify-center'>
+            <img
+              src={src}
+              alt={title}
+              className='max-h-full max-w-full object-contain rounded-2xl border'
+              style={{ borderColor: 'var(--border)' }}
+            />
           </div>
         </div>
-        <div className='flex-1 flex items-center justify-center'>
-          <img
-            src={src}
-            alt={title}
-            className='max-h-full max-w-full object-contain rounded-2xl border'
-            style={{ borderColor: 'var(--border)' }}
-          />
-        </div>
       </div>
-    </div>
+
+      {onReplace ? (
+        <>
+          <ActionSheet open={isReplacePickerOpen} onClose={() => setIsReplacePickerOpen(false)}>
+            <div className='flex flex-col gap-1'>
+              <button
+                type='button'
+                onClick={() => triggerReplacePick('camera')}
+                className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 flex items-center gap-2'
+                style={{ color: 'var(--text)' }}
+              >
+                <Camera size={16} />
+                Tirar foto
+              </button>
+              <button
+                type='button'
+                onClick={() => triggerReplacePick('gallery')}
+                className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 flex items-center gap-2'
+                style={{ color: 'var(--text)' }}
+              >
+                <Image size={16} />
+                Escolher da galeria
+              </button>
+              <button
+                type='button'
+                onClick={() => setIsReplacePickerOpen(false)}
+                className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110'
+                style={{ color: 'var(--muted)' }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </ActionSheet>
+
+          <input
+            ref={replaceCameraInputRef}
+            type='file'
+            accept='image/*'
+            capture='environment'
+            className='hidden'
+            onChange={(e) => onReplace?.(e.target.files?.[0])}
+          />
+          <input
+            ref={replaceGalleryInputRef}
+            type='file'
+            accept='image/*'
+            className='hidden'
+            onChange={(e) => onReplace?.(e.target.files?.[0])}
+          />
+        </>
+      ) : null}
+    </>
   )
 }
 
@@ -981,6 +1101,9 @@ function CalvingModal({
   const [sex, setSex] = useState<CalvingSex>('FEMEA')
   const [photoDataUrl, setPhotoDataUrl] = useState<string | undefined>(undefined)
   const [saving, setSaving] = useState(false)
+  const [isPhotoPickerOpen, setIsPhotoPickerOpen] = useState(false)
+  const cameraInputRef = React.useRef<HTMLInputElement>(null)
+  const galleryInputRef = React.useRef<HTMLInputElement>(null)
 
   const formatInputDate = (value: Date) => {
     const yyyy = value.getFullYear()
@@ -1002,7 +1125,10 @@ function CalvingModal({
   const yesterdayValue = formatInputDate(yesterdayRef)
 
   React.useEffect(() => {
-    if (!open) return
+    if (!open) {
+      setIsPhotoPickerOpen(false)
+      return
+    }
 
     // Reset
     if (editing) {
@@ -1038,12 +1164,22 @@ function CalvingModal({
   const handlePickPhoto = async (file?: File | null) => {
     if (!file) return
     try {
-      const raw = await readFileAsDataUrl(file)
-      const compressed = await compressImageDataUrl(raw, { maxDim: 1024, quality: 0.78 })
-      setPhotoDataUrl(compressed)
+      const processed = await preparePhotoFromFile(file)
+      setPhotoDataUrl(processed)
     } catch (e) {
       console.error('Falha ao preparar imagem', e)
-      alert('Não foi possível carregar a imagem.')
+      const reason = e instanceof Error && e.message ? ` Detalhe: ${e.message}` : ''
+      alert(`Nao foi possivel carregar a imagem. Tente outra foto ou tire uma foto agora.${reason}`)
+    }
+  }
+
+  const triggerPhotoPick = (mode: 'camera' | 'gallery') => {
+    const targetRef = mode === 'camera' ? cameraInputRef : galleryInputRef
+    setIsPhotoPickerOpen(false)
+    const input = targetRef.current
+    if (input) {
+      input.value = ''
+      input.click()
     }
   }
 
@@ -1088,334 +1224,373 @@ function CalvingModal({
   const primaryLabel = editing ? 'Salvar alteracoes' : 'Registrar parto'
 
   return (
-    <Modal
-      open={open}
-      title={title}
-      onClose={onClose}
-      closeOnBackdrop
-      closeLabel={<X size={14} />}
-      closeAriaLabel='Fechar'
-    >
-      <div className='space-y-4'>
-        <div
-          className='rounded-2xl border p-4 space-y-3'
-          style={{
-            background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
-            borderColor: 'var(--border)',
-            boxShadow: '0 18px 40px -32px var(--shadow)'
-          }}
-        >
-          <div className='flex items-center justify-between gap-2'>
-            <div
-              className='text-[11px] font-semibold uppercase tracking-wide'
-              style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
-            >
-              Vaca (obrigatorio)
-            </div>
-            {!editing && (
-              <button
-                type='button'
-                onClick={() => {
-                  if (mode === 'existing') {
-                    setMode('new')
-                    setNewCowName('')
-                    setSelectedCowId('')
-                  } else {
-                    setMode('existing')
-                  }
-                }}
-                className='h-9 px-3 rounded-full text-xs font-semibold border inline-flex items-center gap-2 transition hover:brightness-110'
-                style={{
-                  background: 'var(--surface)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              >
-                {mode === 'new' ? (
-                  'Selecionar vaca'
-                ) : (
-                  <>
-                    <Plus size={14} />
-                    Nova vaca
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-
-          {!editing ? (
-            mode === 'existing' ? (
-              <div className='relative'>
-                <Search
-                  size={16}
-                  className='absolute left-3 top-1/2 -translate-y-1/2'
-                  style={{ color: 'var(--muted)' }}
-                />
-                <select
-                  value={selectedCowId}
-                  onChange={(e) => setSelectedCowId(e.target.value)}
-                  className='w-full h-11 rounded-xl border pl-9 pr-3 outline-none appearance-none'
-                  style={{
-                    background: 'var(--surface-2)',
-                    borderColor: 'var(--border)',
-                    color: 'var(--text)'
-                  }}
-                >
-                  {cows.map((cow) => (
-                    <option key={cow.id} value={cow.id}>
-                      {cow.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div className='relative'>
-                <Search
-                  size={16}
-                  className='absolute left-3 top-1/2 -translate-y-1/2'
-                  style={{ color: 'var(--muted)' }}
-                />
-                <input
-                  value={newCowName}
-                  onChange={(e) => setNewCowName(e.target.value)}
-                  placeholder='Nome da vaca...'
-                  className='w-full h-11 rounded-xl border pl-9 pr-3 outline-none'
-                  style={{
-                    background: 'var(--surface-2)',
-                    borderColor: 'var(--border)',
-                    color: 'var(--text)'
-                  }}
-                />
-              </div>
-            )
-          ) : (
-            <div
-              className='rounded-xl border px-3 py-2 text-sm'
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
-            >
-              Vaca do registro:{' '}
-              <b style={{ color: 'var(--text)' }}>{cows.find((c) => c.id === editing.cowId)?.name || 'Vaca'}</b>
-            </div>
-          )}
-        </div>
-
-        <div
-          className='rounded-2xl border p-4 space-y-4'
-          style={{
-            background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
-            borderColor: 'var(--border)',
-            boxShadow: '0 18px 40px -32px var(--shadow)'
-          }}
-        >
+    <>
+      <Modal
+        open={open}
+        title={title}
+        onClose={onClose}
+        closeOnBackdrop
+        closeLabel={<X size={14} />}
+        closeAriaLabel='Fechar'
+      >
+        <div className='space-y-4'>
           <div
-            className='text-[11px] font-semibold uppercase tracking-wide'
-            style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
+            className='rounded-2xl border p-4 space-y-3'
+            style={{
+              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+              borderColor: 'var(--border)',
+              boxShadow: '0 18px 40px -32px var(--shadow)'
+            }}
           >
-            Informacoes do parto
-          </div>
-
-          <div className='space-y-2'>
-            <div className='flex items-center justify-between gap-3 flex-wrap'>
+            <div className='flex items-center justify-between gap-2'>
               <div
                 className='text-[11px] font-semibold uppercase tracking-wide'
                 style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
               >
-                Data do parto (obrigatorio)
+                Vaca (obrigatorio)
               </div>
-              <div className='flex items-center gap-2'>
+              {!editing && (
                 <button
                   type='button'
-                  onClick={() => setQuickDate(0)}
-                  className='h-9 px-4 rounded-full text-xs font-semibold border transition'
-                  style={{
-                    background: isTodaySelected ? 'var(--accent)' : 'var(--surface)',
-                    borderColor: isTodaySelected ? 'var(--accent)' : 'var(--border)',
-                    color: isTodaySelected ? '#0a120a' : 'var(--text)',
-                    boxShadow: isTodaySelected ? '0 12px 32px -22px var(--shadow)' : 'none'
+                  onClick={() => {
+                    if (mode === 'existing') {
+                      setMode('new')
+                      setNewCowName('')
+                      setSelectedCowId('')
+                    } else {
+                      setMode('existing')
+                    }
                   }}
-                >
-                  Hoje
-                </button>
-                <button
-                  type='button'
-                  onClick={() => setQuickDate(1)}
-                  className='h-9 px-4 rounded-full text-xs font-semibold border transition'
-                  style={{
-                    background: isYesterdaySelected ? 'var(--accent)' : 'var(--surface)',
-                    borderColor: isYesterdaySelected ? 'var(--accent)' : 'var(--border)',
-                    color: isYesterdaySelected ? '#0a120a' : 'var(--text)',
-                    boxShadow: isYesterdaySelected ? '0 12px 32px -22px var(--shadow)' : 'none'
-                  }}
-                >
-                  Ontem
-                </button>
-              </div>
-            </div>
-            <div className='relative'>
-              <CalendarDays
-                size={16}
-                className='absolute left-3 top-1/2 -translate-y-1/2'
-                style={{ color: 'var(--muted)' }}
-              />
-              <input
-                type='date'
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className='w-full h-12 rounded-xl border pl-10 pr-3 outline-none text-sm'
-                style={{
-                  background: 'var(--surface-2)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              />
-            </div>
-          </div>
-
-          <div className='space-y-2'>
-            <div
-              className='text-[11px] font-semibold uppercase tracking-wide'
-              style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
-            >
-              Sexo
-            </div>
-            <div className='grid grid-cols-2 gap-2'>
-              <button
-                type='button'
-                onClick={() => setSex('MACHO')}
-                className='h-12 rounded-full border px-4 text-sm font-semibold flex items-center justify-center gap-2 transition'
-                style={{
-                  background: sex === 'MACHO' ? 'rgba(184, 255, 44, 0.12)' : 'var(--surface-2)',
-                  borderColor: sex === 'MACHO' ? 'var(--accent)' : 'var(--border)',
-                  color: sex === 'MACHO' ? 'var(--text)' : 'var(--muted)',
-                  boxShadow: sex === 'MACHO' ? '0 12px 32px -22px var(--shadow)' : 'none'
-                }}
-              >
-                <CircleDot size={16} />
-                Macho
-              </button>
-              <button
-                type='button'
-                onClick={() => setSex('FEMEA')}
-                className='h-12 rounded-full border px-4 text-sm font-semibold flex items-center justify-center gap-2 transition'
-                style={{
-                  background: sex === 'FEMEA' ? 'rgba(184, 255, 44, 0.12)' : 'var(--surface-2)',
-                  borderColor: sex === 'FEMEA' ? 'var(--accent)' : 'var(--border)',
-                  color: sex === 'FEMEA' ? 'var(--text)' : 'var(--muted)',
-                  boxShadow: sex === 'FEMEA' ? '0 12px 32px -22px var(--shadow)' : 'none'
-                }}
-              >
-                <Circle size={16} />
-                Femea
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div
-          className='rounded-2xl border p-4 space-y-3'
-          style={{
-            background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
-            borderColor: 'var(--border)',
-            boxShadow: '0 18px 40px -32px var(--shadow)'
-          }}
-        >
-          <div
-            className='text-[11px] font-semibold uppercase tracking-wide'
-            style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
-          >
-            Foto
-          </div>
-
-          {photoDataUrl ? (
-            <div
-              className='rounded-xl border overflow-hidden relative'
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-            >
-              <img src={photoDataUrl} alt='Preview da foto' className='w-full h-48 object-cover' />
-              <div className='absolute inset-x-3 bottom-3 flex justify-end gap-2'>
-                <label
-                  className='h-10 px-4 rounded-full text-sm font-semibold border inline-flex items-center gap-2 cursor-pointer transition hover:brightness-110'
+                  className='h-9 px-3 rounded-full text-xs font-semibold border inline-flex items-center gap-2 transition hover:brightness-110'
                   style={{
                     background: 'var(--surface)',
                     borderColor: 'var(--border)',
                     color: 'var(--text)'
                   }}
                 >
-                  Trocar
-                  <input
-                    type='file'
-                    accept='image/*'
-                    capture='environment'
-                    className='hidden'
-                    onChange={(e) => handlePickPhoto(e.target.files?.[0])}
+                  {mode === 'new' ? (
+                    'Selecionar vaca'
+                  ) : (
+                    <>
+                      <Plus size={14} />
+                      Nova vaca
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {!editing ? (
+              mode === 'existing' ? (
+                <div className='relative'>
+                  <Search
+                    size={16}
+                    className='absolute left-3 top-1/2 -translate-y-1/2'
+                    style={{ color: 'var(--muted)' }}
                   />
-                </label>
+                  <select
+                    value={selectedCowId}
+                    onChange={(e) => setSelectedCowId(e.target.value)}
+                    className='w-full h-11 rounded-xl border pl-9 pr-3 outline-none appearance-none'
+                    style={{
+                      background: 'var(--surface-2)',
+                      borderColor: 'var(--border)',
+                      color: 'var(--text)'
+                    }}
+                  >
+                    {cows.map((cow) => (
+                      <option key={cow.id} value={cow.id}>
+                        {cow.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className='relative'>
+                  <Search
+                    size={16}
+                    className='absolute left-3 top-1/2 -translate-y-1/2'
+                    style={{ color: 'var(--muted)' }}
+                  />
+                  <input
+                    value={newCowName}
+                    onChange={(e) => setNewCowName(e.target.value)}
+                    placeholder='Nome da vaca...'
+                    className='w-full h-11 rounded-xl border pl-9 pr-3 outline-none'
+                    style={{
+                      background: 'var(--surface-2)',
+                      borderColor: 'var(--border)',
+                      color: 'var(--text)'
+                    }}
+                  />
+                </div>
+              )
+            ) : (
+              <div
+                className='rounded-xl border px-3 py-2 text-sm'
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+              >
+                Vaca do registro:{' '}
+                <b style={{ color: 'var(--text)' }}>{cows.find((c) => c.id === editing.cowId)?.name || 'Vaca'}</b>
+              </div>
+            )}
+          </div>
+
+          <div
+            className='rounded-2xl border p-4 space-y-4'
+            style={{
+              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+              borderColor: 'var(--border)',
+              boxShadow: '0 18px 40px -32px var(--shadow)'
+            }}
+          >
+            <div
+              className='text-[11px] font-semibold uppercase tracking-wide'
+              style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
+            >
+              Informacoes do parto
+            </div>
+
+            <div className='space-y-2'>
+              <div className='flex items-center justify-between gap-3 flex-wrap'>
+                <div
+                  className='text-[11px] font-semibold uppercase tracking-wide'
+                  style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
+                >
+                  Data do parto (obrigatorio)
+                </div>
+                <div className='flex items-center gap-2'>
+                  <button
+                    type='button'
+                    onClick={() => setQuickDate(0)}
+                    className='h-9 px-4 rounded-full text-xs font-semibold border transition'
+                    style={{
+                      background: isTodaySelected ? 'var(--accent)' : 'var(--surface)',
+                      borderColor: isTodaySelected ? 'var(--accent)' : 'var(--border)',
+                      color: isTodaySelected ? '#0a120a' : 'var(--text)',
+                      boxShadow: isTodaySelected ? '0 12px 32px -22px var(--shadow)' : 'none'
+                    }}
+                  >
+                    Hoje
+                  </button>
+                  <button
+                    type='button'
+                    onClick={() => setQuickDate(1)}
+                    className='h-9 px-4 rounded-full text-xs font-semibold border transition'
+                    style={{
+                      background: isYesterdaySelected ? 'var(--accent)' : 'var(--surface)',
+                      borderColor: isYesterdaySelected ? 'var(--accent)' : 'var(--border)',
+                      color: isYesterdaySelected ? '#0a120a' : 'var(--text)',
+                      boxShadow: isYesterdaySelected ? '0 12px 32px -22px var(--shadow)' : 'none'
+                    }}
+                  >
+                    Ontem
+                  </button>
+                </div>
+              </div>
+              <div className='relative'>
+                <CalendarDays
+                  size={16}
+                  className='absolute left-3 top-1/2 -translate-y-1/2'
+                  style={{ color: 'var(--muted)' }}
+                />
+                <input
+                  type='date'
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className='w-full h-12 rounded-xl border pl-10 pr-3 outline-none text-sm'
+                  style={{
+                    background: 'var(--surface-2)',
+                    borderColor: 'var(--border)',
+                    color: 'var(--text)'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className='space-y-2'>
+              <div
+                className='text-[11px] font-semibold uppercase tracking-wide'
+                style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
+              >
+                Sexo
+              </div>
+              <div className='grid grid-cols-2 gap-2'>
                 <button
                   type='button'
-                  onClick={() => setPhotoDataUrl(undefined)}
-                  className='h-10 px-4 rounded-full text-sm font-semibold border transition hover:brightness-110'
+                  onClick={() => setSex('MACHO')}
+                  className='h-12 rounded-full border px-4 text-sm font-semibold flex items-center justify-center gap-2 transition'
                   style={{
-                    background: 'rgba(255, 90, 106, 0.16)',
-                    borderColor: 'var(--border)',
-                    color: 'var(--danger)'
+                    background: sex === 'MACHO' ? 'rgba(184, 255, 44, 0.12)' : 'var(--surface-2)',
+                    borderColor: sex === 'MACHO' ? 'var(--accent)' : 'var(--border)',
+                    color: sex === 'MACHO' ? 'var(--text)' : 'var(--muted)',
+                    boxShadow: sex === 'MACHO' ? '0 12px 32px -22px var(--shadow)' : 'none'
                   }}
                 >
-                  Remover
+                  <CircleDot size={16} />
+                  Macho
+                </button>
+                <button
+                  type='button'
+                  onClick={() => setSex('FEMEA')}
+                  className='h-12 rounded-full border px-4 text-sm font-semibold flex items-center justify-center gap-2 transition'
+                  style={{
+                    background: sex === 'FEMEA' ? 'rgba(184, 255, 44, 0.12)' : 'var(--surface-2)',
+                    borderColor: sex === 'FEMEA' ? 'var(--accent)' : 'var(--border)',
+                    color: sex === 'FEMEA' ? 'var(--text)' : 'var(--muted)',
+                    boxShadow: sex === 'FEMEA' ? '0 12px 32px -22px var(--shadow)' : 'none'
+                  }}
+                >
+                  <Circle size={16} />
+                  Femea
                 </button>
               </div>
             </div>
-          ) : (
-            <label
-              className='h-12 px-4 rounded-xl border inline-flex items-center gap-2 cursor-pointer transition hover:brightness-110 text-sm font-semibold'
-              style={{
-                background: 'var(--surface-2)',
-                borderColor: 'var(--border)',
-                color: 'var(--text)'
-              }}
-            >
-              <Camera size={18} />
-              Adicionar foto (opcional)
-              <input
-                type='file'
-                accept='image/*'
-                capture='environment'
-                className='hidden'
-                onChange={(e) => handlePickPhoto(e.target.files?.[0])}
-              />
-            </label>
-          )}
-        </div>
+          </div>
 
-        <div className='space-y-2 pt-1'>
-          <button
-            type='button'
-            onClick={save}
-            disabled={!canSave || saving}
-            className='w-full h-12 rounded-full text-sm font-semibold border transition disabled:opacity-60'
+          <div
+            className='rounded-2xl border p-4 space-y-3'
             style={{
-              background: '#95c11f',
-              borderColor: '#95c11f',
-              color: '#0c120b',
-              boxShadow: '0 16px 40px -26px var(--shadow)'
+              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+              borderColor: 'var(--border)',
+              boxShadow: '0 18px 40px -32px var(--shadow)'
             }}
           >
-            {saving ? 'Salvando...' : primaryLabel}
+            <div
+              className='text-[11px] font-semibold uppercase tracking-wide'
+              style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
+            >
+              Foto
+            </div>
+
+            {photoDataUrl ? (
+              <div
+                className='rounded-xl border overflow-hidden relative'
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+              >
+                <img src={photoDataUrl} alt='Preview da foto' className='w-full h-48 object-cover' />
+                <div className='absolute inset-x-3 bottom-3 flex justify-end gap-2'>
+                  <button
+                    type='button'
+                    onClick={() => setIsPhotoPickerOpen(true)}
+                    className='h-10 px-4 rounded-full text-sm font-semibold border inline-flex items-center gap-2 transition hover:brightness-110'
+                    style={{
+                      background: 'var(--surface)',
+                      borderColor: 'var(--border)',
+                      color: 'var(--text)'
+                    }}
+                  >
+                    Trocar
+                  </button>
+                  <button
+                    type='button'
+                    onClick={() => setPhotoDataUrl(undefined)}
+                    className='h-10 px-4 rounded-full text-sm font-semibold border transition hover:brightness-110'
+                    style={{
+                      background: 'rgba(255, 90, 106, 0.16)',
+                      borderColor: 'var(--border)',
+                      color: 'var(--danger)'
+                    }}
+                  >
+                    Remover
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type='button'
+                onClick={() => setIsPhotoPickerOpen(true)}
+                className='h-12 px-4 rounded-xl border inline-flex items-center gap-2 transition hover:brightness-110 text-sm font-semibold'
+                style={{
+                  background: 'var(--surface-2)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                <Camera size={18} />
+                Adicionar foto (opcional)
+              </button>
+            )}
+          </div>
+
+          <div className='space-y-2 pt-1'>
+            <button
+              type='button'
+              onClick={save}
+              disabled={!canSave || saving}
+              className='w-full h-12 rounded-full text-sm font-semibold border transition disabled:opacity-60'
+              style={{
+                background: '#95c11f',
+                borderColor: '#95c11f',
+                color: '#0c120b',
+                boxShadow: '0 16px 40px -26px var(--shadow)'
+              }}
+            >
+              {saving ? 'Salvando...' : primaryLabel}
+            </button>
+            <button
+              type='button'
+              onClick={onClose}
+              className='w-full h-11 rounded-full text-sm font-semibold border transition hover:brightness-110'
+              style={{
+                background: 'transparent',
+                borderColor: 'var(--border)',
+                color: 'var(--muted)'
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <ActionSheet open={isPhotoPickerOpen} onClose={() => setIsPhotoPickerOpen(false)}>
+        <div className='flex flex-col gap-1'>
+          <button
+            type='button'
+            onClick={() => triggerPhotoPick('camera')}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 flex items-center gap-2'
+            style={{ color: 'var(--text)' }}
+          >
+            <Camera size={16} />
+            Tirar foto
           </button>
           <button
             type='button'
-            onClick={onClose}
-            className='w-full h-11 rounded-full text-sm font-semibold border transition hover:brightness-110'
-            style={{
-              background: 'transparent',
-              borderColor: 'var(--border)',
-              color: 'var(--muted)'
-            }}
+            onClick={() => triggerPhotoPick('gallery')}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 flex items-center gap-2'
+            style={{ color: 'var(--text)' }}
+          >
+            <Image size={16} />
+            Escolher da galeria
+          </button>
+          <button
+            type='button'
+            onClick={() => setIsPhotoPickerOpen(false)}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110'
+            style={{ color: 'var(--muted)' }}
           >
             Cancelar
           </button>
         </div>
-      </div>
-    </Modal>
+      </ActionSheet>
+
+      <input
+        ref={cameraInputRef}
+        type='file'
+        accept='image/*'
+        capture='environment'
+        className='hidden'
+        onChange={(e) => handlePickPhoto(e.target.files?.[0])}
+      />
+      <input
+        ref={galleryInputRef}
+        type='file'
+        accept='image/*'
+        className='hidden'
+        onChange={(e) => handlePickPhoto(e.target.files?.[0])}
+      />
+    </>
   )
 }
 
@@ -1504,6 +1679,9 @@ function NewCowModal({
     </Modal>
   )
 }
+
+
+
 
 
 

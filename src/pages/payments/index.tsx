@@ -274,14 +274,19 @@ export function PaymentsPage({
         </div>
       )}
 
-      <div className='flex items-center justify-between mb-6'>
-        <h1 className='text-[24px] font-semibold leading-none'>Pagamentos</h1>
+      <div className='mt-6 flex items-start justify-between gap-4 mb-4'>
+        <div>
+          <h1 className='text-[28px] font-semibold leading-none'>Pagamentos</h1>
+          <p className='mt-2 text-xs' style={{ color: 'var(--muted)' }}>
+            {payments.length} {payments.length === 1 ? 'registro' : 'registros'}
+          </p>
+        </div>
         <IconButton
           aria-label='Novo pagamento'
           onClick={handleAddPayment}
           disabled={paymentCandidates.length === 0}
           icon={<Plus size={16} />}
-          className='h-9 w-9'
+          className='h-9 w-9 mt-1'
           style={{
             backgroundColor: 'var(--accent)',
             color: 'var(--accent-ink)',
