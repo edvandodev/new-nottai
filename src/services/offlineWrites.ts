@@ -12,6 +12,16 @@ const enqueue = async (type: any, key: string, payload: any) => {
 const messageFromError = (error: any) =>
   (error?.message || error?.code || 'Erro').toString()
 
+const normalizeCalvingPayload = (calving: CalvingEvent): CalvingEvent => {
+  const photos = Array.isArray(calving.photos)
+    ? calving.photos.filter((p): p is string => Boolean(p))
+    : calving.photoDataUrl
+      ? [calving.photoDataUrl]
+      : []
+  const photoDataUrl = calving.photoDataUrl ?? photos[0] ?? null
+  return { ...calving, photos, photoDataUrl }
+}
+
 export const offlineWrites = {
   async saveClient(client: Client) {
     const action = {
@@ -177,16 +187,17 @@ export const offlineWrites = {
   },
 
   async saveCalving(calving: CalvingEvent) {
+    const normalizedCalving = normalizeCalvingPayload(calving)
     const action = {
       type: 'UPSERT_CALVING' as const,
-      key: `calving:${calving.id}`,
-      payload: calving,
+      key: `calving:${normalizedCalving.id}`,
+      payload: normalizedCalving,
       createdAt: Date.now()
     }
     optimisticStore.apply(action)
     try {
       if (!isOnline()) throw new Error('offline')
-      await firestoreService.saveCalving(calving)
+      await firestoreService.saveCalving(normalizedCalving)
       optimisticStore.confirm(action.key)
     } catch (error) {
       await enqueue(action.type, action.key, action.payload)
@@ -224,7 +235,8 @@ export const offlineWrites = {
       firestoreService.savePriceSettings(settings),
     saveCow: (cow: Cow) => firestoreService.saveCow(cow),
     deleteCow: (id: string) => firestoreService.deleteCow(id),
-    saveCalving: (calving: CalvingEvent) => firestoreService.saveCalving(calving),
+    saveCalving: (calving: CalvingEvent) =>
+      firestoreService.saveCalving(normalizeCalvingPayload(calving)),
     deleteCalving: (id: string) => firestoreService.deleteCalving(id)
   }
 }

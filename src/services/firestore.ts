@@ -31,6 +31,26 @@ const stripUndefined = <T extends Record<string, any>>(obj: T): Partial<T> =>
     Object.entries(obj).filter(([, v]) => v !== undefined)
   ) as Partial<T>
 
+const normalizeCalvingFromSnapshot = (data: any, id: string): CalvingEvent => {
+  const photos = Array.isArray(data?.photos)
+    ? (data.photos as any[]).filter((p): p is string => Boolean(p))
+    : data?.photoDataUrl
+      ? [data.photoDataUrl]
+      : []
+  const photoDataUrl = data?.photoDataUrl ?? photos[0] ?? null
+  return { ...(data as any), photos, photoDataUrl, id }
+}
+
+const normalizeCalvingForSave = (calving: CalvingEvent): CalvingEvent => {
+  const photos = Array.isArray(calving.photos)
+    ? calving.photos.filter((p): p is string => Boolean(p))
+    : calving.photoDataUrl
+      ? [calving.photoDataUrl]
+      : []
+  const photoDataUrl = calving.photoDataUrl ?? photos[0] ?? null
+  return { ...calving, photos, photoDataUrl }
+}
+
 const noteSync = () => {
   lastSyncAt = Date.now()
   syncCallbacks.forEach((cb) => {
@@ -423,7 +443,7 @@ export const firestoreService = {
         const calvings = event.snapshots.map((s) => {
           const data = s.data ?? {}
           void backfillMeta(reference, s.id, data, backfilledCalvings)
-          return { ...data, id: s.id }
+          return normalizeCalvingFromSnapshot(data, s.id)
         })
         callback(calvings as CalvingEvent[])
         noteSync()
@@ -443,9 +463,10 @@ export const firestoreService = {
 
   saveCalving: async (calving: CalvingEvent) => {
     const uid = requireUid()
-    const { id, ...calvingDataRaw } = calving
+    const normalizedCalving = normalizeCalvingForSave(calving)
+    const { id, ...calvingDataRaw } = normalizedCalving
 
-    const meta = calving.createdAt ? getMetaForUpdate(uid) : getMetaForCreate(uid)
+    const meta = normalizedCalving.createdAt ? getMetaForUpdate(uid) : getMetaForCreate(uid)
     const calvingData = { ...stripUndefined(calvingDataRaw), ...meta }
 
     const reference = calvingsPath()

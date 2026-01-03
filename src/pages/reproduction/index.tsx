@@ -17,6 +17,7 @@ import type { CalvingEvent, CalvingSex, Cow } from '@/types'
 import { Modal } from '@/components/Modal'
 import { StatCard } from '@/components/payments/StatCard'
 import { offlineWrites } from '@/services/offlineWrites'
+import { formatTimeSince } from '@/utils/time'
 import '../../styles/theme-flat.css'
 
 type ReproductionPageProps = {
@@ -73,16 +74,6 @@ const formatDateBR = (iso: string) => {
   return d.toLocaleDateString('pt-BR')
 }
 
-const daysSince = (iso: string) => {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return null
-  const diffMs = Date.now() - d.getTime()
-  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
-}
-
-const plural = (n: number, singular: string, pluralForm: string) =>
-  n === 1 ? singular : pluralForm
-
 const toDateTime = (dateStr: string) => {
   const now = new Date()
   const [year, month, day] = dateStr.split('-').map(Number)
@@ -97,28 +88,6 @@ const toDateTime = (dateStr: string) => {
     now.getMilliseconds()
   )
   return dt.toISOString()
-}
-
-const formatElapsedTime = (days: number | null) => {
-  if (days === null || Number.isNaN(days) || days < 0) return ''
-  if (days === 0) return 'Hoje'
-  if (days < 30) {
-    return `${days} ${plural(days, 'dia', 'dias')}`
-  }
-
-  const months = Math.floor(days / 30)
-  const remainingDays = days % 30
-
-  if (months < 12) {
-    if (remainingDays === 0) return `${months} ${plural(months, 'mes', 'meses')}`
-    return `${months} ${plural(months, 'mes', 'meses')} e ${remainingDays} ${plural(remainingDays, 'dia', 'dias')}`
-  }
-
-  const years = Math.floor(months / 12)
-  const restMonths = months % 12
-  const parts: string[] = [`${years} ${plural(years, 'ano', 'anos')}`]
-  if (restMonths > 0) parts.push(`${restMonths} ${plural(restMonths, 'mes', 'meses')}`)
-  return parts.join(' e ')
 }
 
 const readFileAsDataUrl = (file: File): Promise<string> =>
@@ -178,6 +147,14 @@ const compressImageDataUrl = async (
   } catch {
     return dataUrl
   }
+}
+
+const getEventPhotos = (event?: CalvingEvent | null) => {
+  if (!event) return []
+  if (Array.isArray(event.photos) && event.photos.length) {
+    return event.photos.filter((p): p is string => Boolean(p))
+  }
+  return event?.photoDataUrl ? [event.photoDataUrl].filter(Boolean) : []
 }
 
 const preparePhotoFromFile = async (file: File): Promise<string> => {
@@ -370,50 +347,61 @@ const CowIdentityStrip = ({
 const BirthItemRow = ({
   event,
   isFirst,
-  onEdit,
+  onOpen,
   onOpenMenu
 }: {
   event: CalvingEvent
   isFirst: boolean
-  onEdit: () => void
+  onOpen: () => void
   onOpenMenu: () => void
-}) => (
-  <button
-    type='button'
-    onClick={onEdit}
-    className='w-full flex items-center justify-between gap-3 px-3 py-4 text-left transition hover:brightness-105'
-    style={{
-      color: 'var(--text)',
-      borderTop: isFirst ? 'none' : `1px solid ${dividerColor}`
-    }}
-  >
-    <div className='text-base font-semibold'>{formatDateBR(event.date)}</div>
-    <div className='flex items-center gap-2'>
-      <span
-        className='inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold'
-        style={{
-          background: event.sex === 'FEMEA' ? 'rgba(255, 90, 106, 0.12)' : 'rgba(53, 230, 181, 0.14)',
-          color: 'var(--text)',
-          border: '1px solid var(--border)'
-        }}
-      >
-        {sexLabel(event.sex)}
-      </span>
-      <button
-        type='button'
-        onClick={(e) => {
-          e.stopPropagation()
-          onOpenMenu()
-        }}
-        aria-label='Acoes do parto'
-        className='h-8 w-8 rounded-full flex items-center justify-center transition'
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)' }}
-      >
-        <MoreVertical size={14} />
-      </button>
-    </div>
-  </button>
-)
+}) => {
+  const timeSinceLabel = formatTimeSince(event.date)
+
+  return (
+    <button
+      type='button'
+      onClick={onOpen}
+      className='w-full flex items-center justify-between gap-3 px-3 py-4 text-left transition hover:brightness-105'
+      style={{
+        color: 'var(--text)',
+        borderTop: isFirst ? 'none' : `1px solid ${dividerColor}`
+      }}
+    >
+      <div className='flex-1 min-w-0 flex flex-col gap-1'>
+        <div className='text-base font-semibold flex flex-wrap items-center gap-2'>
+          <span>{formatDateBR(event.date)}</span>
+          <span className='text-xs font-normal' style={{ color: 'var(--muted)' }}>
+            {`- ${timeSinceLabel}`}
+          </span>
+        </div>
+      </div>
+      <div className='flex items-center gap-2'>
+        <span
+          className='inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold'
+          style={{
+            background: event.sex === 'FEMEA' ? 'rgba(255, 90, 106, 0.12)' : 'rgba(53, 230, 181, 0.14)',
+            color: 'var(--text)',
+            border: '1px solid var(--border)'
+          }}
+        >
+          {sexLabel(event.sex)}
+        </span>
+        <button
+          type='button'
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpenMenu()
+          }}
+          aria-label='Acoes do parto'
+          className='h-8 w-8 rounded-full flex items-center justify-center transition'
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)' }}
+        >
+          <MoreVertical size={14} />
+        </button>
+      </div>
+    </button>
+  )
+}
 
 export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
   const [search, setSearch] = useState('')
@@ -575,8 +563,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
             const lastEvent = r.lastEvent
             const lastDateLabel = lastEvent ? formatDateBR(lastEvent.date) : null
             const lastSexLabel = lastEvent ? sexLabel(lastEvent.sex) : null
-            const daysSinceLast = lastEvent ? daysSince(lastEvent.date) : null
-            const elapsedLabel = daysSinceLast !== null ? formatElapsedTime(daysSinceLast) : null
+            const elapsedLabel = lastEvent ? formatTimeSince(lastEvent.date) : null
 
             return (
               <button
@@ -601,7 +588,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
                         className="text-xs font-semibold mt-1"
                         style={{ color: "var(--accent, #b8ff2c)" }}
                       >
-                        {elapsedLabel ? `Ha: ${elapsedLabel}` : null}
+                        {elapsedLabel}
                       </div>
                     )}
                   </div>
@@ -760,6 +747,7 @@ function CowDetailsModal({
     title: ''
   })
   const [activeEventMenu, setActiveEventMenu] = useState<CalvingEvent | null>(null)
+  const [galleryEvent, setGalleryEvent] = useState<CalvingEvent | null>(null)
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null)
   const [isCowPhotoPickerOpen, setIsCowPhotoPickerOpen] = useState(false)
   const cowPhotoCameraInputRef = React.useRef<HTMLInputElement>(null)
@@ -780,6 +768,22 @@ function CowDetailsModal({
     },
     []
   )
+
+  React.useEffect(() => {
+    if (!open) setGalleryEvent(null)
+  }, [open])
+
+  React.useEffect(() => {
+    if (!galleryEvent) return
+    const latest = events.find((ev) => ev.id === galleryEvent.id)
+    if (!latest) {
+      setGalleryEvent(null)
+      return
+    }
+    if (latest !== galleryEvent) {
+      setGalleryEvent(latest)
+    }
+  }, [events, galleryEvent])
 
   const showToast = (message: string, tone: 'success' | 'error' = 'success') => {
     if (toastTimeoutRef.current) window.clearTimeout(toastTimeoutRef.current)
@@ -919,6 +923,37 @@ function CowDetailsModal({
     }
   }
 
+  const handleAddPhotoToEvent = async (event: CalvingEvent, photoDataUrl: string) => {
+    try {
+      const currentPhotos = getEventPhotos(event)
+      const nextPhotos = [...currentPhotos, photoDataUrl]
+      const nextEvent = { ...event, photos: nextPhotos, photoDataUrl: nextPhotos[0] ?? null }
+      await offlineWrites.saveCalving(nextEvent)
+      setGalleryEvent(nextEvent)
+      showToast('Foto adicionada')
+    } catch (e) {
+      console.error('Falha ao adicionar foto do parto', e)
+      showToast('Nao foi possivel adicionar a foto.', 'error')
+    }
+  }
+
+  const handleRemovePhotoFromEvent = async (event: CalvingEvent, index: number) => {
+    const photos = getEventPhotos(event)
+    if (!photos.length) return
+    const confirmRemove = window.confirm('Remover esta foto?')
+    if (!confirmRemove) return
+    const nextPhotos = photos.filter((_, idx) => idx !== index)
+    const nextEvent = { ...event, photos: nextPhotos, photoDataUrl: nextPhotos[0] ?? null }
+    try {
+      await offlineWrites.saveCalving(nextEvent)
+      setGalleryEvent(nextEvent)
+      showToast('Foto removida')
+    } catch (e) {
+      console.error('Falha ao remover foto do parto', e)
+      showToast('Nao foi possivel remover a foto.', 'error')
+    }
+  }
+
   const skeleton = (
     <div className='space-y-4 animate-pulse'>
       <div className='h-7 rounded-lg' style={{ background: 'var(--surface-2)' }} />
@@ -929,15 +964,9 @@ function CowDetailsModal({
   )
 
   const lastEvent = events[0] || null
-  const lastEventDays = lastEvent ? daysSince(lastEvent.date) : null
   const breedLabel = cow?.breed || cow?.raca
   const statusLabel = cow?.status
-  const lastEventLabel =
-    lastEventDays === null
-      ? null
-      : lastEventDays === 0
-        ? 'Ultimo parto hoje'
-        : `Ultimo parto ha ${lastEventDays} ${plural(lastEventDays, 'dia', 'dias')}`
+  const lastEventLabel = lastEvent ? `Ultimo parto ${formatTimeSince(lastEvent.date)}` : null
   const subtitleParts: string[] = []
   if (lastEventLabel) subtitleParts.push(lastEventLabel)
   if (!lastEventLabel && events.length === 0) subtitleParts.push('Sem partos registrados')
@@ -1023,7 +1052,7 @@ function CowDetailsModal({
                       key={ev.id}
                       event={ev}
                       isFirst={index === 0}
-                      onEdit={() => onEditCalving(ev)}
+                      onOpen={() => setGalleryEvent(ev)}
                       onOpenMenu={() => setActiveEventMenu(ev)}
                     />
                   ))}
@@ -1043,12 +1072,20 @@ function CowDetailsModal({
                 }}
               >
                 <Plus size={16} />
-                + Novo parto
+                Novo parto
               </button>
             </div>
           </div>
         )}
       </Modal>
+
+      <CalvingGalleryModal
+        open={Boolean(galleryEvent)}
+        event={galleryEvent}
+        onClose={() => setGalleryEvent(null)}
+        onAddPhoto={handleAddPhotoToEvent}
+        onRemovePhoto={handleRemovePhotoFromEvent}
+      />
 
       <ActionSheet open={isActionsOpen} onClose={() => setIsActionsOpen(false)}>
         <div className='flex flex-col gap-1'>
@@ -1253,6 +1290,255 @@ function CowDetailsModal({
         accept='image/*'
         className='hidden'
         onChange={(e) => handlePickCowPhoto(e.target.files?.[0])}
+      />
+    </>
+  )
+}
+
+function CalvingGalleryModal({
+  open,
+  event,
+  onClose,
+  onAddPhoto,
+  onRemovePhoto
+}: {
+  open: boolean
+  event: CalvingEvent | null
+  onClose: () => void
+  onAddPhoto: (event: CalvingEvent, photoDataUrl: string) => Promise<void>
+  onRemovePhoto: (event: CalvingEvent, photoIndex: number) => Promise<void>
+}) {
+  const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const cameraInputRef = React.useRef<HTMLInputElement>(null)
+  const galleryInputRef = React.useRef<HTMLInputElement>(null)
+
+  const photos = getEventPhotos(event)
+  const hasPhotos = photos.length > 0
+
+  React.useEffect(() => {
+    if (!open) setIsPickerOpen(false)
+  }, [open])
+
+  React.useEffect(() => {
+    setActiveIndex(0)
+  }, [event?.id])
+
+  React.useEffect(() => {
+    if (!photos.length) {
+      setActiveIndex(0)
+      return
+    }
+    setActiveIndex((current) => Math.min(current, photos.length - 1))
+  }, [photos.length])
+
+  if (!open || !event) return null
+
+  const triggerPick = (mode: 'camera' | 'gallery') => {
+    const targetRef = mode === 'camera' ? cameraInputRef : galleryInputRef
+    setIsPickerOpen(false)
+    const input = targetRef.current
+    if (input) {
+      input.value = ''
+      input.click()
+    }
+  }
+
+  const handlePickPhoto = async (file?: File | null) => {
+    if (!file) return
+    try {
+      const processed = await preparePhotoFromFile(file)
+      await onAddPhoto(event, processed)
+      setActiveIndex(photos.length)
+    } catch (e) {
+      console.error('Falha ao adicionar foto do parto', e)
+      alert('Nao foi possivel adicionar a foto. Tente novamente.')
+    }
+  }
+
+  const handleRemove = async () => {
+    if (!hasPhotos) return
+    try {
+      await onRemovePhoto(event, activeIndex)
+      setActiveIndex((current) => Math.max(0, Math.min(current, photos.length - 2)))
+    } catch (e) {
+      console.error('Falha ao remover foto do parto', e)
+      alert('Nao foi possivel remover a foto.')
+    }
+  }
+
+  const goPrev = () => {
+    if (!hasPhotos) return
+    setActiveIndex((current) => (current - 1 + photos.length) % photos.length)
+  }
+
+  const goNext = () => {
+    if (!hasPhotos) return
+    setActiveIndex((current) => (current + 1) % photos.length)
+  }
+
+  return (
+    <>
+      <Modal
+        open={open}
+        title='Fotos do parto'
+        onClose={onClose}
+        closeLabel={<X size={14} />}
+        closeAriaLabel='Fechar'
+        closeOnBackdrop
+      >
+        <div className='space-y-4'>
+          <div className='flex items-start justify-between gap-3 flex-wrap'>
+            <div className='text-sm space-y-1' style={{ color: 'var(--muted)' }}>
+              <div>
+                {formatDateBR(event.date)}
+                {event.sex ? ` \u2022 ${sexLabel(event.sex)}` : ''}
+              </div>
+              <div className='text-xs font-semibold' style={{ color: 'var(--accent, #b8ff2c)' }}>
+                {formatTimeSince(event.date)}
+              </div>
+            </div>
+            <div className='flex gap-2 flex-wrap justify-end'>
+              {hasPhotos ? (
+                <button
+                  type='button'
+                  onClick={handleRemove}
+                  className='h-9 px-3 rounded-full text-xs font-semibold border transition hover:brightness-110 disabled:opacity-60'
+                  style={{ background: 'rgba(255, 90, 106, 0.14)', borderColor: 'var(--border)', color: 'var(--danger)' }}
+                  disabled={!hasPhotos}
+                >
+                  Remover foto
+                </button>
+              ) : null}
+              <button
+                type='button'
+                onClick={() => setIsPickerOpen(true)}
+                className='h-9 px-4 rounded-full text-xs font-semibold border transition hover:brightness-110 inline-flex items-center gap-2'
+                style={{ background: 'var(--accent, var(--primary, #b8ff2c))', borderColor: 'transparent', color: 'var(--accentText, #07110a)' }}
+              >
+                <Plus size={14} />
+                Adicionar foto
+              </button>
+            </div>
+          </div>
+
+          {hasPhotos ? (
+            <div className='space-y-3'>
+              <div
+                className='relative rounded-2xl border overflow-hidden'
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+              >
+                <div
+                  className='absolute top-3 right-3 text-xs font-semibold px-3 py-1 rounded-full border'
+                  style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                >
+                  {`${activeIndex + 1}/${photos.length}`}
+                </div>
+                <div className='h-64 flex items-center justify-center bg-[#0f1624]'>
+                  <img
+                    src={photos[activeIndex]}
+                    alt='Foto do parto'
+                    className='h-full w-full object-contain'
+                  />
+                </div>
+                {photos.length > 1 ? (
+                  <div className='absolute inset-y-0 left-0 right-0 flex items-center justify-between px-3 pointer-events-none'>
+                    <button
+                      type='button'
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        goPrev()
+                      }}
+                      className='h-10 w-10 rounded-full border flex items-center justify-center bg-black/30 backdrop-blur pointer-events-auto'
+                      style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+                    >
+                      {'<'}
+                    </button>
+                    <button
+                      type='button'
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        goNext()
+                      }}
+                      className='h-10 w-10 rounded-full border flex items-center justify-center bg-black/30 backdrop-blur pointer-events-auto'
+                      style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+                    >
+                      {'>'}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <div
+              className='rounded-xl border px-4 py-8 text-center space-y-2'
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+            >
+              <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                Nenhuma foto adicionada ainda
+              </div>
+              <div className='text-xs'>
+                Adicione fotos do parto para manter o historico completo.
+              </div>
+              <button
+                type='button'
+                onClick={() => setIsPickerOpen(true)}
+                className='h-10 px-4 rounded-full text-sm font-semibold border transition hover:brightness-110 inline-flex items-center gap-2 justify-center'
+                style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+              >
+                <Plus size={14} />
+                Adicionar foto
+              </button>
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      <ActionSheet open={isPickerOpen} onClose={() => setIsPickerOpen(false)}>
+        <div className='flex flex-col gap-1'>
+          <button
+            type='button'
+            onClick={() => triggerPick('camera')}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 flex items-center gap-2'
+            style={{ color: 'var(--text)' }}
+          >
+            <Camera size={16} />
+            Tirar foto
+          </button>
+          <button
+            type='button'
+            onClick={() => triggerPick('gallery')}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 flex items-center gap-2'
+            style={{ color: 'var(--text)' }}
+          >
+            <Image size={16} />
+            Escolher da galeria
+          </button>
+          <button
+            type='button'
+            onClick={() => setIsPickerOpen(false)}
+            className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110'
+            style={{ color: 'var(--muted)' }}
+          >
+            Cancelar
+          </button>
+        </div>
+      </ActionSheet>
+
+      <input
+        ref={cameraInputRef}
+        type='file'
+        accept='image/*'
+        capture='environment'
+        className='hidden'
+        onChange={(e) => handlePickPhoto(e.target.files?.[0])}
+      />
+      <input
+        ref={galleryInputRef}
+        type='file'
+        accept='image/*'
+        className='hidden'
+        onChange={(e) => handlePickPhoto(e.target.files?.[0])}
       />
     </>
   )
@@ -1515,7 +1801,7 @@ function CalvingModal({
   const [newCowName, setNewCowName] = useState<string>('')
   const [date, setDate] = useState<string>('')
   const [sex, setSex] = useState<CalvingSex>('FEMEA')
-  const [photoDataUrl, setPhotoDataUrl] = useState<string | undefined>(undefined)
+  const [photos, setPhotos] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [isPhotoPickerOpen, setIsPhotoPickerOpen] = useState(false)
   const cameraInputRef = React.useRef<HTMLInputElement>(null)
@@ -1552,7 +1838,7 @@ function CalvingModal({
       setSelectedCowId(editing.cowId)
       setNewCowName('')
       setSex(editing.sex)
-      setPhotoDataUrl(editing.photoDataUrl)
+      setPhotos(getEventPhotos(editing))
       const d = new Date(editing.date)
       setDate(!Number.isNaN(d.getTime()) ? formatInputDate(d) : '')
       return
@@ -1561,7 +1847,7 @@ function CalvingModal({
     const today = new Date()
     setDate(formatInputDate(today))
     setSex('FEMEA')
-    setPhotoDataUrl(undefined)
+    setPhotos([])
     setNewCowName('')
     setMode('existing')
 
@@ -1576,12 +1862,17 @@ function CalvingModal({
   const isYesterdaySelected = date === yesterdayValue
 
   const title = editing ? 'Editar parto' : 'Cadastrar novo parto'
+  const primaryPhoto = photos[0]
 
   const handlePickPhoto = async (file?: File | null) => {
     if (!file) return
     try {
       const processed = await preparePhotoFromFile(file)
-      setPhotoDataUrl(processed)
+      setPhotos((prev) => {
+        if (!prev.length) return [processed]
+        const [, ...rest] = prev
+        return [processed, ...rest]
+      })
     } catch (e) {
       console.error('Falha ao preparar imagem', e)
       const reason = e instanceof Error && e.message ? ` Detalhe: ${e.message}` : ''
@@ -1619,13 +1910,15 @@ function CalvingModal({
       }
 
       const evId = editing?.id || crypto.randomUUID()
+      const photoList = photos.filter(Boolean)
       const ev: CalvingEvent = {
         ...(editing || {}),
         id: evId,
         cowId,
         date: toDateTime(date),
         sex,
-        photoDataUrl: photoDataUrl ?? null
+        photos: photoList,
+        photoDataUrl: photoList[0] ?? null
       }
       await offlineWrites.saveCalving(ev)
       onSaved()
@@ -1879,12 +2172,20 @@ function CalvingModal({
               Foto
             </div>
 
-            {photoDataUrl ? (
+            {primaryPhoto ? (
               <div
                 className='rounded-xl border overflow-hidden relative'
                 style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
               >
-                <img src={photoDataUrl} alt='Preview da foto' className='w-full h-48 object-cover' />
+                {photos.length > 1 ? (
+                  <div
+                    className='absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full border'
+                    style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                  >
+                    {`1/${photos.length}`}
+                  </div>
+                ) : null}
+                <img src={primaryPhoto} alt='Preview da foto' className='w-full h-48 object-cover' />
                 <div className='absolute inset-x-3 bottom-3 flex justify-end gap-2'>
                   <button
                     type='button'
@@ -1900,7 +2201,7 @@ function CalvingModal({
                   </button>
                   <button
                     type='button'
-                    onClick={() => setPhotoDataUrl(undefined)}
+                    onClick={() => setPhotos((prev) => prev.slice(1))}
                     className='h-10 px-4 rounded-full text-sm font-semibold border transition hover:brightness-110'
                     style={{
                       background: 'rgba(255, 90, 106, 0.16)',

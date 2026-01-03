@@ -87,6 +87,8 @@ export type CalvingEvent = {
   /** ISO string */
   date: string
   sex: CalvingSex
+  /** lista de URIs/paths de fotos do parto */
+  photos?: string[]
   /** data URL (ex.: data:image/jpeg;base64,...) */
   photoDataUrl?: string | null
   createdAt?: number
