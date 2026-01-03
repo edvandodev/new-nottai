@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { App as CapacitorApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
+import { Share } from '@capacitor/share'
 import { firestoreService } from './services/firestore'
 import { authService, type AppUser } from './services/auth'
 import { ensureUserInitialized } from './services/bootstrap'
@@ -27,6 +29,7 @@ import {
 import { createReceiptFile } from './services/pdfGenerator'
 import type { ReceiptFileRef } from './services/pdfGenerator'
 import { PdfViewerModal } from './components/PdfViewerModal'
+import { ReceiptViewer } from './components/receipt/ReceiptViewer'
 import { BarChart3, Milk, Settings as SettingsIcon, Users } from 'lucide-react'
 import { PendingQueueModal } from './components/PendingQueueModal'
 import { optimisticStore } from './services/optimisticStore'
@@ -88,6 +91,16 @@ const ReproductionIcon = ({
     <circle cx='421' cy='199.58' r='20' />
   </svg>
 )
+
+const base64ToBlob = (base64: string, mimeType: string) => {
+  const byteCharacters = atob(base64)
+  const byteNumbers = new Array(byteCharacters.length)
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i)
+  }
+  const byteArray = new Uint8Array(byteNumbers)
+  return new Blob([byteArray], { type: mimeType })
+}
 
 function App() {
   const navigate = useNavigate()
@@ -154,12 +167,51 @@ function App() {
   } | null>(null)
   const [pdfFile, setPdfFile] = useState<ReceiptFileRef | null>(null)
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
+  const [isReceiptViewerOpen, setIsReceiptViewerOpen] = useState(false)
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  const [receiptFile, setReceiptFile] = useState<ReceiptFileRef | null>(null)
+  const [receiptBlob, setReceiptBlob] = useState<Blob | null>(null)
+  const [receiptShareInfo, setReceiptShareInfo] = useState<{
+    clientName: string
+    amount: number
+    date: string
+  } | null>(null)
   const [editingClientLoadedUpdatedAt, setEditingClientLoadedUpdatedAt] =
     useState<number>(0)
 
   // Email verification state
   const [isSendingVerification, setIsSendingVerification] = useState(false)
   const [isCheckingVerification, setIsCheckingVerification] = useState(false)
+
+  const revokeReceiptObjectUrl = useCallback((url?: string | null) => {
+    if (!url) return
+    try {
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.warn('Falha ao revogar URL do comprovante', err)
+    }
+  }, [])
+
+  const closeReceiptViewer = useCallback(() => {
+    setIsReceiptViewerOpen(false)
+    revokeReceiptObjectUrl(receiptUrl)
+    if (receiptFile?.source === 'web') {
+      revokeReceiptObjectUrl(receiptFile.uri)
+    }
+    setReceiptUrl(null)
+    setReceiptBlob(null)
+    setReceiptFile(null)
+    setReceiptShareInfo(null)
+  }, [receiptFile, receiptUrl, revokeReceiptObjectUrl])
+
+  useEffect(() => {
+    return () => {
+      revokeReceiptObjectUrl(receiptUrl)
+      if (receiptFile?.source === 'web') {
+        revokeReceiptObjectUrl(receiptFile.uri)
+      }
+    }
+  }, [receiptFile, receiptUrl, revokeReceiptObjectUrl])
 
   useEffect(() => {
     authService.setLanguageToPortuguese().catch(() => undefined)
@@ -473,6 +525,11 @@ function App() {
           return
         }
 
+        if (isReceiptViewerOpen) {
+          closeReceiptViewer()
+          return
+        }
+
         if (isClientModalOpen) {
           setIsClientModalOpen(false)
           return
@@ -550,11 +607,13 @@ function App() {
     isReceiptModalOpen,
     isSaleModalOpen,
     isPdfViewerOpen,
+    isReceiptViewerOpen,
     location.pathname,
     navigate,
     lastBackTime, 
     paymentToDeleteId,
-    saleToDeleteId
+    saleToDeleteId,
+    closeReceiptViewer
   ])
 
   // Memoized Calculations
@@ -778,6 +837,17 @@ function App() {
     setSelectedClientId(null)
   }
 
+  const resolveReceiptBlob = useCallback(async (file: ReceiptFileRef | null) => {
+    if (!file) return null
+    if (file.blob) return file.blob
+    if (file.base64) return base64ToBlob(file.base64, file.mimeType)
+    if (file.uri) {
+      const res = await fetch(file.uri)
+      return await res.blob()
+    }
+    return null
+  }, [])
+
   const handleGenerateReceipt = async (payment?: Payment) => {
     const info = payment
       ? {
@@ -787,20 +857,105 @@ function App() {
           date: payment.date
         }
       : lastPaymentInfo
-    if (info) {
-      try {
-        const file = await createReceiptFile(info.clientName, info.amount, info.sales, info.date)
-        setPdfFile(file)
-        setIsPdfViewerOpen(true)
-        if (!payment) setIsReceiptModalOpen(false)
-      } catch (err) {
-        console.error('Falha ao gerar comprovante', err)
-        alert('N\u00e3o foi poss\u00edvel gerar o comprovante.')
-      }
-    } else {
+    if (!info) {
       alert('N\u00e3o h\u00e1 informa\u00e7\u00f5es para gerar o recibo.')
+      return
+    }
+
+    try {
+      revokeReceiptObjectUrl(receiptUrl)
+      const file = await createReceiptFile(info.clientName, info.amount, info.sales, info.date)
+      const blob = await resolveReceiptBlob(file)
+      if (!blob) {
+        throw new Error('Blob do comprovante n\u00e3o gerado')
+      }
+
+      if (file.source === 'web') {
+        revokeReceiptObjectUrl(file.uri)
+      }
+
+      const url = URL.createObjectURL(blob)
+      setReceiptFile(file)
+      setReceiptBlob(blob)
+      setReceiptUrl(url)
+      setReceiptShareInfo({
+        clientName: info.clientName,
+        amount: info.amount,
+        date: info.date
+      })
+      setIsReceiptViewerOpen(true)
+      if (!payment) setIsReceiptModalOpen(false)
+    } catch (err) {
+      console.error('Falha ao gerar comprovante', err)
+      alert('N\u00e3o foi poss\u00edvel gerar o comprovante.')
     }
   }
+
+  const shareReceipt = useCallback(async () => {
+    if (!receiptFile) return
+
+    const fileName = receiptFile.fileName || 'comprovante.pdf'
+    const mimeType = receiptFile.mimeType || 'application/pdf'
+    const shareText = receiptShareInfo?.clientName
+      ? `Comprovante de ${receiptShareInfo.clientName}`
+      : 'Comprovante de pagamento'
+
+    try {
+      if (Capacitor.isNativePlatform?.() && receiptFile.uri) {
+        try {
+          await Share.share({
+            title: 'Comprovante de Pagamento',
+            text: shareText,
+            url: receiptFile.uri,
+            dialogTitle: 'Compartilhar PDF'
+          })
+          return
+        } catch (nativeError) {
+          console.warn('Falha ao compartilhar nativamente, tentando fallback', nativeError)
+        }
+      }
+
+      const blob = receiptBlob ?? (await resolveReceiptBlob(receiptFile))
+
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        const shareData: ShareData = {
+          title: 'Comprovante',
+          text: shareText
+        }
+        if (blob) {
+          const fileForShare = new File([blob], fileName, { type: mimeType })
+          const navAny = navigator as any
+          if (!navAny.canShare || navAny.canShare({ files: [fileForShare] })) {
+            ;(shareData as any).files = [fileForShare]
+          } else if (receiptUrl) {
+            ;(shareData as any).url = receiptUrl
+          }
+        } else if (receiptUrl) {
+          ;(shareData as any).url = receiptUrl
+        }
+        await navigator.share(shareData)
+        return
+      }
+
+      const downloadUrl = receiptUrl || receiptFile.uri
+      if (downloadUrl) {
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.download = fileName
+        link.target = '_blank'
+        link.rel = 'noopener'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        return
+      }
+
+      alert('N\u00e3o foi poss\u00edvel compartilhar o comprovante.')
+    } catch (error) {
+      console.error('Falha ao compartilhar comprovante', error)
+      alert('N\u00e3o foi poss\u00edvel compartilhar o comprovante.')
+    }
+  }, [receiptFile, receiptShareInfo, receiptBlob, receiptUrl, resolveReceiptBlob])
   // --- Deletion Handlers exposed to pages ---
   const confirmDeleteClient = async () => {
     if (!clientToDeleteId) return
@@ -1219,6 +1374,13 @@ function App() {
         title='Excluir Pagamento'
         message='Deseja remover este registro de pagamento?'
         isDanger
+      />
+
+      <ReceiptViewer
+        open={isReceiptViewerOpen}
+        pdfUrl={receiptUrl}
+        onClose={closeReceiptViewer}
+        onShare={shareReceipt}
       />
 
       <PdfViewerModal

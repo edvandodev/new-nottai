@@ -143,6 +143,7 @@ export type ReceiptFileRef = {
   fileName: string
   mimeType: string
   base64?: string
+  blob?: Blob
 }
 
 export const createReceiptFile = async (
@@ -158,7 +159,7 @@ export const createReceiptFile = async (
 
   if (!isNative) {
     const blobUrl = URL.createObjectURL(pdfBlob)
-    return { source: 'web', uri: blobUrl, fileName, mimeType }
+    return { source: 'web', uri: blobUrl, fileName, mimeType, blob: pdfBlob }
   }
 
   const base64 = await toBase64(pdfBlob)
@@ -184,7 +185,8 @@ export const createReceiptFile = async (
     uri: uri.uri ?? null,
     fileName,
     mimeType,
-    base64
+    base64,
+    blob: pdfBlob
   }
 }
 
