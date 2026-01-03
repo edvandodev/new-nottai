@@ -4,11 +4,7 @@ import {
   Camera,
   Circle,
   CircleDot,
-  Clock3,
-  Edit3,
   Image,
-  List,
-  Milk,
   MoreVertical,
   Plus,
   Search,
@@ -105,6 +101,7 @@ const toDateTime = (dateStr: string) => {
 
 const formatElapsedTime = (days: number | null) => {
   if (days === null || Number.isNaN(days) || days < 0) return ''
+  if (days === 0) return 'Hoje'
   if (days < 30) {
     return `${days} ${plural(days, 'dia', 'dias')}`
   }
@@ -122,45 +119,6 @@ const formatElapsedTime = (days: number | null) => {
   const parts: string[] = [`${years} ${plural(years, 'ano', 'anos')}`]
   if (restMonths > 0) parts.push(`${restMonths} ${plural(restMonths, 'mes', 'meses')}`)
   return parts.join(' e ')
-}
-
-const computeStats = (events: CalvingEvent[]) => {
-  if (!events?.length) {
-    return {
-      total: 0,
-      lastEvent: null as CalvingEvent | null,
-      daysSinceLast: null as number | null,
-      averageIntervalDays: null as number | null
-    }
-  }
-
-  const sorted = [...events].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  )
-  const lastEvent = sorted[0]
-  const daysSinceLast = daysSince(lastEvent.date)
-
-  let averageIntervalDays: number | null = null
-  if (sorted.length > 1) {
-    let totalDiff = 0
-    let intervals = 0
-    for (let i = 0; i < sorted.length - 1; i += 1) {
-      const current = new Date(sorted[i].date).getTime()
-      const next = new Date(sorted[i + 1].date).getTime()
-      if (Number.isNaN(current) || Number.isNaN(next)) continue
-      const diff = Math.max(0, Math.round((current - next) / (1000 * 60 * 60 * 24)))
-      totalDiff += diff
-      intervals += 1
-    }
-    if (intervals > 0) averageIntervalDays = Math.round(totalDiff / intervals)
-  }
-
-  return {
-    total: sorted.length,
-    lastEvent,
-    daysSinceLast,
-    averageIntervalDays
-  }
 }
 
 const readFileAsDataUrl = (file: File): Promise<string> =>
@@ -617,7 +575,6 @@ function CowDetailsModal({
   const [isCowPhotoPickerOpen, setIsCowPhotoPickerOpen] = useState(false)
   const cowPhotoCameraInputRef = React.useRef<HTMLInputElement>(null)
   const cowPhotoGalleryInputRef = React.useRef<HTMLInputElement>(null)
-  const stats = React.useMemo(() => computeStats(events), [events])
   const toastTimeoutRef = React.useRef<number | null>(null)
   const [toast, setToast] = useState<{ message: string; tone?: 'success' | 'error' } | null>(null)
 
@@ -774,21 +731,20 @@ function CowDetailsModal({
   }
 
   const skeleton = (
-    <div className='space-y-3 animate-pulse'>
-      <div className='h-24 rounded-2xl border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
-      <div className='h-10 rounded-xl border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
-      <div className='h-32 rounded-2xl border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
+    <div className='space-y-4 animate-pulse'>
+      <div className='h-6 rounded-lg' style={{ background: 'var(--surface-2)' }} />
+      <div className='rounded-xl border h-14' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
+      <div className='rounded-xl border h-14' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
+      <div className='h-12 rounded-full border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
     </div>
   )
-
-  const lastDateLabel = stats.lastEvent ? formatDateBR(stats.lastEvent.date) : 'Sem registro'
-  const sinceLastLabel = stats.daysSinceLast !== null ? formatElapsedTime(stats.daysSinceLast) : 'Sem registro'
+  const dividerColor = '#1e2a38'
 
   return (
     <>
       <Modal
         open={open}
-        title={cow ? cow.name : 'Perfil da vaca'}
+        title='Partos'
         onClose={onClose}
         closeLabel={<X size={14} />}
         closeAriaLabel='Fechar'
@@ -811,247 +767,106 @@ function CowDetailsModal({
           skeleton
         ) : (
           <div className='space-y-5'>
-            <div className='space-y-3' style={{ padding: '0 16px' }}>
-              <div className='flex items-center gap-3'>
-                <div className='relative'>
-                  <button
-                    type='button'
-                    onClick={() => {
-                      if (cow.photoDataUrl) {
-                        openPhotoViewer(cow.photoDataUrl, cow.name, undefined, 'cow')
-                      } else {
-                        setIsCowPhotoPickerOpen(true)
-                      }
-                    }}
-                    className='h-16 w-16 sm:h-[72px] sm:w-[72px] rounded-full border overflow-hidden flex items-center justify-center transition hover:brightness-110'
-                    style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-                  >
-                    {cow.photoDataUrl ? (
-                      <img src={cow.photoDataUrl} alt={`Foto de ${cow.name}`} className='h-full w-full object-cover' />
-                    ) : (
-                      <MaskIcon src={cowIcon} size={32} color='var(--muted)' />
-                    )}
-                  </button>
-                  <button
-                    type='button'
-                    onClick={() => setIsCowPhotoPickerOpen(true)}
-                    className='h-8 w-8 rounded-full border absolute -bottom-1 -right-1 flex items-center justify-center transition hover:brightness-110'
-                    style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                    aria-label='Trocar foto da vaca'
-                  >
-                    <Camera size={14} />
-                  </button>
+            <div
+              className='rounded-xl border p-4'
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+            >
+              <div className='space-y-2'>
+                <div
+                  className='text-[11px] font-semibold uppercase tracking-wide'
+                  style={{ color: 'var(--muted)', opacity: 0.5, letterSpacing: '0.04em' }}
+                >
+                  VACA
                 </div>
 
-                <div className='flex-1 min-w-0 space-y-1'>
-                  <div className='flex items-center gap-2'>
-                    <div className='text-lg font-semibold leading-tight truncate' style={{ color: 'var(--text)' }}>
-                      {cow.name}
-                    </div>
-                    {!isEditingName && (
+                {isEditingName ? (
+                  <div className='space-y-2'>
+                    <input
+                      value={nameDraft}
+                      onChange={(e) => setNameDraft(e.target.value)}
+                      className='w-full h-11 rounded-xl border px-3 outline-none'
+                      placeholder='Nome da vaca'
+                      style={{
+                        background: 'var(--surface)',
+                        borderColor: 'var(--border)',
+                        color: 'var(--text)'
+                      }}
+                    />
+                    <div className='flex gap-2'>
                       <button
                         type='button'
-                        onClick={() => setIsEditingName(true)}
-                        className='ml-auto h-8 px-3 rounded-full text-xs font-semibold border inline-flex items-center gap-2 transition hover:brightness-110'
-                        style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                      >
-                        <Edit3 size={14} />
-                        Editar
-                      </button>
-                    )}
-                  </div>
-                  {!isEditingName ? (
-                    <div className='text-xs' style={{ color: 'var(--muted)' }}>
-                      Perfil e historico
-                    </div>
-                  ) : null}
-
-                  {isEditingName ? (
-                    <div className='flex flex-col sm:flex-row gap-2 pt-1'>
-                      <input
-                        value={nameDraft}
-                        onChange={(e) => setNameDraft(e.target.value)}
-                        className='flex-1 h-10 rounded-xl border px-3 outline-none'
-                        placeholder='Nome da vaca'
+                        onClick={saveName}
+                        disabled={!canSaveName || savingName}
+                        className='h-10 px-4 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
                         style={{
-                          background: 'var(--surface-2)',
+                          background: 'var(--surface)',
                           borderColor: 'var(--border)',
                           color: 'var(--text)'
                         }}
-                      />
-                      <div className='flex gap-2'>
-                        <button
-                          type='button'
-                          onClick={saveName}
-                          disabled={!canSaveName || savingName}
-                          className='h-10 px-4 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
-                          style={{
-                            background: '#95c11f',
-                            borderColor: '#95c11f',
-                            color: '#0c120b',
-                            boxShadow: '0 12px 32px -24px var(--shadow)'
-                          }}
-                        >
-                          {savingName ? 'Salvando...' : 'Salvar'}
-                        </button>
-                        <button
-                          type='button'
-                          onClick={() => {
-                            setIsEditingName(false)
-                            setNameDraft(cow.name)
-                          }}
-                          className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
-                          style={{ background: 'transparent', borderColor: 'var(--border)', color: 'var(--muted)' }}
-                        >
-                          Cancelar
-                        </button>
-                      </div>
+                      >
+                        {savingName ? 'Salvando...' : 'Salvar'}
+                      </button>
+                      <button
+                        type='button'
+                        onClick={() => {
+                          setIsEditingName(false)
+                          setNameDraft(cow.name)
+                        }}
+                        className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+                        style={{ background: 'transparent', borderColor: 'var(--border)', color: 'var(--muted)' }}
+                      >
+                        Cancelar
+                      </button>
                     </div>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className='flex items-center gap-2 overflow-x-auto pb-1' style={{ WebkitOverflowScrolling: 'touch' }}>
-                <StatChip icon={<CalendarDays size={14} />} label='Ultimo parto' value={lastDateLabel} />
-                <StatChip
-                  icon={<Clock3 size={14} />}
-                  label='Tempo'
-                  value={stats.daysSinceLast === 0 ? 'Hoje' : sinceLastLabel || 'Sem registro'}
-                />
-                <StatChip icon={<List size={14} />} label='Partos' value={String(stats.total)} />
+                  </div>
+                ) : (
+                  <div className='text-xl font-semibold leading-tight' style={{ color: 'var(--text)' }}>
+                    {cow.name}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className='space-y-3'>
-              <div className='flex items-center justify-between gap-2'>
-                <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                  Historico de partos
-                </div>
-                <button
-                  type='button'
-                  onClick={onNewCalving}
-                  className='inline-flex items-center gap-2 h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
-                  style={{
-                    background: '#95c11f',
-                    borderColor: '#95c11f',
-                    color: '#0c120b',
-                    boxShadow: '0 16px 40px -26px var(--shadow)'
-                  }}
-                >
-                  <Plus size={14} />
-                  Novo parto
-                </button>
+            <div className='space-y-2'>
+              <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+                Partos
               </div>
 
               {events.length === 0 ? (
                 <div
-                  className='rounded-2xl border p-4 flex items-center justify-between gap-3'
-                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+                  className='rounded-xl border px-3 py-3 text-sm'
+                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
                 >
-                  <div className='flex items-center gap-3'>
-                    <div
-                      className='h-12 w-12 rounded-xl border flex items-center justify-center'
-                      style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-                    >
-                      <Milk size={18} style={{ color: 'var(--muted)' }} />
-                    </div>
-                    <div>
-                      <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                        Nenhum parto registrado
-                      </div>
-                      <div className='text-xs' style={{ color: 'var(--muted)' }}>
-                        Adicione o primeiro para acompanhar intervalos
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type='button'
-                    onClick={onNewCalving}
-                    className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
-                    style={{
-                      background: 'var(--surface)',
-                      borderColor: 'var(--border)',
-                      color: 'var(--text)'
-                    }}
-                  >
-                    Adicionar
-                  </button>
+                  Nenhum parto registrado
                 </div>
               ) : (
-                <div className='space-y-3 max-h-[60vh] overflow-auto pr-1'>
-                  {events.map((ev, index) => {
-                    const prev = events[index + 1]
-                    const sinceEvent = daysSince(ev.date)
-                    const sinceLabel = sinceEvent !== null ? formatElapsedTime(sinceEvent) : null
-                    const intervalDays = prev
-                      ? Math.max(
-                          0,
-                          Math.round(
-                            (new Date(ev.date).getTime() - new Date(prev.date).getTime()) / (1000 * 60 * 60 * 24)
-                          )
-                        )
-                      : null
-                    const intervalLabel = intervalDays !== null ? formatElapsedTime(intervalDays) : null
-                    const sexColor =
-                      ev.sex === 'FEMEA'
-                        ? { bg: 'rgba(255, 90, 106, 0.16)', text: 'var(--text)' }
-                        : { bg: 'rgba(53, 230, 181, 0.16)', text: 'var(--text)' }
-
-                    return (
-                      <div
-                        key={ev.id}
-                        role='button'
-                        tabIndex={0}
-                        onClick={() => onEditCalving(ev)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') onEditCalving(ev)
-                        }}
-                        className='rounded-2xl border p-3 flex gap-3 relative group transition hover:brightness-105'
-                        style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-                      >
-                        <button
-                          type='button'
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (ev.photoDataUrl) {
-                              openPhotoViewer(ev.photoDataUrl as string, `Parto ${formatDateBR(ev.date)}`, ev, 'event')
-                            }
+                <div
+                  className='rounded-xl border'
+                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                >
+                  {events.map((ev, index) => (
+                    <button
+                      key={ev.id}
+                      type='button'
+                      onClick={() => onEditCalving(ev)}
+                      className='w-full flex items-center justify-between gap-3 px-3 py-4 text-left transition hover:brightness-105'
+                      style={{
+                        color: 'var(--text)',
+                        borderTop: index === 0 ? 'none' : `1px solid ${dividerColor}`
+                      }}
+                    >
+                      <div className='text-base font-semibold'>{formatDateBR(ev.date)}</div>
+                      <div className='flex items-center gap-2'>
+                        <span
+                          className='inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold'
+                          style={{
+                            background: ev.sex === 'FEMEA' ? 'rgba(255, 90, 106, 0.12)' : 'rgba(53, 230, 181, 0.14)',
+                            color: 'var(--text)',
+                            border: '1px solid var(--border)'
                           }}
-                          className='h-16 w-16 rounded-xl border overflow-hidden flex items-center justify-center'
-                          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
                         >
-                          {ev.photoDataUrl ? (
-                            <img src={ev.photoDataUrl} alt='Foto do parto' className='h-full w-full object-cover' />
-                          ) : (
-                            <div className='text-[11px] font-semibold text-center' style={{ color: 'var(--muted)' }}>
-                              Sem foto
-                            </div>
-                          )}
-                        </button>
-
-                        <div className='flex-1 space-y-1'>
-                          <div className='flex items-center gap-2 flex-wrap'>
-                            <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                              {formatDateBR(ev.date)}
-                            </div>
-                            <span
-                              className='inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold'
-                              style={{ background: sexColor.bg, color: sexColor.text, border: '1px solid var(--border)' }}
-                            >
-                              {ev.sex === 'FEMEA' ? <Circle size={12} /> : <CircleDot size={12} />}
-                              {sexLabel(ev.sex)}
-                            </span>
-                          </div>
-                          <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
-                            {sinceLabel ? `Ha: ${sinceLabel}` : 'Sem referencia'}
-                          </div>
-                          {intervalLabel ? (
-                            <div className='text-[11px]' style={{ color: 'var(--muted)' }}>
-                              Intervalo anterior: {intervalLabel}
-                            </div>
-                          ) : null}
-                        </div>
-
+                          {sexLabel(ev.sex)}
+                        </span>
                         <button
                           type='button'
                           onClick={(e) => {
@@ -1059,16 +874,32 @@ function CowDetailsModal({
                             setActiveEventMenu(ev)
                           }}
                           aria-label='Acoes do parto'
-                          className='h-9 w-9 rounded-full border flex items-center justify-center transition absolute top-3 right-3 opacity-100 sm:opacity-80 sm:group-hover:opacity-100'
-                          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+                          className='h-8 w-8 rounded-full flex items-center justify-center transition'
+                          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)' }}
                         >
-                          <MoreVertical size={15} />
+                          <MoreVertical size={14} />
                         </button>
                       </div>
-                    )
-                  })}
+                    </button>
+                  ))}
                 </div>
               )}
+            </div>
+
+            <div className='pt-1'>
+              <button
+                type='button'
+                onClick={onNewCalving}
+                className='w-full h-12 rounded-full border text-sm font-semibold inline-flex items-center justify-center gap-2 transition hover:brightness-105'
+                style={{
+                  background: 'var(--surface-2)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                <Plus size={16} />
+                Novo parto
+              </button>
             </div>
           </div>
         )}
@@ -1279,38 +1110,6 @@ function CowDetailsModal({
         onChange={(e) => handlePickCowPhoto(e.target.files?.[0])}
       />
     </>
-  )
-}
-
-function StatChip({
-  icon,
-  label,
-  value
-}: {
-  icon: React.ReactNode
-  label: string
-  value: string
-}) {
-  return (
-    <div
-      className='inline-flex items-center gap-2 rounded-full border px-3 py-2 h-10 flex-shrink-0'
-      style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-    >
-      <div
-        className='h-6 w-6 rounded-full border flex items-center justify-center'
-        style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
-      >
-        {icon}
-      </div>
-      <div className='flex flex-col leading-tight'>
-        <span className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-          {value}
-        </span>
-        <span className='text-[11px]' style={{ color: 'var(--muted)' }}>
-          {label}
-        </span>
-      </div>
-    </div>
   )
 }
 

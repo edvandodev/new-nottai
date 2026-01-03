@@ -11,7 +11,7 @@ export function Modal({
   closeOnBackdrop = false
 }: {
   open: boolean
-  title: string
+  title: React.ReactNode
   onClose: () => void
   children: React.ReactNode
   actions?: React.ReactNode

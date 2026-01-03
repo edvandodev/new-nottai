@@ -139,26 +139,41 @@ export function PaymentsPage({
     [payments]
   )
   const litersReceivable = useMemo(() => {
-    const byClient = new Map<string, { liters: number; value: number }>()
+    const unpaidByClient = new Map<string, { liters: number; value: number }>()
     sales.forEach((sale) => {
       if (sale.isPaid === true || sale.paymentStatus !== 'PRAZO') return
-      const prev = byClient.get(sale.clientId) || { liters: 0, value: 0 }
-      byClient.set(sale.clientId, {
-        liters: prev.liters + (sale.liters || 0),
-        value: prev.value + (sale.totalValue || 0)
+      const current = unpaidByClient.get(sale.clientId) || { liters: 0, value: 0 }
+      unpaidByClient.set(sale.clientId, {
+        liters: current.liters + (sale.liters || 0),
+        value: current.value + (sale.totalValue || 0)
       })
     })
 
+    const balanceByClient = new Map<string, number>()
+    sales.forEach((sale) => {
+      if (sale.paymentStatus !== 'PRAZO') return
+      balanceByClient.set(
+        sale.clientId,
+        (balanceByClient.get(sale.clientId) || 0) + (sale.totalValue || 0)
+      )
+    })
+    payments.forEach((payment) => {
+      balanceByClient.set(
+        payment.clientId,
+        (balanceByClient.get(payment.clientId) || 0) - (payment.amount || 0)
+      )
+    })
+
     let totalLiters = 0
-    byClient.forEach((data, clientId) => {
-      const balance = Math.max(0, clientBalances.get(clientId) || 0)
+    unpaidByClient.forEach((data, clientId) => {
+      const balance = Math.max(0, balanceByClient.get(clientId) || 0)
       if (balance <= 0 || data.value <= 0) return
       const ratio = Math.min(balance / data.value, 1)
       totalLiters += data.liters * ratio
     })
 
     return totalLiters
-  }, [sales, clientBalances])
+  }, [sales, payments])
   const totalReceivedMonthly = useMemo(() => {
     const now = new Date()
     const currentMonth = now.getMonth()
