@@ -1,9 +1,12 @@
-import { jsPDF } from 'jspdf'
+﻿import { jsPDF } from 'jspdf'
 import { Filesystem, Directory } from '@capacitor/filesystem'
 import { FileOpener } from '@capawesome-team/capacitor-file-opener'
 import { Share } from '@capacitor/share'
 import { Capacitor } from '@capacitor/core'
 import type { Sale } from '@/types'
+
+const PAGE_WIDTH = 148 // mm (mantÃ©m largura do mock)
+const MIN_HEIGHT = 263 // altura mÃ­nima padrÃ£o para recibos curtos
 
 const toBase64 = async (blob: Blob) => {
   const buffer = await blob.arrayBuffer()
@@ -46,7 +49,7 @@ const fmtDateLong = (iso: string) => {
     year: 'numeric'
   })
   const timeStr = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `${dateStr.charAt(0).toUpperCase()}${dateStr.slice(1)} • ${timeStr}`
+  return `${dateStr.charAt(0).toUpperCase()}${dateStr.slice(1)} â€¢ ${timeStr}`
 }
 
 const loadImageSize = async (dataUrl: string | null) => {
@@ -57,12 +60,7 @@ const loadImageSize = async (dataUrl: string | null) => {
     }
     try {
       const img = new Image()
-      img.onload = () => {
-        resolve({
-          w: img.naturalWidth || 1,
-          h: img.naturalHeight || 1
-        })
-      }
+      img.onload = () => resolve({ w: img.naturalWidth || 1, h: img.naturalHeight || 1 })
       img.onerror = () => resolve({ w: 1, h: 1 })
       img.src = dataUrl
     } catch {
@@ -79,24 +77,130 @@ const fitIntoBox = (imgW: number, imgH: number, maxW: number, maxH: number) => {
 const logoSrc = new URL('../../assets/comprovante/logo.png', import.meta.url).toString()
 const illustrationSrc = new URL('../../assets/comprovante/ilustracao.png', import.meta.url).toString()
 
+type LayoutConstants = {
+  MARGIN_X: number
+  CONTENT_W: number
+  RIGHT_X: number
+  RIGHT_PAD: number
+  PAD: number
+  GAP_SM: number
+  GAP_MD: number
+  GAP_LG: number
+  headerHeight: number
+  listHeaderHeight: number
+  itemMinHeight: number
+  totalBarHeight: number
+  footerHeight: number
+  bottomMargin: number
+}
+
+const LAYOUT: LayoutConstants = {
+  MARGIN_X: 14,
+  CONTENT_W: PAGE_WIDTH - 14 * 2,
+  RIGHT_X: PAGE_WIDTH - 14,
+  RIGHT_PAD: 8,
+  PAD: 8,
+  GAP_SM: 6,
+  GAP_MD: 10,
+  GAP_LG: 14,
+  headerHeight: 42,
+  listHeaderHeight: 15,
+  itemMinHeight: 20,
+  totalBarHeight: 18,
+  footerHeight: 12,
+  bottomMargin: 14
+}
+
+// MediÃ§Ã£o do conteÃºdo para calcular altura final (sem addPage)
+const GAP_AFTER_PAYER = 0.5 // mm
+const TABLE_HEADER_HEIGHT = 12 // mm
+const TABLE_HEADER_GAP = 6 // mm
+
+const measureReceiptHeight = (
+  doc: jsPDF,
+  salesPaid: Sale[],
+  clientName: string
+): number => {
+  const { MARGIN_X, CONTENT_W, RIGHT_X, PAD, GAP_SM, GAP_MD, GAP_LG, headerHeight, itemMinHeight, totalBarHeight, footerHeight, bottomMargin } =
+    LAYOUT
+
+  let y = headerHeight + GAP_LG
+
+  // TÃ­tulo e data
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(18)
+  y += doc.getTextDimensions('Comprovante de pagamento').h + GAP_SM
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(11)
+  y += doc.getTextDimensions('data').h // approx height
+
+  // Pagador
+  y += GAP_MD
+  const labelSize = 9
+  const valueSize = 18
+  const labelGap = 2
+  const leftMaxWidth = Math.max(20, CONTENT_W * 0.62)
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(valueSize)
+  const payerLineHeight = doc.getTextDimensions('Ag').h
+  const payerLines = doc.splitTextToSize(clientName || 'Cliente', leftMaxWidth)
+  const payerBlockH = payerLineHeight * payerLines.length
+  const amountHeight = doc.getTextDimensions('R$ 0,00').h
+  const payerEndY = y + labelSize + labelGap + Math.max(payerBlockH, amountHeight)
+
+  // Header da lista
+  y = payerEndY + GAP_AFTER_PAYER
+  y += TABLE_HEADER_HEIGHT + TABLE_HEADER_GAP
+
+  // Itens
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
+  salesPaid.forEach((sale) => {
+    const textX = MARGIN_X + PAD
+    const maxTextWidth = RIGHT_X - PAD - textX
+    const title = `Leite (${sale.liters || 0}L)`
+    const titleLines = doc.splitTextToSize(title, maxTextWidth)
+    const lineHeight = 5.5
+    const dateHeight = 1.5
+    const blockHeight = Math.max(itemMinHeight, titleLines.length * lineHeight + dateHeight + 1)
+    y += blockHeight + GAP_SM
+  })
+
+  // Total + rodapÃ© + margem inferior
+  y += GAP_MD + totalBarHeight + GAP_SM + footerHeight + bottomMargin
+
+  return Math.max(y, MIN_HEIGHT)
+}
+
 const buildReceiptDoc = async (
   clientName: string,
   amount: number,
   salesPaid: Sale[],
   paymentDate: string
 ) => {
-  const doc = new jsPDF({ unit: 'mm', format: [148, 263] })
+  // Passo 1: medir altura
+  const tempDoc = new jsPDF({ unit: 'mm', format: [PAGE_WIDTH, MIN_HEIGHT] })
+  const measuredHeight = measureReceiptHeight(tempDoc, salesPaid, clientName)
+  const finalHeight = Math.max(measuredHeight, MIN_HEIGHT)
 
-  const pageWidth = doc.internal.pageSize.getWidth()
-  const pageHeight = doc.internal.pageSize.getHeight()
-  const MARGIN_X = 14
-  const CONTENT_W = pageWidth - MARGIN_X * 2
-  const RIGHT_X = pageWidth - MARGIN_X
-  const PAD = 6
-  const GAP_SM = 6
-  const GAP_MD = 10
-  const headerHeight = 42
-  const totalCardHeight = 18
+  // Passo 2: criar doc real com altura dinÃ¢mica
+  const doc = new jsPDF({ unit: 'mm', format: [PAGE_WIDTH, finalHeight] })
+  const {
+    MARGIN_X,
+    CONTENT_W,
+    RIGHT_X,
+    RIGHT_PAD,
+    PAD,
+    GAP_SM,
+    GAP_MD,
+    GAP_LG,
+    headerHeight,
+    itemMinHeight,
+    totalBarHeight,
+    footerHeight,
+    bottomMargin
+  } = LAYOUT
 
   const logoData = await toDataUrl(logoSrc)
   const illustrationData = await toDataUrl(illustrationSrc)
@@ -129,149 +233,177 @@ const buildReceiptDoc = async (
     }
   }
 
-  let yPos = headerHeight + GAP_MD
+  let yPos = headerHeight + GAP_LG
 
-  const ensureSpace = (spaceNeeded: number) => {
-    if (yPos + spaceNeeded <= pageHeight - MARGIN_X) return
-    doc.addPage()
-    drawHeader()
-    yPos = headerHeight + GAP_MD
-  }
-
-  const drawKeyValueCard = (
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    label: string,
-    value: string
-  ) => {
-    doc.setFillColor(242, 242, 244)
-    doc.roundedRect(x, y, w, h, 3, 3, 'F')
-    const textY = y + h / 2
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(13)
-    doc.setTextColor(98, 157, 46)
-    doc.text(label, x + PAD, textY, { baseline: 'middle' })
+  const drawTitleAndDate = () => {
     doc.setTextColor(12, 15, 23)
-    doc.text(value, RIGHT_X, textY, { align: 'right', baseline: 'middle' })
-  }
-
-  const drawSectionLabel = (x: number, y: number, text: string) => {
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(30, 32, 36)
-    doc.text(text, x, y)
+    doc.setFontSize(18)
+    doc.text('Comprovante de pagamento', MARGIN_X, yPos)
+
+    yPos += GAP_SM
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(11)
+    doc.setTextColor(85, 85, 85)
+    doc.text(fmtDateLong(paymentDate), MARGIN_X, yPos)
+    doc.setTextColor(12, 15, 23)
   }
 
-  const drawItemRow = (x: number, y: number, item: Sale) => {
-    const textX = x + PAD
+  const drawPayerSection = () => {
+    // espaÃ§amento antes
+    yPos += GAP_MD
+
+    const xLeft = MARGIN_X
+    const xRight = RIGHT_X - RIGHT_PAD
+    const leftMaxWidth = Math.max(20, CONTENT_W * 0.62)
+
+    const labelSize = 9
+    const valueSize = 18
+    const labelGap = 2
+    const labelColor: [number, number, number] = [102, 102, 102]
+
+    const yLabel = yPos
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(labelSize)
+    doc.setTextColor(...labelColor)
+    doc.text('PAGADOR:', xLeft, yLabel)
+    doc.text('VALOR PAGO:', xRight, yLabel, { align: 'right' })
+
+    const yValue = yLabel + labelSize + labelGap
+    const payerLines = doc.splitTextToSize(clientName || 'Cliente', leftMaxWidth)
+    const payerLineHeight = doc.getTextDimensions('Ag').h
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(valueSize)
+    doc.setTextColor(104, 159, 30)
+    payerLines.forEach((line, idx) => {
+      const lineY = yValue + payerLineHeight * idx
+      doc.text(line, xLeft, lineY)
+    })
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(valueSize)
+    doc.setTextColor(12, 15, 23)
+    doc.text(fmtMoney(amount), xRight, yValue, { align: 'right' })
+
+    const payerBlockH = payerLines.length * payerLineHeight
+    const amountHeight = doc.getTextDimensions(fmtMoney(amount)).h
+    const blockH = Math.max(payerBlockH, amountHeight)
+    const payerEndY = yValue + blockH
+    yPos = payerEndY + GAP_AFTER_PAYER
+  }
+
+  const drawTableHeader = () => {
+    const headerH = TABLE_HEADER_HEIGHT
+    const headerPad = 6
+
+    doc.setFillColor(240, 240, 240)
+    doc.roundedRect(MARGIN_X, yPos, CONTENT_W, headerH, 3, 3, 'F')
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(11)
+    doc.setTextColor(30, 30, 30)
+    const textY = yPos + headerH / 2
+    doc.text('Descri\u00e7\u00e3o / Data da Compra', MARGIN_X + headerPad, textY, { baseline: 'middle' })
+    doc.text('Valor', MARGIN_X + CONTENT_W - headerPad, textY, {
+      align: 'right',
+      baseline: 'middle'
+    })
+
+    const dividerY = yPos + headerH
+    doc.setDrawColor(234, 236, 240)
+    doc.setLineWidth(0.2)
+    doc.line(MARGIN_X, dividerY, pageWidth - MARGIN_X, dividerY)
+
+    yPos += headerH + TABLE_HEADER_GAP
+  }
+
+  const drawItemRow = (item: Sale) => {
+    const textX = MARGIN_X + PAD
     const maxTextWidth = RIGHT_X - PAD - textX
     const title = `Leite (${item.liters || 0}L)`
     const titleLines = doc.splitTextToSize(title, maxTextWidth)
-    const lineHeight = 6
-    const dateHeight = 4.5
-    const minHeight = 18
-    const blockHeight = Math.max(minHeight, titleLines.length * lineHeight + dateHeight + GAP_SM)
-
-    ensureSpace(blockHeight + 1)
+    const lineHeight = 5
+    const dateHeight = 1.5
+    const blockHeight = Math.max(itemMinHeight, titleLines.length * lineHeight + dateHeight + 1)
 
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(12)
+    doc.setFontSize(14)
     doc.setTextColor(12, 15, 23)
     titleLines.forEach((line, idx) => {
-      const lineY = y + lineHeight * idx + lineHeight / 2 + 1
+      const lineY = yPos + lineHeight * idx + lineHeight / 2 + 1
       doc.text(line, textX, lineY, { baseline: 'middle' })
     })
 
-    const valueY = y + blockHeight / 2
-    doc.text(fmtMoney(item.totalValue || 0), RIGHT_X, valueY, {
+    const valueY = yPos + blockHeight / 2
+    doc.text(fmtMoney(item.totalValue || 0), RIGHT_X - PAD / 2, valueY, {
       align: 'right',
       baseline: 'middle'
     })
 
     const dateStr = item.date ? new Date(item.date as any).toLocaleDateString('pt-BR') : ''
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(9)
-    doc.setTextColor(90, 94, 104)
-    doc.text(dateStr, textX, y + blockHeight - GAP_SM, { baseline: 'middle' })
+    doc.setFontSize(11)
+    doc.setTextColor(100, 102, 108)
+    doc.text(dateStr, textX, yPos + blockHeight - GAP_SM, { baseline: 'middle' })
 
+    yPos += blockHeight
     doc.setDrawColor(230, 232, 236)
     doc.setLineWidth(0.2)
-    doc.line(MARGIN_X, y + blockHeight, pageWidth - MARGIN_X, y + blockHeight)
-
-    return blockHeight
+    doc.line(MARGIN_X, yPos, pageWidth - MARGIN_X, yPos)
+    yPos += GAP_SM
   }
 
+  const drawTotalBar = (total: number) => {
+    yPos += GAP_MD
+    doc.setFillColor(184, 255, 44)
+    doc.roundedRect(MARGIN_X, yPos, CONTENT_W, totalBarHeight, 2, 2, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(14)
+    doc.setTextColor(12, 15, 23)
+    const totalTextY = yPos + totalBarHeight / 2
+    doc.text('TOTAL', MARGIN_X + PAD, totalTextY, { baseline: 'middle' })
+    doc.text(fmtMoney(total), RIGHT_X - PAD, totalTextY, { align: 'right', baseline: 'middle' })
+    yPos += totalBarHeight + GAP_SM
+  }
+
+  const drawFooter = (createdAt: Date, receiptId: string) => {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(100, 102, 108)
+    const createdStr = createdAt.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+    const createdTime = createdAt.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+    doc.text(`Gerado em: ${createdStr} Ã s ${createdTime}`, MARGIN_X, yPos + 4)
+    doc.text(`ID do comprovante: ${receiptId}`, MARGIN_X, yPos + 9)
+    yPos += footerHeight
+  }
+
+  const pageWidth = doc.internal.pageSize.getWidth()
+
   drawHeader()
+  drawTitleAndDate()
+  drawPayerSection()
+  drawTableHeader()
+  salesPaid.forEach((sale) => drawItemRow(sale))
 
-  // Titulo e data
-  doc.setTextColor(12, 15, 23)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(17)
-  doc.text('Comprovante de pagamento', MARGIN_X, yPos)
+  const receiptId = `#${Math.random().toString(16).slice(2, 10).toUpperCase()}`
+  const createdAt = new Date()
 
-  yPos += GAP_SM
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.setTextColor(90, 94, 104)
-  doc.text(fmtDateLong(paymentDate), MARGIN_X, yPos)
-  doc.setTextColor(12, 15, 23)
+  drawTotalBar(amount)
 
-  // Total pago
-  yPos += GAP_MD
-  ensureSpace(totalCardHeight + 10)
-  drawKeyValueCard(MARGIN_X, yPos, CONTENT_W, totalCardHeight, 'Total pago:', fmtMoney(amount))
-
-  // Pagador
-  yPos += totalCardHeight + GAP_MD
-  ensureSpace(24)
-  drawSectionLabel(MARGIN_X, yPos, 'PAGADOR:')
-  yPos += GAP_SM
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(16)
-  doc.setTextColor(104, 159, 30)
-  doc.text(clientName || 'Cliente', MARGIN_X, yPos)
-
-  // Linha divisoria
-  yPos += GAP_SM
-  doc.setDrawColor(234, 236, 240)
-  doc.setLineWidth(0.2)
-  doc.line(MARGIN_X, yPos, pageWidth - MARGIN_X, yPos)
-
-  // Header da lista
-  yPos += GAP_SM
-  const listHeaderHeight = 12
-  ensureSpace(listHeaderHeight + GAP_SM)
-  doc.setFillColor(242, 242, 244)
-  doc.roundedRect(MARGIN_X, yPos, CONTENT_W, listHeaderHeight, 2, 2, 'F')
-  const listTextY = yPos + listHeaderHeight / 2
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9)
-  doc.setTextColor(30, 32, 36)
-  doc.text('Descricao /Data da Compra', MARGIN_X + PAD, listTextY, { baseline: 'middle' })
-  doc.text('Valor', RIGHT_X, listTextY, { align: 'right', baseline: 'middle' })
-  yPos += listHeaderHeight + GAP_SM
-
-  // Itens (um a um)
-  salesPaid.forEach((sale, idx) => {
-    const consumed = drawItemRow(MARGIN_X, yPos, sale)
-    yPos += consumed
-    if (idx === salesPaid.length - 1) {
-      yPos += GAP_SM
-    }
-  })
-
-  // Total final
-  ensureSpace(20)
-  doc.setFillColor(184, 255, 44)
-  doc.roundedRect(MARGIN_X, yPos, CONTENT_W, 16, 2, 2, 'F')
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(13)
-  doc.setTextColor(12, 15, 23)
-  const totalTextY = yPos + 8
-  doc.text('TOTAL:', MARGIN_X + PAD, totalTextY, { baseline: 'middle' })
-  doc.text(fmtMoney(amount), RIGHT_X, totalTextY, { align: 'right', baseline: 'middle' })
+  // Se faltar espaÃ§o para o rodapÃ©, apenas desloca para nÃ£o ficar colado na margem
+  const remaining = finalHeight - yPos - footerHeight - bottomMargin
+  if (remaining > 0) {
+    yPos += Math.min(remaining, GAP_MD)
+  }
+  drawFooter(createdAt, receiptId)
 
   const fileName = `Comprovante_${clientName.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`
   return { doc, fileName }
@@ -412,7 +544,7 @@ export const generateReceipt = (
     try {
       if (!isNative) {
         if (action === 'share') {
-          alert('Compartilhar não é suportado no navegador; o PDF será baixado.')
+          alert('Compartilhar nÃ£o Ã© suportado no navegador; o PDF serÃ¡ baixado.')
         }
         doc.save(fileName)
         return
@@ -420,18 +552,21 @@ export const generateReceipt = (
 
       openNative().catch((err) => {
         console.warn('Falha ao salvar/abrir/compartilhar PDF nativo, fallback para download', err)
-        alert('Não foi possível abrir/compartilhar o PDF. Verifique se há leitor de PDF instalado.')
+        alert('NÃ£o foi possÃ­vel abrir/compartilhar o PDF. Verifique se hÃ¡ leitor de PDF instalado.')
         doc.save(fileName)
       })
     } catch (err) {
       console.warn('Falha ao salvar/abrir/compartilhar PDF nativo, fallback para download', err)
-      alert('Não foi possível abrir/compartilhar o PDF. Verifique se há leitor de PDF instalado.')
+      alert('NÃ£o foi possÃ­vel abrir/compartilhar o PDF. Verifique se hÃ¡ leitor de PDF instalado.')
       doc.save(fileName)
     }
   }
 
   run().catch((err) => {
     console.error('Erro ao gerar comprovante', err)
-    alert('Não foi possível gerar o comprovante.')
+    alert('NÃ£o foi possÃ­vel gerar o comprovante.')
   })
 }
+
+
+
