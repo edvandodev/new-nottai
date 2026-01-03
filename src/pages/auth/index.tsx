@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react'
-import { LogIn, UserPlus, Mail, Lock } from 'lucide-react'
+import { ArrowRight, Eye, EyeOff, Lock, Mail, UserRound } from 'lucide-react'
+import logoImage from '../../../assets/icon/Anotaai-01.svg'
+import loginIllustration from '../../../assets/icon/ilustra\u00e7\u00e3o-login2.svg'
 import { authService } from '@/services/auth'
 
 type Mode = 'signin' | 'signup'
@@ -11,6 +13,9 @@ type ResetState = {
   success: string | null
   loading: boolean
 }
+
+const accentColor = '#C7F000'
+const gradientBackground = 'linear-gradient(180deg, #0B1220 0%, #05070D 100%)'
 
 const translateError = (error: any) => {
   const code = (error?.code || error?.message || '').toString()
@@ -51,9 +56,18 @@ export function AuthPage() {
     success: null,
     loading: false
   })
+  const [showPassword, setShowPassword] = useState(false)
 
   const title = useMemo(
     () => (mode === 'signin' ? 'Bem-vindo de volta' : 'Crie sua conta'),
+    [mode]
+  )
+
+  const subtitle = useMemo(
+    () =>
+      mode === 'signin'
+        ? 'Acesse sua conta para continuar.'
+        : 'Preencha os dados para come\u00e7ar a usar o Anota A\u00ed.',
     [mode]
   )
 
@@ -65,6 +79,10 @@ export function AuthPage() {
     const trimmedEmail = email.trim()
     if (!trimmedEmail) {
       setError('Informe um e-mail.')
+      return
+    }
+    if (!/.+@.+\..+/.test(trimmedEmail)) {
+      setError('Informe um e-mail v\u00e1lido.')
       return
     }
     if (password.length < 6) {
@@ -121,7 +139,7 @@ export function AuthPage() {
       setReset((prev) => ({ ...prev, error: 'Informe um e-mail.' }))
       return
     }
-    if (!/.+@.+\..+/.test(trimmedEmail)) {
+    if (!/.+@.+\\..+/.test(trimmedEmail)) {
       setReset((prev) => ({ ...prev, error: 'Informe um e-mail v\u00e1lido.' }))
       return
     }
@@ -143,177 +161,238 @@ export function AuthPage() {
   }
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex items-center justify-center px-4'>
-      <div className='w-full max-w-md'>
-        <div className='flex justify-center mb-6'>
-          <div className='h-14 w-14 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-lg shadow-blue-900/40'>
-            {mode === 'signin' ? <LogIn size={26} /> : <UserPlus size={26} />}
-          </div>
-        </div>
+    <div
+      className='relative min-h-screen text-white'
+      style={{
+        background: gradientBackground,
+        color: '#FFFFFF',
+        fontFamily: "'Inter','Poppins','DM Sans','Segoe UI',sans-serif"
+      }}
+    >
+      <div className='absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,rgba(199,240,0,0.12),transparent_32%),radial-gradient(circle_at_80%_68%,rgba(199,240,0,0.08),transparent_30%)] opacity-70 pointer-events-none' />
 
-        <div className='bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl shadow-blue-900/30 overflow-hidden'>
-          <div className='grid grid-cols-2 bg-slate-800/60'>
-            <button
-              className={`py-3 text-sm font-semibold tracking-wide transition-all ${
-                mode === 'signin'
-                  ? 'text-white border-b-2 border-blue-500'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-              onClick={() => {
-                setMode('signin')
-                setError(null)
-                setInfo(null)
-              }}
-              disabled={loading}
-            >
-              Entrar
-            </button>
-            <button
-              className={`py-3 text-sm font-semibold tracking-wide transition-all ${
-                mode === 'signup'
-                  ? 'text-white border-b-2 border-blue-500'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-              onClick={() => {
-                setMode('signup')
-                setError(null)
-                setInfo(null)
-              }}
-              disabled={loading}
-            >
-              Criar conta
-            </button>
+      <div
+        className='relative z-10 flex min-h-screen justify-center px-6 overflow-y-auto'
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 24px)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)'
+        }}
+      >
+        <div className='w-full max-w-md flex flex-col gap-7'>
+          <header className='flex justify-center'>
+            <img src={logoImage} alt='Logo Anota A\u00ed' className='h-16 md:h-20 w-auto object-contain' />
+          </header>
+
+          <div className='flex justify-center'>
+            <img
+              src={loginIllustration}
+              alt='Ilustra\u00e7\u00e3o do login'
+              className='w-full max-w-sm max-h-[40vh] object-contain'
+            />
           </div>
 
-          <div className='p-6 space-y-6'>
-            <div>
-              <h1 className='text-2xl font-bold text-white'>{title}</h1>
-              <p className='text-slate-400 text-sm mt-1'>
-                Acesse ou crie sua conta para continuar.
-              </p>
-            </div>
+          <div className='relative pt-1'>
+            <div
+              className='pointer-events-none absolute left-[-24px] right-[-24px] bottom-[-28px]'
+              style={{
+                top: '55%',
+                zIndex: 0,
+                background:
+                  'linear-gradient(180deg, rgba(5,7,13,0) 0%, rgba(5,7,13,0.2) 45%, rgba(5,7,13,0.55) 100%)'
+              }}
+            />
 
-            {error && (
-              <div className='p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-200 text-sm'>
-                {error}
-              </div>
-            )}
-
-            {info && (
-              <div className='p-3 rounded-lg border border-blue-500/40 bg-blue-500/10 text-blue-100 text-sm'>
-                {info}
-              </div>
-            )}
-
-            <form className='space-y-4' onSubmit={handleSubmit}>
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-200 flex items-center gap-2'>
-                  <Mail size={16} className='text-blue-400' />
-                  E-mail
-                </label>
-                <input
-                  type='email'
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className='w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  placeholder='voc\u00ea@email.com'
-                  disabled={loading}
-                  required
-                />
+            <div className='space-y-6 relative z-10'>
+              <div className='space-y-1 text-center'>
+                <p className='text-xs font-semibold uppercase tracking-[0.2em] text-[#A7B0BF]'>
+                  login
+                </p>
+                <h1 className='text-[26px] font-semibold leading-tight'>Seja bem-vindo</h1>
+                <p className='text-sm text-[#A7B0BF]'>Acesse sua conta para continuar.</p>
               </div>
 
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-200 flex items-center gap-2'>
-                  <Lock size={16} className='text-blue-400' />
-                  Senha
-                </label>
-                <input
-                  type='password'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className='w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  placeholder='********'
-                  disabled={loading}
-                  minLength={6}
-                  required
-                />
-              </div>
+              {error && (
+                <div className='p-3 rounded-xl border border-red-500/40 bg-red-500/10 text-red-100 text-sm'>
+                  {error}
+                </div>
+              )}
 
-              {mode === 'signup' && (
+              {info && (
+                <div
+                  className='p-3 rounded-xl text-sm'
+                  style={{
+                    border: `1px solid ${accentColor}40`,
+                    backgroundColor: `${accentColor}14`,
+                    color: '#d8ff4a'
+                  }}
+                >
+                  {info}
+                </div>
+              )}
+
+              <form className='space-y-4' onSubmit={handleSubmit}>
                 <div className='space-y-2'>
-                  <label className='text-sm font-medium text-slate-200 flex items-center gap-2'>
-                    <Lock size={16} className='text-blue-400' />
-                    Confirmar senha
-                  </label>
-                  <input
-                    type='password'
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className='w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
-                    placeholder='Repita a senha'
-                    disabled={loading}
-                    minLength={6}
-                    required
-                  />
+                  <div className='flex items-center gap-3 rounded-[14px] bg-[rgba(15,23,42,0.55)] border border-white/10 px-4 h-[52px] transition-all focus-within:border-[#C7F000] focus-within:ring-1 focus-within:ring-[#C7F000]'>
+                    <Mail size={18} className='text-[#C7F000]' />
+                    <input
+                      type='email'
+                      inputMode='email'
+                      autoComplete='email'
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className='flex-1 bg-transparent text-white placeholder:text-[#6b7484] focus:outline-none'
+                      placeholder='Seu e-mail'
+                      disabled={loading}
+                      required
+                    />
+                  </div>
                 </div>
-              )}
 
-              {mode === 'signin' && (
-                <div className='flex justify-end'>
+                <div className='space-y-2'>
+                  <div className='flex items-center gap-3 rounded-[14px] bg-[rgba(15,23,42,0.55)] border border-white/10 px-4 h-[52px] transition-all focus-within:border-[#C7F000] focus-within:ring-1 focus-within:ring-[#C7F000]'>
+                    <Lock size={18} className='text-[#C7F000]' />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete='current-password'
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className='flex-1 bg-transparent text-white placeholder:text-[#6b7484] focus:outline-none'
+                      placeholder='Sua senha'
+                      disabled={loading}
+                      minLength={6}
+                      required
+                    />
+                    <button
+                      type='button'
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className='text-[#A7B0BF] hover:text-white transition-colors'
+                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                {mode === 'signup' && (
+                  <div className='space-y-2'>
+                    <div className='flex items-center gap-3 rounded-[14px] bg-[rgba(15,23,42,0.55)] border border-white/10 px-4 h-[52px] transition-all focus-within:border-[#C7F000] focus-within:ring-1 focus-within:ring-[#C7F000]'>
+                      <Lock size={18} className='text-[#C7F000]' />
+                      <input
+                        type='password'
+                        autoComplete='new-password'
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className='flex-1 bg-transparent text-white placeholder:text-[#6b7484] focus:outline-none'
+                        placeholder='Confirme sua senha'
+                        disabled={loading}
+                        minLength={6}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {mode === 'signin' && (
+                  <div className='flex justify-end'>
+                    <button
+                      type='button'
+                      onClick={openReset}
+                      className='text-xs font-semibold text-[#C7F000] hover:underline underline-offset-4 transition-colors'
+                      disabled={loading}
+                    >
+                      Esqueceu sua senha?
+                    </button>
+                  </div>
+                )}
+
+                <div className='space-y-3 pt-1'>
                   <button
-                    type='button'
-                    onClick={openReset}
-                    className='text-xs text-blue-300 hover:text-blue-200 underline'
+                    type='submit'
                     disabled={loading}
+                    className='w-full h-[52px] rounded-[14px] bg-[#C7F000] text-[#05070D] font-semibold flex items-center justify-center gap-2 transition-transform duration-150 hover:bg-[#d4ff33] active:translate-y-[1px] disabled:opacity-70'
                   >
-                    Esqueci minha senha
+                    {loading ? (
+                      <span className='animate-pulse'>Carregando...</span>
+                    ) : (
+                      <>
+                        <ArrowRight size={18} />
+                        {mode === 'signin' ? 'Entrar' : 'Criar conta'}
+                      </>
+                    )}
                   </button>
-                </div>
-              )}
 
-              <button
-                type='submit'
-                disabled={loading}
-                className='w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg font-semibold transition-all shadow-lg shadow-blue-900/40 active:scale-[0.99] flex items-center justify-center gap-2'
-              >
-                {loading ? (
-                  <span className='animate-pulse'>Carregando...</span>
-                ) : mode === 'signin' ? (
+                  {mode === 'signin' && (
+                    <button
+                      type='button'
+                      onClick={handleGuestSignIn}
+                      disabled={guestLoading || loading}
+                      className='w-full h-[52px] rounded-[14px] border border-[#C7F000] text-[#C7F000] font-semibold flex items-center justify-center gap-2 transition-colors hover:bg-[#c7f000]/10 disabled:opacity-60'
+                    >
+                      {guestLoading ? (
+                        'Entrando...'
+                      ) : (
+                        <>
+                          <UserRound size={18} />
+                          Entrar como convidado
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </form>
+
+              <div className='pt-2 text-center text-sm text-[#A7B0BF]'>
+                {mode === 'signin' ? (
                   <>
-                    <LogIn size={18} />
-                    Entrar
+                    Não tem uma conta?{' '}
+                    <button
+                      type='button'
+                      className='text-[#C7F000] font-semibold hover:underline underline-offset-4 transition-colors'
+                      onClick={() => {
+                        setMode('signup')
+                        setError(null)
+                        setInfo(null)
+                      }}
+                      disabled={loading}
+                    >
+                      Crie agora
+                    </button>
                   </>
                 ) : (
                   <>
-                    <UserPlus size={18} />
-                    Criar conta
+                    Já tem uma conta?{' '}
+                    <button
+                      type='button'
+                      className='text-[#C7F000] font-semibold hover:underline underline-offset-4 transition-colors'
+                      onClick={() => {
+                        setMode('signin')
+                        setError(null)
+                        setInfo(null)
+                        setConfirmPassword('')
+                      }}
+                      disabled={loading}
+                    >
+                      Entrar
+                    </button>
                   </>
                 )}
-              </button>
-
-              {mode === 'signin' && (
-                <button
-                  type='button'
-                  onClick={handleGuestSignIn}
-                  disabled={guestLoading || loading}
-                  className='w-full py-3 border border-slate-700 bg-slate-800/60 hover:bg-slate-800 disabled:opacity-60 text-white rounded-lg font-semibold transition-all active:scale-[0.99]'
-                >
-                  {guestLoading ? 'Entrando...' : 'Entrar como convidado (teste)'}
-                </button>
-              )}
-            </form>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {reset.open && (
-        <div className='fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center px-4'>
-          <div className='w-full max-w-sm bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl shadow-black/50 space-y-4'>
-            <div className='flex items-center justify-between'>
-              <h2 className='text-lg font-semibold text-white'>Redefinir senha</h2>
+        <div className='fixed inset-0 z-30 bg-black/70 flex items-center justify-center px-4'>
+          <div className='w-full max-w-sm rounded-2xl bg-[#0F172A] border border-[#1f2a3c] p-6 shadow-[0_18px_42px_-36px_rgba(0,0,0,0.85)] space-y-4'>
+            <div className='flex items-center justify-between gap-4'>
+              <div>
+                <p className='text-base font-semibold text-white'>Recuperar senha</p>
+                <p className='text-xs text-[#9AA4B2]'>Enviaremos um link para o seu e-mail.</p>
+              </div>
               <button
                 onClick={closeReset}
-                className='text-slate-400 hover:text-white text-sm'
+                className='text-[#9AA4B2] hover:text-white text-sm'
                 disabled={reset.loading}
               >
                 Fechar
@@ -321,34 +400,37 @@ export function AuthPage() {
             </div>
 
             {reset.error && (
-              <div className='p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-200 text-sm'>
+              <div className='p-3 rounded-xl border border-red-500/40 bg-red-500/10 text-red-100 text-sm'>
                 {reset.error}
               </div>
             )}
             {reset.success && (
-              <div className='p-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-100 text-sm'>
+              <div className='p-3 rounded-xl border border-[#c7f000]/30 bg-[#c7f000]/10 text-[#d8ff4a] text-sm'>
                 {reset.success}
               </div>
             )}
 
             <form className='space-y-3' onSubmit={handleResetSubmit}>
-              <div className='space-y-1'>
-                <label className='text-sm text-slate-300'>E-mail</label>
-                <input
-                  type='email'
-                  value={reset.email}
-                  onChange={(e) => setReset((prev) => ({ ...prev, email: e.target.value }))}
-                  className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  placeholder='voc\u00ea@email.com'
-                  disabled={reset.loading}
-                  required
-                />
+              <div className='space-y-2'>
+                <label className='text-sm font-medium text-white'>E-mail</label>
+                <div className='flex items-center gap-3 rounded-xl border border-[#1f2a3c] bg-[#0F172A] px-4 py-3 transition-all focus-within:border-[#C7F000] focus-within:ring-1 focus-within:ring-[#C7F000]'>
+                  <Mail size={18} className='text-[#C7F000]' />
+                  <input
+                    type='email'
+                    value={reset.email}
+                    onChange={(e) => setReset((prev) => ({ ...prev, email: e.target.value }))}
+                    className='flex-1 bg-transparent text-white placeholder:text-[#6b7484] focus:outline-none'
+                    placeholder='Seu e-mail'
+                    disabled={reset.loading}
+                    required
+                  />
+                </div>
               </div>
 
               <button
                 type='submit'
                 disabled={reset.loading}
-                className='w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg font-semibold transition-all active:scale-[0.99]'
+                className='w-full h-11 rounded-[12px] bg-[#C7F000] text-[#05070D] font-semibold flex items-center justify-center gap-2 transition-transform duration-150 hover:bg-[#d4ff33] active:translate-y-[1px] disabled:opacity-70'
               >
                 {reset.loading ? 'Enviando...' : 'Enviar link'}
               </button>
