@@ -16,7 +16,12 @@ type CustomerNotePreviewPageProps = {
   sales: Sale[]
   payments: Payment[]
   onClose: () => void
-  onPdfReady: (file: ReceiptFileRef) => void
+  onPdfReady: (payload: {
+    file: ReceiptFileRef
+    clientName: string
+    periodLabel: string
+    balance: number
+  }) => void
 }
 
 const presets: { label: string; value: PeriodPreset }[] = [
@@ -70,7 +75,7 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
 }) => {
   const client = clients.find((c) => c.id === clientId)
   const [preset, setPreset] = useState<PeriodPreset>('all')
-  const [includeDetails, setIncludeDetails] = useState(true)
+  const [includeDetails, setIncludeDetails] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const nowTs = useMemo(() => Date.now(), [])
 
@@ -144,7 +149,7 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
         includeDetails,
         emittedAt: new Date(nowTs)
       })
-      onPdfReady(file)
+      onPdfReady({ file, clientName: client.name, periodLabel, balance: noteData.balance })
     } catch (error) {
       console.error('Falha ao gerar nota do cliente', error)
       alert('Não foi possível gerar o PDF da nota.')
@@ -182,7 +187,6 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
               <p className='text-xs font-semibold uppercase tracking-wide' style={{ color: 'var(--muted)' }}>
                 Prévia da Nota
               </p>
-              <h2 className='text-lg font-bold truncate'>{client.name}</h2>
             </div>
             <div className='flex items-center gap-2 text-xs font-semibold' style={{ color: 'var(--muted)' }}>
               <Clock3 size={14} />
@@ -364,3 +368,4 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
     </div>
   )
 }
+

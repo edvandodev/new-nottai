@@ -3,7 +3,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem'
 import { FileOpener } from '@capawesome-team/capacitor-file-opener'
 import { Share } from '@capacitor/share'
 import { Capacitor } from '@capacitor/core'
-import type { Sale } from '@/types'
+import type { Payment, Sale } from '@/types'
 
 const PAGE_WIDTH = 148 // mm (mantÃ©m largura do mock)
 const MIN_HEIGHT = 263 // altura mÃ­nima padrÃ£o para recibos curtos
@@ -75,6 +75,10 @@ const fitIntoBox = (imgW: number, imgH: number, maxW: number, maxH: number) => {
 
 const logoSrc = new URL('../../assets/comprovante/logo.png', import.meta.url).toString()
 const illustrationSrc = new URL('../../assets/comprovante/ilustracao.png', import.meta.url).toString()
+const illustrationNoteSrc = new URL(
+  '../../assets/comprovante/ilustracao-nota.png',
+  import.meta.url
+).toString()
 
 type LayoutConstants = {
   MARGIN_X: number
@@ -483,6 +487,559 @@ export const createReceiptFile = async (
 
   const base64 = await toBase64(pdfBlob)
   const savePath = `receipts/${fileName}`
+  const saveDirectory: Directory = Directory.Documents
+
+  await Filesystem.writeFile({
+    path: savePath,
+    data: base64,
+    directory: saveDirectory,
+    recursive: true
+  })
+
+  const uri = await Filesystem.getUri({
+    path: savePath,
+    directory: saveDirectory
+  })
+
+  return {
+    source: 'native',
+    directory: saveDirectory,
+    path: savePath,
+    uri: uri.uri ?? null,
+    fileName,
+    mimeType,
+    base64,
+    blob: pdfBlob
+  }
+}
+
+type NoteListRow = {
+  title: string
+  meta?: string
+  valueLabel: string
+  ts?: number
+}
+
+export type NotePdfInput = {
+  clientName: string
+  noteId: string
+  periodLabel: string
+  emittedAt: Date
+  balance: number
+  pendingBalance?: number
+  totalLiters?: number
+  includeDetails: boolean
+  sales?: Sale[]
+  payments?: Payment[]
+}
+
+const extractTimestamp = (
+  value:
+    | string
+    | number
+    | Date
+    | { seconds?: number; nanoseconds?: number; toMillis?: () => number }
+    | null
+    | undefined
+) => {
+  if (!value) return 0
+  if (value instanceof Date) return value.getTime()
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const t = new Date(value).getTime()
+    return Number.isNaN(t) ? 0 : t
+  }
+  if (typeof value === 'object') {
+    if (typeof value.toMillis === 'function') {
+      const t = value.toMillis()
+      return Number.isNaN(t) ? 0 : t
+    }
+    if (typeof value.seconds === 'number') {
+      const millis =
+        value.seconds * 1000 +
+        (typeof value.nanoseconds === 'number'
+          ? Math.floor(value.nanoseconds / 1_000_000)
+          : 0)
+      return millis
+    }
+  }
+  return 0
+}
+
+const formatNoteMeta = (value: any) => {
+  const ts = extractTimestamp(value)
+  if (!ts) return ''
+  const d = new Date(ts)
+  const date = d.toLocaleDateString('pt-BR')
+  const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  return `${date} ${time}`
+}
+
+const formatDateShort = (ts: number) => {
+  if (!ts) return ''
+  const d = new Date(ts)
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
+const getSalesAfterLastPayment = (sales: Sale[] = [], payments: Payment[] = []) => {
+  const lastPaymentTs = payments.reduce((acc, p) => {
+    const ts = extractTimestamp((p as any).createdAt ?? p.date)
+    return ts > acc ? ts : acc
+  }, 0)
+
+  const filteredSales =
+    lastPaymentTs > 0
+      ? sales.filter((s) => extractTimestamp((s as any).createdAt ?? s.date) > lastPaymentTs)
+      : sales
+
+  return { lastPaymentTs, filteredSales }
+}
+
+type FilteredNoteData = {
+  lastPaymentTs: number
+  filteredSales: Sale[]
+  paymentsAfterLast: Payment[]
+  filteredTotal: number
+  filteredLiters: number
+}
+
+const resolvePeriodRow = (data: NotePdfInput, filtered: FilteredNoteData): NoteListRow => {
+  const payments = data.payments || []
+  const sales = data.sales || []
+  const { lastPaymentTs, filteredSales } = filtered
+
+  let meta = ''
+  if (lastPaymentTs > 0 && filteredSales.length === 0) {
+    meta = 'Sem compras após o último pagamento'
+  } else if (filteredSales.length > 0) {
+    const timestamps = filteredSales.map((s) => extractTimestamp((s as any).createdAt ?? s.date)).filter(Boolean)
+    const startTs = Math.min(...timestamps)
+    const endTs = Math.max(...timestamps)
+    meta = `De ${formatDateShort(startTs)} a ${formatDateShort(endTs)}`
+  } else if (sales.length === 0) {
+    meta = 'Sem compras registradas'
+  } else {
+    const timestamps = sales.map((s) => extractTimestamp((s as any).createdAt ?? s.date)).filter(Boolean)
+    const startTs = Math.min(...timestamps)
+    const endTs = Math.max(...timestamps)
+    meta = `De ${formatDateShort(startTs)} a ${formatDateShort(endTs)}`
+  }
+
+  return {
+    title: 'Período',
+    meta,
+    valueLabel: ''
+  }
+}
+
+const buildNoteRows = (data: NotePdfInput): NoteListRow[] => {
+  const payments = data.payments || []
+  const sales = data.sales || []
+  const { lastPaymentTs, filteredSales } = getSalesAfterLastPayment(sales, payments)
+  const paymentsAfterLast = payments.filter(
+    (payment) => extractTimestamp((payment as any).createdAt ?? payment.date) > lastPaymentTs
+  )
+  const filteredTotal = filteredSales.reduce((acc, s) => acc + (s.totalValue || 0), 0)
+  const filteredLiters = filteredSales.reduce((acc, s) => acc + (s.liters || 0), 0)
+  const filteredData: FilteredNoteData = {
+    lastPaymentTs,
+    filteredSales,
+    paymentsAfterLast,
+    filteredTotal,
+    filteredLiters
+  }
+
+  const rows: NoteListRow[] = [
+    resolvePeriodRow(data, filteredData),
+    {
+      title: 'Saldo atual',
+      meta: 'Vendas - pagamentos',
+      valueLabel: fmtMoney(filteredTotal || 0)
+    }
+  ]
+
+  if ((data.pendingBalance || 0) > 0) {
+    rows.push({
+      title: 'Saldo pendente',
+      meta: 'Pendências em aberto',
+      valueLabel: fmtMoney(data.pendingBalance || 0)
+    })
+  }
+
+  if (filteredLiters) {
+    rows.push({
+      title: 'Total de litros',
+      meta: 'Volume vendido',
+      valueLabel: `${(filteredLiters || 0).toLocaleString('pt-BR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      })} L`
+    })
+  }
+
+  if (data.includeDetails) {
+    const detailItems: NoteListRow[] = []
+    filteredData.filteredSales.forEach((sale) => {
+      const liters = sale.liters || 0
+      detailItems.push({
+        title: `Venda - ${liters.toLocaleString('pt-BR', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2
+        })} L`,
+        meta: formatNoteMeta((sale as any).createdAt ?? sale.date),
+        valueLabel: fmtMoney(sale.totalValue || 0),
+        ts: extractTimestamp((sale as any).createdAt ?? sale.date)
+      })
+    })
+    filteredData.paymentsAfterLast.forEach((payment) => {
+      detailItems.push({
+        title: payment.note ? `Pagamento - ${payment.note}` : 'Pagamento recebido',
+        meta: formatNoteMeta((payment as any).createdAt ?? payment.date),
+        valueLabel: fmtMoney(payment.amount || 0),
+        ts: extractTimestamp((payment as any).createdAt ?? payment.date)
+      })
+    })
+
+    detailItems
+      .sort((a, b) => (b.ts || 0) - (a.ts || 0))
+      .forEach((item) => rows.push(item))
+  }
+
+  return rows
+}
+
+const measureNoteHeight = (
+  doc: jsPDF,
+  rows: NoteListRow[],
+  clientName: string,
+  hasPeriodLine: boolean
+): number => {
+  const {
+    MARGIN_X,
+    CONTENT_W,
+    RIGHT_X,
+    PAD,
+    GAP_SM,
+    GAP_MD,
+    GAP_LG,
+    headerHeight,
+    totalBarHeight,
+    footerHeight,
+    bottomMargin
+  } = LAYOUT
+
+  let y = headerHeight + GAP_LG
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(18)
+  y += doc.getTextDimensions('Nota de pagamento').h + GAP_SM
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(11)
+  y += doc.getTextDimensions('data').h
+  if (hasPeriodLine) {
+    y += doc.getTextDimensions('Per\u00edodo').h
+  }
+
+  y += GAP_MD
+  const xLeft = MARGIN_X
+  const leftMaxWidth = Math.max(20, CONTENT_W * 0.62)
+
+  const labelSize = 9
+  const valueSize = 18
+  const labelGap = 2
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(valueSize)
+  const payerLineHeight = doc.getTextDimensions('Ag').h
+  const payerLines = doc.splitTextToSize(clientName || 'Cliente', leftMaxWidth)
+  const payerBlockH = payerLineHeight * payerLines.length
+  const payerEndY = y + labelSize + labelGap + payerBlockH
+
+  y = payerEndY + GAP_AFTER_PAYER
+  y += TABLE_HEADER_HEIGHT + TABLE_HEADER_GAP
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
+  const itemLineH = doc.getTextDimensions('Ag').h
+  const itemMetaH = doc.getTextDimensions('00/00/0000 00:00').h
+  rows.forEach((row) => {
+    const textX = MARGIN_X + PAD
+    const maxTextWidth = RIGHT_X - PAD - textX
+    const titleLines = doc.splitTextToSize(row.title || '', maxTextWidth)
+    const extraH = Math.max(0, titleLines.length - 1) * itemLineH
+    const metaH = row.meta ? doc.getTextDimensions(row.meta).h : itemMetaH
+    const contentH =
+      ITEM_NAME_OFFSET +
+      titleLines.length * itemLineH +
+      ITEM_DATE_OFFSET +
+      metaH +
+      ITEM_BOTTOM_PAD
+    const rowH = Math.max(ITEM_ROW_BASE_H + extraH, contentH)
+    y += rowH
+  })
+
+  y += GAP_MD + totalBarHeight + GAP_SM + footerHeight + bottomMargin
+
+  return Math.max(y, MIN_HEIGHT)
+}
+
+const buildNoteDoc = async (data: NotePdfInput) => {
+  const payments = data.payments || []
+  const sales = data.sales || []
+  const { filteredSales } = getSalesAfterLastPayment(sales, payments)
+  const filteredTotal = filteredSales.reduce((acc, s) => acc + (s.totalValue || 0), 0)
+  const filteredLiters = filteredSales.reduce((acc, s) => acc + (s.liters || 0), 0)
+  const pendingBalance = Math.max(0, data.pendingBalance || 0)
+  const totalWithPending = filteredTotal + pendingBalance
+  const rows = buildNoteRows(data)
+  const hasPeriodLine = Boolean(data.periodLabel)
+  const tempDoc = new jsPDF({ unit: 'mm', format: [PAGE_WIDTH, MIN_HEIGHT] })
+  const measuredHeight = measureNoteHeight(tempDoc, rows, data.clientName, hasPeriodLine)
+  const finalHeight = Math.max(measuredHeight, MIN_HEIGHT)
+
+  const doc = new jsPDF({ unit: 'mm', format: [PAGE_WIDTH, finalHeight] })
+  const {
+    MARGIN_X,
+    CONTENT_W,
+    RIGHT_X,
+    PAD,
+    GAP_SM,
+    GAP_MD,
+    GAP_LG,
+    headerHeight,
+    totalBarHeight,
+    footerHeight,
+    bottomMargin
+  } = LAYOUT
+
+  const logoData = await toDataUrl(logoSrc)
+  const illustrationData = await toDataUrl(illustrationNoteSrc)
+  const logoSize = await loadImageSize(logoData)
+  const illustrationSize = await loadImageSize(illustrationData)
+
+  const drawHeader = () => {
+    doc.setFillColor(12, 15, 23)
+    doc.rect(0, 0, pageWidth, headerHeight, 'F')
+
+    const paddingX = 12
+    const paddingY = 6
+    const logoBoxW = pageWidth * 0.55
+    const logoBoxH = headerHeight - paddingY * 2
+    const illuBoxW = pageWidth * 0.35
+    const illuBoxH = headerHeight - paddingY * 2
+
+    if (logoData) {
+      const { drawW, drawH } = fitIntoBox(logoSize.w, logoSize.h, logoBoxW, logoBoxH)
+      const logoX = paddingX
+      const logoY = paddingY + (logoBoxH - drawH) / 2
+      doc.addImage(logoData, 'PNG', logoX, logoY, drawW, drawH)
+    }
+
+    if (illustrationData) {
+      const { drawW, drawH } = fitIntoBox(illustrationSize.w, illustrationSize.h, illuBoxW, illuBoxH)
+      const illuX = pageWidth - paddingX - drawW
+      const illuY = paddingY + (illuBoxH - drawH) / 2
+      doc.addImage(illustrationData, 'PNG', illuX, illuY, drawW, drawH)
+    }
+  }
+
+  let yPos = headerHeight + GAP_LG
+
+  const drawTitleAndDate = () => {
+    doc.setTextColor(12, 15, 23)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(18)
+    doc.text('Nota de pagamento', MARGIN_X, yPos)
+
+    yPos += GAP_SM
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(11)
+    doc.setTextColor(85, 85, 85)
+    doc.text(fmtDateLong(data.emittedAt.toISOString()), MARGIN_X, yPos)
+    if (data.periodLabel) {
+      yPos += doc.getTextDimensions('data').h
+      doc.text(`Per\u00edodo: ${data.periodLabel}`, MARGIN_X, yPos)
+    }
+    doc.setTextColor(12, 15, 23)
+  }
+
+  const drawPayerSection = () => {
+    yPos += GAP_MD
+
+    const xLeft = MARGIN_X
+    const leftMaxWidth = Math.max(20, CONTENT_W * 0.62)
+
+    const labelSize = 9
+    const valueSize = 18
+    const labelGap = 2
+    const labelColor: [number, number, number] = [102, 102, 102]
+
+    const yLabel = yPos
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(labelSize)
+    doc.setTextColor(...labelColor)
+    doc.text('CLIENTE:', xLeft, yLabel)
+
+    const yValue = yLabel + labelSize + labelGap
+    const payerLines = doc.splitTextToSize(data.clientName || 'Cliente', leftMaxWidth)
+    const payerLineHeight = doc.getTextDimensions('Ag').h
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(valueSize)
+    doc.setTextColor(104, 159, 30)
+    payerLines.forEach((line, idx) => {
+      const lineY = yValue + payerLineHeight * idx
+      doc.text(line, xLeft, lineY)
+    })
+
+    const payerBlockH = payerLines.length * payerLineHeight
+    const payerEndY = yValue + payerBlockH
+    yPos = payerEndY + GAP_AFTER_PAYER
+  }
+
+  const drawTableHeader = () => {
+    const headerH = TABLE_HEADER_HEIGHT
+    const headerPad = 6
+
+    doc.setFillColor(240, 240, 240)
+    doc.roundedRect(MARGIN_X, yPos, CONTENT_W, headerH, 3, 3, 'F')
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(11)
+    doc.setTextColor(30, 30, 30)
+    const textY = yPos + headerH / 2
+    doc.text('Descri\u00e7\u00e3o / Data', MARGIN_X + headerPad, textY, { baseline: 'middle' })
+    doc.text('Valor', MARGIN_X + CONTENT_W - headerPad, textY, {
+      align: 'right',
+      baseline: 'middle'
+    })
+
+    const dividerY = yPos + headerH
+    doc.setDrawColor(234, 236, 240)
+    doc.setLineWidth(0.2)
+    doc.line(MARGIN_X, dividerY, pageWidth - MARGIN_X, dividerY)
+
+    yPos += headerH + TABLE_HEADER_GAP
+  }
+
+  const drawRow = (row: NoteListRow) => {
+    const textX = MARGIN_X + PAD
+    const maxTextWidth = RIGHT_X - PAD - textX
+    const titleLines = doc.splitTextToSize(row.title || '', maxTextWidth)
+    const lineHeight = doc.getTextDimensions('Ag').h
+    const extraH = Math.max(0, titleLines.length - 1) * lineHeight
+    const metaText = row.meta || ''
+    const metaHeight = metaText ? doc.getTextDimensions(metaText).h : doc.getTextDimensions('00/00/0000').h
+    const contentH =
+      ITEM_NAME_OFFSET +
+      titleLines.length * lineHeight +
+      ITEM_DATE_OFFSET +
+      metaHeight +
+      ITEM_BOTTOM_PAD
+    const rowH = Math.max(ITEM_ROW_BASE_H + extraH, contentH)
+    const nameYStart = yPos + ITEM_NAME_OFFSET
+    const metaY = nameYStart + lineHeight * (titleLines.length - 1) + ITEM_DATE_OFFSET
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(14)
+    doc.setTextColor(12, 15, 23)
+    titleLines.forEach((line, idx) => {
+      const lineY = nameYStart + lineHeight * idx
+      doc.text(line, textX, lineY, { baseline: 'top' })
+    })
+
+    const valueY = nameYStart
+    doc.text(row.valueLabel || '', RIGHT_X - PAD / 2, valueY, {
+      align: 'right',
+      baseline: 'top'
+    })
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(11)
+    doc.setTextColor(100, 102, 108)
+    if (metaText) {
+      doc.text(metaText, textX, metaY, { baseline: 'top' })
+    }
+
+    yPos += rowH
+    doc.setDrawColor(230, 232, 236)
+    doc.setLineWidth(0.2)
+    doc.line(MARGIN_X, yPos, pageWidth - MARGIN_X, yPos)
+  }
+
+  const drawTotalBar = (total: number, liters: number) => {
+    yPos += GAP_MD
+    doc.setFillColor(184, 255, 44)
+    doc.roundedRect(MARGIN_X, yPos, CONTENT_W, totalBarHeight, 2, 2, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(14)
+    doc.setTextColor(12, 15, 23)
+    const totalTextY = yPos + totalBarHeight / 2
+    const litersLabel = `${(liters || 0).toLocaleString('pt-BR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    })} LITROS`
+    doc.text(`TOTAL ${litersLabel}`, MARGIN_X + PAD, totalTextY, { baseline: 'middle' })
+    doc.text(fmtMoney(total), RIGHT_X - PAD, totalTextY, { align: 'right', baseline: 'middle' })
+    yPos += totalBarHeight + GAP_SM
+  }
+
+  const drawFooter = (createdAt: Date, noteId: string) => {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(100, 102, 108)
+    const createdStr = createdAt.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+    const createdTime = createdAt.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+    doc.text(`Gerado em: ${createdStr} \u00e0s ${createdTime}`, MARGIN_X, yPos + 4)
+    doc.text(`ID da nota: ${noteId}`, MARGIN_X, yPos + 9)
+    yPos += footerHeight
+  }
+
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  drawHeader()
+  drawTitleAndDate()
+  drawPayerSection()
+  drawTableHeader()
+  rows.forEach((row) => drawRow(row))
+
+  const createdAt = data.emittedAt || new Date()
+
+  drawTotalBar(totalWithPending, filteredLiters)
+
+  const remaining = finalHeight - yPos - footerHeight - bottomMargin
+  if (remaining > 0) {
+    yPos += Math.min(remaining, GAP_MD)
+  }
+  drawFooter(createdAt, data.noteId)
+
+  const safeFileName = `${data.noteId || `Nota_${data.clientName.replace(/\s+/g, '_')}_${new Date().getTime()}`}.pdf`
+  return { doc, fileName: safeFileName }
+}
+
+export const generateNotaPdf = async (data: NotePdfInput): Promise<ReceiptFileRef> => {
+  const { doc, fileName } = await buildNoteDoc(data)
+  const pdfBlob = doc.output('blob')
+  const mimeType = 'application/pdf'
+  const isNative = Capacitor.isNativePlatform?.() ?? false
+
+  if (!isNative) {
+    const uri = URL.createObjectURL(pdfBlob)
+    return { source: 'web', uri, fileName, mimeType, blob: pdfBlob }
+  }
+
+  const base64 = await toBase64(pdfBlob)
+  const savePath = `notes/${fileName}`
   const saveDirectory: Directory = Directory.Documents
 
   await Filesystem.writeFile({

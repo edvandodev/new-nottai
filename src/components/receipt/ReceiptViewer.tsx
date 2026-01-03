@@ -8,13 +8,17 @@ type ReceiptViewerProps = {
   pdfUrl: string | null
   onClose: () => void
   onShare: () => void
+  title?: string
+  documentLabel?: string
 }
 
 export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
   open,
   pdfUrl,
   onClose,
-  onShare
+  onShare,
+  title,
+  documentLabel
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [containerWidth, setContainerWidth] = useState<number>(0)
@@ -47,6 +51,10 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
     return Math.max(0, Math.min(containerWidth - 24, 720))
   }, [containerWidth])
 
+  const heading = title || 'Comprovante'
+  const docLabel = (documentLabel || heading || 'comprovante').toLowerCase()
+  const docArticle = docLabel.endsWith('a') ? 'a' : 'o'
+
   if (!open || !pdfUrl) return null
 
   return (
@@ -78,7 +86,7 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className='text-base font-semibold'>Comprovante</h1>
+          <h1 className='text-base font-semibold'>{heading}</h1>
           <button
             type='button'
             onClick={onShare}
@@ -108,14 +116,16 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
             <Document
               key={`${pdfUrl}-${reloadTick}`}
               file={pdfUrl}
-              loading={<p className='py-8 text-sm text-center text-slate-500'>Carregando comprovante...</p>}
+              loading={
+                <p className='py-8 text-sm text-center text-slate-500'>{`Carregando ${docLabel}...`}</p>
+              }
               onLoadSuccess={() => undefined}
               onLoadError={(err) => {
                 console.error('Erro ao carregar PDF', err)
               }}
               error={
                 <div className='py-8 text-center space-y-3'>
-                  <p className='text-sm text-slate-600'>N\u00e3o foi poss\u00edvel abrir o comprovante.</p>
+                  <p className='text-sm text-slate-600'>{`N\u00e3o foi poss\u00edvel abrir ${docArticle} ${docLabel}.`}</p>
                   <button
                     type='button'
                     onClick={() => setReloadTick((n) => n + 1)}

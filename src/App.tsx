@@ -28,7 +28,6 @@ import {
 } from './components/Modals'
 import { createReceiptFile } from './services/pdfGenerator'
 import type { ReceiptFileRef } from './services/pdfGenerator'
-import { PdfViewerModal } from './components/PdfViewerModal'
 import { ReceiptViewer } from './components/receipt/ReceiptViewer'
 import { BarChart3, Milk, Settings as SettingsIcon, Users } from 'lucide-react'
 import { PendingQueueModal } from './components/PendingQueueModal'
@@ -165,8 +164,6 @@ function App() {
     sales: Sale[]
     date: string
   } | null>(null)
-  const [pdfFile, setPdfFile] = useState<ReceiptFileRef | null>(null)
-  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
   const [isReceiptViewerOpen, setIsReceiptViewerOpen] = useState(false)
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
   const [receiptFile, setReceiptFile] = useState<ReceiptFileRef | null>(null)
@@ -176,6 +173,15 @@ function App() {
     amount: number
     date: string
   } | null>(null)
+  const [isNoteViewerOpen, setIsNoteViewerOpen] = useState(false)
+  const [noteUrl, setNoteUrl] = useState<string | null>(null)
+  const [noteFile, setNoteFile] = useState<ReceiptFileRef | null>(null)
+  const [noteBlob, setNoteBlob] = useState<Blob | null>(null)
+  const [noteShareInfo, setNoteShareInfo] = useState<{
+    clientName: string
+    periodLabel: string
+    balance: number
+  } | null>(null)
   const [editingClientLoadedUpdatedAt, setEditingClientLoadedUpdatedAt] =
     useState<number>(0)
 
@@ -183,35 +189,51 @@ function App() {
   const [isSendingVerification, setIsSendingVerification] = useState(false)
   const [isCheckingVerification, setIsCheckingVerification] = useState(false)
 
-  const revokeReceiptObjectUrl = useCallback((url?: string | null) => {
+  const revokePdfObjectUrl = useCallback((url?: string | null) => {
     if (!url) return
     try {
       URL.revokeObjectURL(url)
     } catch (err) {
-      console.warn('Falha ao revogar URL do comprovante', err)
+      console.warn('Falha ao revogar URL do PDF', err)
     }
   }, [])
 
   const closeReceiptViewer = useCallback(() => {
     setIsReceiptViewerOpen(false)
-    revokeReceiptObjectUrl(receiptUrl)
+    revokePdfObjectUrl(receiptUrl)
     if (receiptFile?.source === 'web') {
-      revokeReceiptObjectUrl(receiptFile.uri)
+      revokePdfObjectUrl(receiptFile.uri)
     }
     setReceiptUrl(null)
     setReceiptBlob(null)
     setReceiptFile(null)
     setReceiptShareInfo(null)
-  }, [receiptFile, receiptUrl, revokeReceiptObjectUrl])
+  }, [receiptFile, receiptUrl, revokePdfObjectUrl])
+
+  const closeNoteViewer = useCallback(() => {
+    setIsNoteViewerOpen(false)
+    revokePdfObjectUrl(noteUrl)
+    if (noteFile?.source === 'web') {
+      revokePdfObjectUrl(noteFile.uri)
+    }
+    setNoteUrl(null)
+    setNoteBlob(null)
+    setNoteFile(null)
+    setNoteShareInfo(null)
+  }, [noteFile, noteUrl, revokePdfObjectUrl])
 
   useEffect(() => {
     return () => {
-      revokeReceiptObjectUrl(receiptUrl)
+      revokePdfObjectUrl(receiptUrl)
       if (receiptFile?.source === 'web') {
-        revokeReceiptObjectUrl(receiptFile.uri)
+        revokePdfObjectUrl(receiptFile.uri)
+      }
+      revokePdfObjectUrl(noteUrl)
+      if (noteFile?.source === 'web') {
+        revokePdfObjectUrl(noteFile.uri)
       }
     }
-  }, [receiptFile, receiptUrl, revokeReceiptObjectUrl])
+  }, [noteFile, noteUrl, receiptFile, receiptUrl, revokePdfObjectUrl])
 
   useEffect(() => {
     authService.setLanguageToPortuguese().catch(() => undefined)
@@ -520,13 +542,18 @@ function App() {
     const register = async () => {
       if (!CapacitorApp?.addListener) return
       backHandler = await CapacitorApp.addListener('backButton', ({ canGoBack }) => {
-        if (location.pathname !== '/') {
-          navigate(-1)
+        if (isNoteViewerOpen) {
+          closeNoteViewer()
           return
         }
 
         if (isReceiptViewerOpen) {
           closeReceiptViewer()
+          return
+        }
+
+        if (location.pathname !== '/') {
+          navigate(-1)
           return
         }
 
@@ -544,11 +571,6 @@ function App() {
         }
         if (isReceiptModalOpen) {
           setIsReceiptModalOpen(false)
-          return
-        }
-        if (isPdfViewerOpen) {
-          setIsPdfViewerOpen(false)
-          setPdfFile(null)
           return
         }
         if (clientToDeleteId) {
@@ -606,14 +628,15 @@ function App() {
     isPayModalOpen,
     isReceiptModalOpen,
     isSaleModalOpen,
-    isPdfViewerOpen,
     isReceiptViewerOpen,
+    isNoteViewerOpen,
     location.pathname,
     navigate,
     lastBackTime, 
     paymentToDeleteId,
     saleToDeleteId,
-    closeReceiptViewer
+    closeReceiptViewer,
+    closeNoteViewer
   ])
 
   // Memoized Calculations
@@ -837,7 +860,7 @@ function App() {
     setSelectedClientId(null)
   }
 
-  const resolveReceiptBlob = useCallback(async (file: ReceiptFileRef | null) => {
+  const resolvePdfBlob = useCallback(async (file: ReceiptFileRef | null) => {
     if (!file) return null
     if (file.blob) return file.blob
     if (file.base64) return base64ToBlob(file.base64, file.mimeType)
@@ -863,15 +886,15 @@ function App() {
     }
 
     try {
-      revokeReceiptObjectUrl(receiptUrl)
+      revokePdfObjectUrl(receiptUrl)
       const file = await createReceiptFile(info.clientName, info.amount, info.sales, info.date)
-      const blob = await resolveReceiptBlob(file)
+      const blob = await resolvePdfBlob(file)
       if (!blob) {
         throw new Error('Blob do comprovante n\u00e3o gerado')
       }
 
       if (file.source === 'web') {
-        revokeReceiptObjectUrl(file.uri)
+        revokePdfObjectUrl(file.uri)
       }
 
       const url = URL.createObjectURL(blob)
@@ -915,7 +938,7 @@ function App() {
         }
       }
 
-      const blob = receiptBlob ?? (await resolveReceiptBlob(receiptFile))
+      const blob = receiptBlob ?? (await resolvePdfBlob(receiptFile))
 
       if (typeof navigator !== 'undefined' && navigator.share) {
         const shareData: ShareData = {
@@ -955,7 +978,107 @@ function App() {
       console.error('Falha ao compartilhar comprovante', error)
       alert('N\u00e3o foi poss\u00edvel compartilhar o comprovante.')
     }
-  }, [receiptFile, receiptShareInfo, receiptBlob, receiptUrl, resolveReceiptBlob])
+  }, [receiptFile, receiptShareInfo, receiptBlob, receiptUrl, resolvePdfBlob])
+
+  const handleNotePdfReady = useCallback(
+    async (payload: {
+      file: ReceiptFileRef
+      clientName: string
+      periodLabel: string
+      balance: number
+    }) => {
+      try {
+        revokePdfObjectUrl(noteUrl)
+        const blob = await resolvePdfBlob(payload.file)
+        if (!blob) {
+          throw new Error('Blob da nota n\u00e3o gerado')
+        }
+        if (payload.file.source === 'web') {
+          revokePdfObjectUrl(payload.file.uri)
+        }
+        const url = URL.createObjectURL(blob)
+        setNoteFile(payload.file)
+        setNoteBlob(blob)
+        setNoteUrl(url)
+        setNoteShareInfo({
+          clientName: payload.clientName,
+          periodLabel: payload.periodLabel,
+          balance: payload.balance
+        })
+        setIsNoteViewerOpen(true)
+      } catch (error) {
+        console.error('Falha ao preparar nota', error)
+        alert('N\u00e3o foi poss\u00edvel abrir a nota.')
+      }
+    },
+    [noteUrl, resolvePdfBlob, revokePdfObjectUrl]
+  )
+
+  const shareNote = useCallback(async () => {
+    if (!noteFile) return
+
+    const fileName = noteFile.fileName || 'nota.pdf'
+    const mimeType = noteFile.mimeType || 'application/pdf'
+    const shareText = noteShareInfo?.clientName
+      ? `Nota de pagamento - ${noteShareInfo.clientName}`
+      : 'Nota de pagamento'
+
+    try {
+      if (Capacitor.isNativePlatform?.() && noteFile.uri) {
+        try {
+          await Share.share({
+            title: 'Nota de pagamento',
+            text: shareText,
+            url: noteFile.uri,
+            dialogTitle: 'Compartilhar PDF'
+          })
+          return
+        } catch (nativeError) {
+          console.warn('Falha ao compartilhar nota nativamente, tentando fallback', nativeError)
+        }
+      }
+
+      const blob = noteBlob ?? (await resolvePdfBlob(noteFile))
+
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        const shareData: ShareData = {
+          title: 'Nota de pagamento',
+          text: shareText
+        }
+        if (blob) {
+          const fileForShare = new File([blob], fileName, { type: mimeType })
+          const navAny = navigator as any
+          if (!navAny.canShare || navAny.canShare({ files: [fileForShare] })) {
+            ;(shareData as any).files = [fileForShare]
+          } else if (noteUrl) {
+            ;(shareData as any).url = noteUrl
+          }
+        } else if (noteUrl) {
+          ;(shareData as any).url = noteUrl
+        }
+        await navigator.share(shareData)
+        return
+      }
+
+      const downloadUrl = noteUrl || noteFile.uri
+      if (downloadUrl) {
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.download = fileName
+        link.target = '_blank'
+        link.rel = 'noopener'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        return
+      }
+
+      alert('N\u00e3o foi poss\u00edvel compartilhar a nota.')
+    } catch (error) {
+      console.error('Falha ao compartilhar nota', error)
+      alert('N\u00e3o foi poss\u00edvel compartilhar a nota.')
+    }
+  }, [noteFile, noteShareInfo, noteBlob, noteUrl, resolvePdfBlob])
   // --- Deletion Handlers exposed to pages ---
   const confirmDeleteClient = async () => {
     if (!clientToDeleteId) return
@@ -1382,18 +1505,13 @@ function App() {
         onClose={closeReceiptViewer}
         onShare={shareReceipt}
       />
-
-      <PdfViewerModal
-        open={isPdfViewerOpen}
-        onClose={() => {
-          if (pdfFile?.source === 'web' && pdfFile.uri) {
-            URL.revokeObjectURL(pdfFile.uri)
-          }
-          setIsPdfViewerOpen(false)
-          setPdfFile(null)
-        }}
-        file={pdfFile}
-        title='Comprovante PDF'
+      <ReceiptViewer
+        open={isNoteViewerOpen}
+        pdfUrl={noteUrl}
+        onClose={closeNoteViewer}
+        onShare={shareNote}
+        title='Nota de pagamento'
+        documentLabel='nota'
       />
       <PendingQueueModal
         open={isPendingModalOpen}
@@ -1438,10 +1556,7 @@ function App() {
           sales={sales}
           payments={payments}
           onClose={() => navigate(-1)}
-          onPdfReady={(file) => {
-            setPdfFile(file)
-            setIsPdfViewerOpen(true)
-          }}
+          onPdfReady={handleNotePdfReady}
         />
       )}
     </div>

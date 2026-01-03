@@ -187,7 +187,7 @@ export function AuthPage() {
             <img
               src={loginIllustration}
               alt='Ilustra\u00e7\u00e3o do login'
-              className='w-full max-w-sm max-h-[40vh] object-contain'
+              className='w-full max-w-[240px] sm:max-w-[280px] max-h-[24vh] sm:max-h-[28vh] md:max-h-[34vh] object-contain'
             />
           </div>
 
@@ -207,8 +207,8 @@ export function AuthPage() {
                 <p className='text-xs font-semibold uppercase tracking-[0.2em] text-[#A7B0BF]'>
                   login
                 </p>
-                <h1 className='text-[26px] font-semibold leading-tight'>Seja bem-vindo</h1>
-                <p className='text-sm text-[#A7B0BF]'>Acesse sua conta para continuar.</p>
+                <h1 className='text-[26px] font-semibold leading-tight'>{title}</h1>
+                <p className='text-sm text-[#A7B0BF]'>{subtitle}</p>
               </div>
 
               {error && (
@@ -309,7 +309,11 @@ export function AuthPage() {
                   <button
                     type='submit'
                     disabled={loading}
-                    className='w-full h-[52px] rounded-[14px] bg-[#C7F000] text-[#05070D] font-semibold flex items-center justify-center gap-2 transition-transform duration-150 hover:bg-[#d4ff33] active:translate-y-[1px] disabled:opacity-70'
+                    className={`w-full h-[52px] rounded-[14px] font-semibold flex items-center justify-center gap-2 transition-transform duration-150 active:translate-y-[1px] disabled:opacity-70 ${
+                      mode === 'signup'
+                        ? 'bg-[#2563EB] text-white hover:bg-[#2f6df0]'
+                        : 'bg-[#C7F000] text-[#05070D] hover:bg-[#d4ff33]'
+                    }`}
                   >
                     {loading ? (
                       <span className='animate-pulse'>Carregando...</span>
