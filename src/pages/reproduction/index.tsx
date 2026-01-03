@@ -226,6 +226,195 @@ const preparePhotoFromFile = async (file: File): Promise<string> => {
 
 const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'Fêmea')
 
+
+const dividerColor = '#1e2a38'
+
+const InfoChip = ({
+  label,
+  tone = 'muted'
+}: {
+  label: string
+  tone?: 'muted' | 'accent'
+}) => (
+  <span
+    className='inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold leading-none'
+    style={
+      tone === 'accent'
+        ? {
+            background: 'rgba(149, 193, 31, 0.16)',
+            borderColor: 'rgba(149, 193, 31, 0.4)',
+            color: 'var(--text)'
+          }
+        : { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }
+    }
+  >
+    {label}
+  </span>
+)
+
+const CowHeader = ({ name, subtitle }: { name: string; subtitle?: string }) => (
+  <div className='flex flex-col gap-1 text-left'>
+    <div className='text-2xl font-semibold leading-tight' style={{ color: 'var(--text)' }}>
+      {`Partos \u2014 ${name}`}
+    </div>
+    {subtitle ? (
+      <div className='text-sm' style={{ color: 'var(--muted)' }}>
+        {subtitle}
+      </div>
+    ) : null}
+  </div>
+)
+
+const CowIdentityStrip = ({
+  cow,
+  idLabel,
+  breed,
+  status,
+  isEditingName,
+  nameDraft,
+  onNameChange,
+  onSaveName,
+  onCancelEdit,
+  canSaveName,
+  savingName,
+  onAvatarClick
+}: {
+  cow: Cow
+  idLabel?: string | null
+  breed?: string | null
+  status?: string | null
+  isEditingName: boolean
+  nameDraft: string
+  onNameChange: (value: string) => void
+  onSaveName: () => void
+  onCancelEdit: () => void
+  canSaveName: boolean
+  savingName: boolean
+  onAvatarClick?: () => void
+}) => {
+  const initial = (cow.name || '?').trim().charAt(0).toUpperCase() || '?'
+
+  return (
+    <div
+      className='rounded-2xl border p-3 flex items-center gap-3'
+      style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+    >
+      <button
+        type='button'
+        onClick={onAvatarClick}
+        className='h-12 w-12 rounded-full border flex items-center justify-center overflow-hidden'
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+      >
+        {cow.photoDataUrl ? (
+          <img src={cow.photoDataUrl} alt={cow.name} className='h-full w-full object-cover' />
+        ) : (
+          <span className='text-lg font-semibold'>{initial}</span>
+        )}
+      </button>
+
+      <div className='flex-1 min-w-0 flex flex-col justify-center gap-2 self-center'>
+        {isEditingName ? (
+          <>
+            <input
+              value={nameDraft}
+              onChange={(e) => onNameChange(e.target.value)}
+              className='w-full h-11 rounded-xl border px-3 outline-none'
+              placeholder='Nome da vaca'
+              style={{
+                background: 'var(--surface)',
+                borderColor: 'var(--border)',
+                color: 'var(--text)'
+              }}
+            />
+            <div className='flex flex-wrap gap-2'>
+              <button
+                type='button'
+                onClick={onSaveName}
+                disabled={!canSaveName || savingName}
+                className='h-10 px-4 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
+                style={{
+                  background: 'var(--surface)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text)'
+                }}
+              >
+                {savingName ? 'Salvando...' : 'Salvar'}
+              </button>
+              <button
+                type='button'
+                onClick={onCancelEdit}
+                className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
+                style={{ background: 'transparent', borderColor: 'var(--border)', color: 'var(--muted)' }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className='text-xl font-semibold leading-tight truncate' style={{ color: 'var(--text)' }}>
+              {cow.name}
+            </div>
+            <div className='flex flex-wrap gap-2'>
+              {idLabel ? <InfoChip label={`ID ${idLabel}`} /> : null}
+              {breed ? <InfoChip label={breed} /> : null}
+              {status ? <InfoChip label={status} tone='accent' /> : null}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const BirthItemRow = ({
+  event,
+  isFirst,
+  onEdit,
+  onOpenMenu
+}: {
+  event: CalvingEvent
+  isFirst: boolean
+  onEdit: () => void
+  onOpenMenu: () => void
+}) => (
+  <button
+    type='button'
+    onClick={onEdit}
+    className='w-full flex items-center justify-between gap-3 px-3 py-4 text-left transition hover:brightness-105'
+    style={{
+      color: 'var(--text)',
+      borderTop: isFirst ? 'none' : `1px solid ${dividerColor}`
+    }}
+  >
+    <div className='text-base font-semibold'>{formatDateBR(event.date)}</div>
+    <div className='flex items-center gap-2'>
+      <span
+        className='inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold'
+        style={{
+          background: event.sex === 'FEMEA' ? 'rgba(255, 90, 106, 0.12)' : 'rgba(53, 230, 181, 0.14)',
+          color: 'var(--text)',
+          border: '1px solid var(--border)'
+        }}
+      >
+        {sexLabel(event.sex)}
+      </span>
+      <button
+        type='button'
+        onClick={(e) => {
+          e.stopPropagation()
+          onOpenMenu()
+        }}
+        aria-label='Acoes do parto'
+        className='h-8 w-8 rounded-full flex items-center justify-center transition'
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)' }}
+      >
+        <MoreVertical size={14} />
+      </button>
+    </div>
+  </button>
+)
+
 export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
   const [search, setSearch] = useState('')
   const [selectedCow, setSelectedCow] = useState<Cow | null>(null)
@@ -732,19 +921,42 @@ function CowDetailsModal({
 
   const skeleton = (
     <div className='space-y-4 animate-pulse'>
-      <div className='h-6 rounded-lg' style={{ background: 'var(--surface-2)' }} />
-      <div className='rounded-xl border h-14' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
-      <div className='rounded-xl border h-14' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
+      <div className='h-7 rounded-lg' style={{ background: 'var(--surface-2)' }} />
+      <div className='h-14 rounded-2xl border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
+      <div className='h-28 rounded-2xl border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
       <div className='h-12 rounded-full border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
     </div>
   )
-  const dividerColor = '#1e2a38'
+
+  const lastEvent = events[0] || null
+  const lastEventDays = lastEvent ? daysSince(lastEvent.date) : null
+  const breedLabel = cow?.breed || cow?.raca
+  const statusLabel = cow?.status
+  const lastEventLabel =
+    lastEventDays === null
+      ? null
+      : lastEventDays === 0
+        ? 'Ultimo parto hoje'
+        : `Ultimo parto ha ${lastEventDays} ${plural(lastEventDays, 'dia', 'dias')}`
+  const subtitleParts: string[] = []
+  if (lastEventLabel) subtitleParts.push(lastEventLabel)
+  if (!lastEventLabel && events.length === 0) subtitleParts.push('Sem partos registrados')
+  const headerSubtitle = subtitleParts.join(' \u2022 ')
+
+  const handleAvatarClick = () => {
+    if (!cow) return
+    if (cow.photoDataUrl) {
+      openPhotoViewer(cow.photoDataUrl, cow.name, undefined, 'cow')
+    } else {
+      setIsCowPhotoPickerOpen(true)
+    }
+  }
 
   return (
     <>
       <Modal
         open={open}
-        title='Partos'
+        title={cow ? <CowHeader name={cow.name} subtitle={headerSubtitle || undefined} /> : 'Partos'}
         onClose={onClose}
         closeLabel={<X size={14} />}
         closeAriaLabel='Fechar'
@@ -768,64 +980,26 @@ function CowDetailsModal({
         ) : (
           <div className='space-y-5'>
             <div
-              className='rounded-xl border p-4'
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-            >
-              <div className='space-y-2'>
-                <div
-                  className='text-[11px] font-semibold uppercase tracking-wide'
-                  style={{ color: 'var(--muted)', opacity: 0.5, letterSpacing: '0.04em' }}
-                >
-                  VACA
-                </div>
+              className='-mx-6 border-b pb-1'
+              style={{ borderColor: 'var(--border)', opacity: 0.5 }}
+            />
 
-                {isEditingName ? (
-                  <div className='space-y-2'>
-                    <input
-                      value={nameDraft}
-                      onChange={(e) => setNameDraft(e.target.value)}
-                      className='w-full h-11 rounded-xl border px-3 outline-none'
-                      placeholder='Nome da vaca'
-                      style={{
-                        background: 'var(--surface)',
-                        borderColor: 'var(--border)',
-                        color: 'var(--text)'
-                      }}
-                    />
-                    <div className='flex gap-2'>
-                      <button
-                        type='button'
-                        onClick={saveName}
-                        disabled={!canSaveName || savingName}
-                        className='h-10 px-4 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
-                        style={{
-                          background: 'var(--surface)',
-                          borderColor: 'var(--border)',
-                          color: 'var(--text)'
-                        }}
-                      >
-                        {savingName ? 'Salvando...' : 'Salvar'}
-                      </button>
-                      <button
-                        type='button'
-                        onClick={() => {
-                          setIsEditingName(false)
-                          setNameDraft(cow.name)
-                        }}
-                        className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
-                        style={{ background: 'transparent', borderColor: 'var(--border)', color: 'var(--muted)' }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className='text-xl font-semibold leading-tight' style={{ color: 'var(--text)' }}>
-                    {cow.name}
-                  </div>
-                )}
-              </div>
-            </div>
+            <CowIdentityStrip
+              cow={cow}
+              breed={breedLabel}
+              status={statusLabel}
+              isEditingName={isEditingName}
+              nameDraft={nameDraft}
+              onNameChange={setNameDraft}
+              onSaveName={saveName}
+              onCancelEdit={() => {
+                setIsEditingName(false)
+                setNameDraft(cow.name)
+              }}
+              canSaveName={Boolean(canSaveName)}
+              savingName={savingName}
+              onAvatarClick={handleAvatarClick}
+            />
 
             <div className='space-y-2'>
               <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
@@ -841,64 +1015,35 @@ function CowDetailsModal({
                 </div>
               ) : (
                 <div
-                  className='rounded-xl border'
+                  className='rounded-2xl border'
                   style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text)' }}
                 >
                   {events.map((ev, index) => (
-                    <button
+                    <BirthItemRow
                       key={ev.id}
-                      type='button'
-                      onClick={() => onEditCalving(ev)}
-                      className='w-full flex items-center justify-between gap-3 px-3 py-4 text-left transition hover:brightness-105'
-                      style={{
-                        color: 'var(--text)',
-                        borderTop: index === 0 ? 'none' : `1px solid ${dividerColor}`
-                      }}
-                    >
-                      <div className='text-base font-semibold'>{formatDateBR(ev.date)}</div>
-                      <div className='flex items-center gap-2'>
-                        <span
-                          className='inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold'
-                          style={{
-                            background: ev.sex === 'FEMEA' ? 'rgba(255, 90, 106, 0.12)' : 'rgba(53, 230, 181, 0.14)',
-                            color: 'var(--text)',
-                            border: '1px solid var(--border)'
-                          }}
-                        >
-                          {sexLabel(ev.sex)}
-                        </span>
-                        <button
-                          type='button'
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setActiveEventMenu(ev)
-                          }}
-                          aria-label='Acoes do parto'
-                          className='h-8 w-8 rounded-full flex items-center justify-center transition'
-                          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)' }}
-                        >
-                          <MoreVertical size={14} />
-                        </button>
-                      </div>
-                    </button>
+                      event={ev}
+                      isFirst={index === 0}
+                      onEdit={() => onEditCalving(ev)}
+                      onOpenMenu={() => setActiveEventMenu(ev)}
+                    />
                   ))}
                 </div>
               )}
             </div>
 
-            <div className='pt-1'>
+            <div className='pt-2'>
               <button
                 type='button'
                 onClick={onNewCalving}
                 className='w-full h-12 rounded-full border text-sm font-semibold inline-flex items-center justify-center gap-2 transition hover:brightness-105'
                 style={{
-                  background: 'var(--surface-2)',
+                  background: 'rgba(149, 193, 31, 0.12)',
                   borderColor: 'var(--border)',
                   color: 'var(--text)'
                 }}
               >
                 <Plus size={16} />
-                Novo parto
+                + Novo parto
               </button>
             </div>
           </div>

@@ -67,6 +67,11 @@ export type TabState =
 export type Cow = {
   id: string
   name: string
+  idLabel?: string
+  tag?: string
+  breed?: string
+  raca?: string
+  status?: string
   photoDataUrl?: string | null
   createdAt?: number
   updatedAt?: number
