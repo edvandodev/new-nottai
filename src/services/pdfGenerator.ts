@@ -49,9 +49,8 @@ const fmtDateLong = (iso: string) => {
     year: 'numeric'
   })
   const timeStr = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `${dateStr.charAt(0).toUpperCase()}${dateStr.slice(1)} â€¢ ${timeStr}`
+  return `${dateStr.charAt(0).toUpperCase()}${dateStr.slice(1)} \u00e0s ${timeStr}`
 }
-
 const loadImageSize = async (dataUrl: string | null) => {
   return new Promise<{ w: number; h: number }>((resolve) => {
     if (!dataUrl) {
@@ -115,6 +114,10 @@ const LAYOUT: LayoutConstants = {
 const GAP_AFTER_PAYER = 0.5 // mm
 const TABLE_HEADER_HEIGHT = 12 // mm
 const TABLE_HEADER_GAP = 6 // mm
+const ITEM_ROW_BASE_H = 12 // mm
+const ITEM_NAME_OFFSET = 4 // mm from row top
+const ITEM_DATE_OFFSET = 6 // mm below last name line
+const ITEM_BOTTOM_PAD = 1 // mm padding before divider
 
 const measureReceiptHeight = (
   doc: jsPDF,
@@ -156,15 +159,22 @@ const measureReceiptHeight = (
   // Itens
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(14)
+  const itemLineH = doc.getTextDimensions('Ag').h
+  const itemDateH = doc.getTextDimensions('00/00/0000').h
   salesPaid.forEach((sale) => {
     const textX = MARGIN_X + PAD
     const maxTextWidth = RIGHT_X - PAD - textX
     const title = `Leite (${sale.liters || 0}L)`
     const titleLines = doc.splitTextToSize(title, maxTextWidth)
-    const lineHeight = 5.5
-    const dateHeight = 1.5
-    const blockHeight = Math.max(itemMinHeight, titleLines.length * lineHeight + dateHeight + 1)
-    y += blockHeight + GAP_SM
+    const extraH = Math.max(0, titleLines.length - 1) * itemLineH
+    const contentH =
+      ITEM_NAME_OFFSET +
+      titleLines.length * itemLineH +
+      ITEM_DATE_OFFSET +
+      itemDateH +
+      ITEM_BOTTOM_PAD
+    const rowH = Math.max(ITEM_ROW_BASE_H + extraH, contentH)
+    y += rowH
   })
 
   // Total + rodapÃ© + margem inferior
@@ -323,35 +333,43 @@ const buildReceiptDoc = async (
     const maxTextWidth = RIGHT_X - PAD - textX
     const title = `Leite (${item.liters || 0}L)`
     const titleLines = doc.splitTextToSize(title, maxTextWidth)
-    const lineHeight = 5
-    const dateHeight = 1.5
-    const blockHeight = Math.max(itemMinHeight, titleLines.length * lineHeight + dateHeight + 1)
+    const lineHeight = doc.getTextDimensions('Ag').h
+    const extraH = Math.max(0, titleLines.length - 1) * lineHeight
+    const dateStr = item.date ? new Date(item.date as any).toLocaleDateString('pt-BR') : ''
+    const dateHeight = dateStr ? doc.getTextDimensions(dateStr).h : doc.getTextDimensions('00/00/0000').h
+    const contentH =
+      ITEM_NAME_OFFSET +
+      titleLines.length * lineHeight +
+      ITEM_DATE_OFFSET +
+      dateHeight +
+      ITEM_BOTTOM_PAD
+    const rowH = Math.max(ITEM_ROW_BASE_H + extraH, contentH)
+    const nameYStart = yPos + ITEM_NAME_OFFSET
+    const dateY = nameYStart + lineHeight * (titleLines.length - 1) + ITEM_DATE_OFFSET
 
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(14)
     doc.setTextColor(12, 15, 23)
     titleLines.forEach((line, idx) => {
-      const lineY = yPos + lineHeight * idx + lineHeight / 2 + 1
-      doc.text(line, textX, lineY, { baseline: 'middle' })
+      const lineY = nameYStart + lineHeight * idx
+      doc.text(line, textX, lineY, { baseline: 'top' })
     })
 
-    const valueY = yPos + blockHeight / 2
+    const valueY = nameYStart
     doc.text(fmtMoney(item.totalValue || 0), RIGHT_X - PAD / 2, valueY, {
       align: 'right',
-      baseline: 'middle'
+      baseline: 'top'
     })
 
-    const dateStr = item.date ? new Date(item.date as any).toLocaleDateString('pt-BR') : ''
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(11)
     doc.setTextColor(100, 102, 108)
-    doc.text(dateStr, textX, yPos + blockHeight - GAP_SM, { baseline: 'middle' })
+    doc.text(dateStr, textX, dateY, { baseline: 'top' })
 
-    yPos += blockHeight
+    yPos += rowH
     doc.setDrawColor(230, 232, 236)
     doc.setLineWidth(0.2)
     doc.line(MARGIN_X, yPos, pageWidth - MARGIN_X, yPos)
-    yPos += GAP_SM
   }
 
   const drawTotalBar = (total: number) => {
@@ -567,6 +585,11 @@ export const generateReceipt = (
     alert('NÃ£o foi possÃ­vel gerar o comprovante.')
   })
 }
+
+
+
+
+
 
 
 
