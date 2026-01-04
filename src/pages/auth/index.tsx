@@ -180,7 +180,7 @@ export function AuthPage() {
       >
         <div className='w-full max-w-md flex flex-col gap-7'>
           <header className='flex justify-center'>
-            <img src={logoImage} alt='Logo Anota A\u00ed' className='h-16 md:h-20 w-auto object-contain' />
+            <img src={logoImage} alt='Logo Anota A\u00ed' className='h-12 md:h-16 w-auto object-contain' />
           </header>
 
           <div className='flex justify-center'>
