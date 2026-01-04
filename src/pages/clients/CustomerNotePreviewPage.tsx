@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { X, FileText, Clock3, CheckCircle, AlertTriangle } from 'lucide-react'
-import type { Client, Payment, Sale } from '@/types'
+import type { Client, Payment, Sale, PriceSettings } from '@/types'
 import type { ReceiptFileRef } from '@/services/pdfGenerator'
 import {
   computeNoteData,
@@ -22,6 +22,7 @@ type CustomerNotePreviewPageProps = {
     periodLabel: string
     balance: number
   }) => void
+  priceSettings: PriceSettings
 }
 
 const presets: { label: string; value: PeriodPreset }[] = [
@@ -71,7 +72,8 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
   sales,
   payments,
   onClose,
-  onPdfReady
+  onPdfReady,
+  priceSettings
 }) => {
   const client = clients.find((c) => c.id === clientId)
   const [preset, setPreset] = useState<PeriodPreset>('all')
@@ -141,13 +143,19 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
         ? 'var(--accent)'
         : 'var(--accent)'
 
+  const pricePerLiter =
+    client.priceType === 'CUSTOM'
+      ? priceSettings.custom ?? 0
+      : priceSettings.standard ?? 0
+
   const handleGenerate = async () => {
     try {
       setIsGenerating(true)
       const file = await generateCustomerNotePdf(client, noteData, {
         periodLabel,
         includeDetails,
-        emittedAt: new Date(nowTs)
+        emittedAt: new Date(nowTs),
+        pricePerLiter
       })
       onPdfReady({ file, clientName: client.name, periodLabel, balance: noteData.balance })
     } catch (error) {

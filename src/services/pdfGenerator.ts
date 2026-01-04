@@ -73,6 +73,17 @@ const fitIntoBox = (imgW: number, imgH: number, maxW: number, maxH: number) => {
   return { drawW: imgW * scale, drawH: imgH * scale }
 }
 
+const getSaleUnitPrice = (sale: Sale): number => {
+  if (typeof sale.pricePerLiter === 'number' && sale.pricePerLiter > 0) {
+    return sale.pricePerLiter
+  }
+  const liters = sale.liters ?? 0
+  if (liters > 0) {
+    return (sale.totalValue || 0) / liters
+  }
+  return 0
+}
+
 const logoSrc = new URL('../../assets/comprovante/logo.png', import.meta.url).toString()
 const illustrationSrc = new URL('../../assets/comprovante/ilustracao.png', import.meta.url).toString()
 const illustrationNoteSrc = new URL(
@@ -518,6 +529,7 @@ type NoteListRow = {
   meta?: string
   valueLabel: string
   ts?: number
+  isDetail?: boolean
 }
 
 export type NotePdfInput = {
@@ -531,6 +543,7 @@ export type NotePdfInput = {
   includeDetails: boolean
   sales?: Sale[]
   payments?: Payment[]
+  pricePerLiter?: number
 }
 
 const extractTimestamp = (
@@ -682,18 +695,21 @@ const buildNoteRows = (data: NotePdfInput): NoteListRow[] => {
 
   if (data.includeDetails) {
     const detailItems: NoteListRow[] = []
-    filteredData.filteredSales.forEach((sale) => {
-      const liters = sale.liters || 0
-      detailItems.push({
-        title: `Venda - ${liters.toLocaleString('pt-BR', {
+      filteredData.filteredSales.forEach((sale) => {
+        const liters = sale.liters || 0
+        const litersLabel = liters.toLocaleString('pt-BR', {
           minimumFractionDigits: 0,
           maximumFractionDigits: 2
-        })} L`,
-        meta: formatNoteMeta((sale as any).createdAt ?? sale.date),
-        valueLabel: fmtMoney(sale.totalValue || 0),
-        ts: extractTimestamp((sale as any).createdAt ?? sale.date)
+        })
+        const unitPriceText = fmtMoney(getSaleUnitPrice(sale))
+        detailItems.push({
+          title: `${litersLabel} Litros - ${unitPriceText}`,
+          meta: formatNoteMeta((sale as any).createdAt ?? sale.date),
+          valueLabel: fmtMoney(sale.totalValue || 0),
+          ts: extractTimestamp((sale as any).createdAt ?? sale.date),
+          isDetail: true
+        })
       })
-    })
     filteredData.paymentsAfterLast.forEach((payment) => {
       detailItems.push({
         title: payment.note ? `Pagamento - ${payment.note}` : 'Pagamento recebido',
@@ -715,7 +731,8 @@ const measureNoteHeight = (
   doc: jsPDF,
   rows: NoteListRow[],
   clientName: string,
-  hasPeriodLine: boolean
+  hasPeriodLine: boolean,
+  unitPrice: number
 ): number => {
   const {
     MARGIN_X,
@@ -756,26 +773,35 @@ const measureNoteHeight = (
   const payerLineHeight = doc.getTextDimensions('Ag').h
   const payerLines = doc.splitTextToSize(clientName || 'Cliente', leftMaxWidth)
   const payerBlockH = payerLineHeight * payerLines.length
-  const payerEndY = y + labelSize + labelGap + payerBlockH
+  const unitPriceText = fmtMoney(unitPrice)
+  const unitPriceHeight = doc.getTextDimensions(unitPriceText).h
+  const valueRowH = Math.max(payerBlockH, unitPriceHeight)
+  const payerEndY = y + labelSize + labelGap + valueRowH
 
   y = payerEndY + GAP_AFTER_PAYER
   y += TABLE_HEADER_HEIGHT + TABLE_HEADER_GAP
 
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(14)
-  const itemLineH = doc.getTextDimensions('Ag').h
-  const itemMetaH = doc.getTextDimensions('00/00/0000 00:00').h
   rows.forEach((row) => {
     const textX = MARGIN_X + PAD
     const maxTextWidth = RIGHT_X - PAD - textX
+    const titleFontSize = row.isDetail ? 13 : 14
+    const titleFontWeight = row.isDetail ? 'normal' : 'bold'
+    doc.setFont('helvetica', titleFontWeight)
+    doc.setFontSize(titleFontSize)
     const titleLines = doc.splitTextToSize(row.title || '', maxTextWidth)
-    const extraH = Math.max(0, titleLines.length - 1) * itemLineH
-    const metaH = row.meta ? doc.getTextDimensions(row.meta).h : itemMetaH
+    const lineHeight = doc.getTextDimensions('Ag').h
+    const extraH = Math.max(0, titleLines.length - 1) * lineHeight
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(11)
+    const metaText = row.meta || ''
+    const metaHeight = metaText
+      ? doc.getTextDimensions(metaText).h
+      : doc.getTextDimensions('00/00/0000').h
     const contentH =
       ITEM_NAME_OFFSET +
-      titleLines.length * itemLineH +
+      titleLines.length * lineHeight +
       ITEM_DATE_OFFSET +
-      metaH +
+      metaHeight +
       ITEM_BOTTOM_PAD
     const rowH = Math.max(ITEM_ROW_BASE_H + extraH, contentH)
     y += rowH
@@ -796,8 +822,30 @@ const buildNoteDoc = async (data: NotePdfInput) => {
   const totalWithPending = filteredTotal + pendingBalance
   const rows = buildNoteRows(data)
   const hasPeriodLine = Boolean(data.periodLabel)
+  const salesList = sales
+  const totalLitersForCalc = salesList.reduce((acc, sale) => acc + (sale.liters ?? 0), 0)
+  const litersToUse = data.totalLiters && data.totalLiters > 0 ? data.totalLiters : totalLitersForCalc
+  const weightedPriceSum = salesList.reduce((acc, sale) => {
+    const liters = sale.liters ?? 0
+    if (!liters) return acc
+    return acc + getSaleUnitPrice(sale) * liters
+  }, 0)
+  const configuredPrice =
+    typeof data.pricePerLiter === 'number' ? data.pricePerLiter : undefined
+  const unitPrice =
+    typeof configuredPrice === 'number'
+      ? configuredPrice
+      : litersToUse > 0
+        ? weightedPriceSum / litersToUse
+        : 0
   const tempDoc = new jsPDF({ unit: 'mm', format: [PAGE_WIDTH, MIN_HEIGHT] })
-  const measuredHeight = measureNoteHeight(tempDoc, rows, data.clientName, hasPeriodLine)
+  const measuredHeight = measureNoteHeight(
+    tempDoc,
+    rows,
+    data.clientName,
+    hasPeriodLine,
+    unitPrice
+  )
   const finalHeight = Math.max(measuredHeight, MIN_HEIGHT)
 
   const doc = new jsPDF({ unit: 'mm', format: [PAGE_WIDTH, finalHeight] })
@@ -805,6 +853,7 @@ const buildNoteDoc = async (data: NotePdfInput) => {
     MARGIN_X,
     CONTENT_W,
     RIGHT_X,
+    RIGHT_PAD,
     PAD,
     GAP_SM,
     GAP_MD,
@@ -870,6 +919,7 @@ const buildNoteDoc = async (data: NotePdfInput) => {
     yPos += GAP_MD
 
     const xLeft = MARGIN_X
+    const xRight = RIGHT_X - RIGHT_PAD
     const leftMaxWidth = Math.max(20, CONTENT_W * 0.62)
 
     const labelSize = 9
@@ -882,6 +932,7 @@ const buildNoteDoc = async (data: NotePdfInput) => {
     doc.setFontSize(labelSize)
     doc.setTextColor(...labelColor)
     doc.text('CLIENTE:', xLeft, yLabel)
+    doc.text('VALOR DO LITRO:', xRight, yLabel, { align: 'right' })
 
     const yValue = yLabel + labelSize + labelGap
     const payerLines = doc.splitTextToSize(data.clientName || 'Cliente', leftMaxWidth)
@@ -895,9 +946,13 @@ const buildNoteDoc = async (data: NotePdfInput) => {
       doc.text(line, xLeft, lineY)
     })
 
+    const unitPriceText = fmtMoney(unitPrice)
+    doc.text(unitPriceText, xRight, yValue, { align: 'right' })
+
     const payerBlockH = payerLines.length * payerLineHeight
-    const payerEndY = yValue + payerBlockH
-    yPos = payerEndY + GAP_AFTER_PAYER
+    const valueHeight = doc.getTextDimensions(unitPriceText).h
+    const valueRowH = Math.max(payerBlockH, valueHeight)
+    yPos = yValue + valueRowH + GAP_AFTER_PAYER
   }
 
   const drawTableHeader = () => {
@@ -928,11 +983,19 @@ const buildNoteDoc = async (data: NotePdfInput) => {
   const drawRow = (row: NoteListRow) => {
     const textX = MARGIN_X + PAD
     const maxTextWidth = RIGHT_X - PAD - textX
+    const titleFontSize = row.isDetail ? 13 : 14
+    const titleFontWeight = row.isDetail ? 'normal' : 'bold'
+    doc.setFont('helvetica', titleFontWeight)
+    doc.setFontSize(titleFontSize)
     const titleLines = doc.splitTextToSize(row.title || '', maxTextWidth)
     const lineHeight = doc.getTextDimensions('Ag').h
     const extraH = Math.max(0, titleLines.length - 1) * lineHeight
     const metaText = row.meta || ''
-    const metaHeight = metaText ? doc.getTextDimensions(metaText).h : doc.getTextDimensions('00/00/0000').h
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(11)
+    const metaHeight = metaText
+      ? doc.getTextDimensions(metaText).h
+      : doc.getTextDimensions('00/00/0000').h
     const contentH =
       ITEM_NAME_OFFSET +
       titleLines.length * lineHeight +
@@ -943,8 +1006,8 @@ const buildNoteDoc = async (data: NotePdfInput) => {
     const nameYStart = yPos + ITEM_NAME_OFFSET
     const metaY = nameYStart + lineHeight * (titleLines.length - 1) + ITEM_DATE_OFFSET
 
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(14)
+    doc.setFont('helvetica', titleFontWeight)
+    doc.setFontSize(titleFontSize)
     doc.setTextColor(12, 15, 23)
     titleLines.forEach((line, idx) => {
       const lineY = nameYStart + lineHeight * idx

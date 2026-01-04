@@ -1557,6 +1557,7 @@ function App() {
           payments={payments}
           onClose={() => navigate(-1)}
           onPdfReady={handleNotePdfReady}
+          priceSettings={priceSettings}
         />
       )}
     </div>

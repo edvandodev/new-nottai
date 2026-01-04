@@ -135,6 +135,7 @@ type PdfOptions = {
   includeDetails: boolean
   customNoteId?: string
   emittedAt?: Date
+  pricePerLiter?: number
 }
 
 export const generateCustomerNotePdf = async (
@@ -157,7 +158,8 @@ export const generateCustomerNotePdf = async (
     totalLiters: noteData.totalLiters,
     includeDetails: options.includeDetails,
     sales: noteData.salesFiltered,
-    payments: noteData.paymentsFiltered
+    payments: noteData.paymentsFiltered,
+    pricePerLiter: options.pricePerLiter
   }
 
   return generateNotaPdf(payload)
