@@ -451,12 +451,15 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
     const now = Date.now()
     const cutoff = now - 30 * 24 * 60 * 60 * 1000
 
+    const validCowIds = new Set(cows.map((cow) => cow.id))
+
     return calvings.reduce((count, calving) => {
+      if (!validCowIds.has(calving.cowId)) return count
       const time = new Date(calving.date).getTime()
       if (Number.isNaN(time)) return count
       return time >= cutoff ? count + 1 : count
     }, 0)
-  }, [calvings])
+  }, [calvings, cows])
 
   const openCow = (cow: Cow) => {
     setSelectedCow(cow)
@@ -1942,7 +1945,13 @@ function CalvingModal({
         closeLabel={<X size={14} />}
         closeAriaLabel='Fechar'
       >
-        <div className='space-y-4'>
+        <div
+          className='space-y-4 overflow-y-auto'
+          style={{
+            maxHeight: 'calc(100vh - 120px)',
+            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))'
+          }}
+        >
           <div
             className='rounded-2xl border p-4 space-y-3'
             style={{

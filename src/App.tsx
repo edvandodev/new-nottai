@@ -1383,7 +1383,7 @@ function App() {
     activeTab === 'CLIENTS' ? 'p-0' : activeTab === 'PAYMENTS' ? 'p-0' : 'p-4'
   const mainAdditionalTop =
     minimalHeaderActive && activeTab !== 'CLIENTS' ? 'pt-6' : ''
-  const isFullBleedPage = activeTab === 'CLIENTS' || activeTab === 'PAYMENTS'
+  const isFullBleedPage = false
 
   if (!authReady) {
     return (

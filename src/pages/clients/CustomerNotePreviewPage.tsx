@@ -77,7 +77,7 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
 }) => {
   const client = clients.find((c) => c.id === clientId)
   const [preset, setPreset] = useState<PeriodPreset>('all')
-  const [includeDetails, setIncludeDetails] = useState(false)
+  const [includeDetails, setIncludeDetails] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const nowTs = useMemo(() => Date.now(), [])
 
