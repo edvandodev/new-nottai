@@ -824,7 +824,13 @@ function App() {
     navigate(`/clientes/${clientId}/nota`)
   }
 
-  const handleConfirmPayDebt = async (paidAmount: number) => {
+  const getValidPaymentDate = (value?: string) => {
+    if (!value) return new Date()
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed
+  }
+
+  const handleConfirmPayDebt = async (paidAmount: number, paidAt?: string) => {
     if (!selectedClientId) return
     const client = clients.find((c) => c.id === selectedClientId)
     const balance = Math.max(0, clientBalances.get(selectedClientId) || 0)
@@ -833,7 +839,7 @@ function App() {
     const amount = Math.min(paidAmount, balance)
     if (amount <= 0) return
 
-    const currentDate = new Date().toISOString()
+    const currentDate = getValidPaymentDate(paidAt).toISOString()
     const unpaidSales = sales.filter(
       (s) => s.clientId === selectedClientId && !s.isPaid
     )

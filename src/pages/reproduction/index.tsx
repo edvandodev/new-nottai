@@ -197,7 +197,13 @@ const preparePhotoFromFile = async (file: File): Promise<string> => {
     URL.revokeObjectURL(objectUrl)
   }
 
-  return readFileAsDataUrl(file)
+  const fallback = await readFileAsDataUrl(file)
+  try {
+    return await compressImageDataUrl(fallback)
+  } catch (err) {
+    console.warn('Falha ao reduzir imagem no fallback', err)
+    return fallback
+  }
 }
 
 

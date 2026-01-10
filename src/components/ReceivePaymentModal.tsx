@@ -51,6 +51,23 @@ const sanitizeCurrencyInput = (value: string) => {
   return next
 }
 
+const formatDateForInput = (date = new Date()) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const parseDateFromInput = (value?: string) => {
+  if (!value) return new Date()
+  const [yearStr, monthStr, dayStr] = value.split('-')
+  const year = Number(yearStr)
+  const month = Number(monthStr)
+  const day = Number(dayStr)
+  if ([year, month, day].some((n) => Number.isNaN(n))) return new Date()
+  return new Date(year, month - 1, day)
+}
+
 export const ReceivePaymentModal = ({
   open,
   onClose,
@@ -64,6 +81,7 @@ export const ReceivePaymentModal = ({
   const [amountInput, setAmountInput] = useState('')
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
+  const [paymentDateInput, setPaymentDateInput] = useState(formatDateForInput())
   const [isSubmitting, setIsSubmitting] = useState(false)
   const amountInputRef = useRef<HTMLInputElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -76,6 +94,7 @@ export const ReceivePaymentModal = ({
       const nextValue = initialValue ?? totalDue
       setAmountInput(formatCurrency(Math.max(0, nextValue)))
       setNote('')
+      setPaymentDateInput(formatDateForInput())
       setError('')
       const raf = requestAnimationFrame(() => setIsVisible(true))
       return () => cancelAnimationFrame(raf)
@@ -134,7 +153,12 @@ export const ReceivePaymentModal = ({
     }
     setIsSubmitting(true)
     try {
-      await onConfirm(normalized, note.trim() || undefined)
+      const todayKey = formatDateForInput()
+      const selectedDate =
+        paymentDateInput === todayKey
+          ? new Date()
+          : parseDateFromInput(paymentDateInput)
+      await onConfirm(normalized, note.trim() || undefined, selectedDate.toISOString())
       onClose()
     } finally {
       setIsSubmitting(false)
@@ -312,6 +336,30 @@ export const ReceivePaymentModal = ({
                 {error}
               </div>
             )}
+          </div>
+
+          <div
+            className='space-y-2 rounded-[18px] p-4 border'
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border)'
+            }}
+          >
+            <label className='block text-sm font-medium' style={{ color: 'var(--muted)' }}>
+              Data do pagamento
+            </label>
+            <input
+              type='date'
+              value={paymentDateInput}
+              onChange={(event) => setPaymentDateInput(event.target.value)}
+              className='w-full h-12 rounded-2xl px-4 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400/60'
+              style={{
+                background: 'rgba(11, 15, 20, 0.55)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)'
+              }}
+              max={formatDateForInput()}
+            />
           </div>
 
           <div

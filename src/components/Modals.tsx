@@ -843,7 +843,7 @@ export const AddSaleModal = ({
 type PayDebtModalProps = {
   isOpen: boolean
   onClose: () => void
-  onConfirm: (amount: number) => void
+  onConfirm: (amount: number, paidAt?: string) => void
   clientName: string
   totalValue: number
   clientAvatar?: string
@@ -864,7 +864,7 @@ export const PayDebtModal = ({
       client={{ name: clientName, avatarUrl: clientAvatar }}
       totalDue={totalValue}
       initialValue={totalValue}
-      onConfirm={(value) => onConfirm(value)}
+      onConfirm={(value, _note, paidDate) => onConfirm(value, paidDate)}
     />
   )
 }
