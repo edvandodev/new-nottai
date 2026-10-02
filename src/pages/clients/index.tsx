@@ -602,7 +602,7 @@ export function ClientsPage({
                       {client.name}
                     </span>
                   </div>
-                  <span className='text-sm font-semibold tabular-nums' style={{ color: 'var(--accent)' }}>
+                  <span className='text-sm font-semibold tabular-nums' style={{ color: 'var(--tertiary)' }}>
                     {formatCurrency(balance)}
                   </span>
                 </button>
@@ -768,7 +768,7 @@ export function ClientsPage({
                       </span>
                       <span
                         className='text-[19px] font-semibold tabular-nums'
-                        style={{ color: balance > 0 ? 'var(--accent)' : 'var(--muted)' }}
+                        style={{ color: balance > 0 ? 'var(--tertiary)' : 'var(--muted)' }}
                       >
                         {formatCurrency(balance)}
                       </span>

@@ -754,7 +754,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                 {isActive && (
                                   <span
                                     className='absolute inset-y-0 w-0.5 z-0'
-                                    style={{ background: 'color-mix(in srgb, var(--accent) 16%, transparent)' }}
+                                    style={{ background: 'color-mix(in srgb, var(--tertiary) 12%, transparent)' }}
                                   />
                                 )}
                                 <div
@@ -767,10 +767,11 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                       height: `${barHeightPct}%`,
                                       opacity: isZero ? 0.2 : 1,
                                       background: isActive
-                                        ? 'var(--accent)'
-                                        : 'var(--tertiary)',
+                                        ? 'var(--tertiary)'
+                                        : 'var(--accent)',
+                                      borderRadius: '4px 4px 0 0',
                                       boxShadow: isActive
-                                        ? '0 12px 24px -18px color-mix(in srgb, var(--accent) 60%, transparent)'
+                                        ? '0 12px 24px -18px color-mix(in srgb, var(--tertiary) 48%, transparent)'
                                         : 'none'
                                     }}
                                   />
@@ -795,7 +796,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                 <span
                                   className='text-[11px] font-semibold uppercase tracking-wide'
                                   style={{
-                                    color: isActive ? 'var(--accent)' : 'var(--muted)'
+                                    color: isActive ? 'var(--tertiary)' : 'var(--muted)'
                                   }}
                                 >
                                   {MONTHS_SHORT[idx]}

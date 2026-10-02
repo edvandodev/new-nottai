@@ -435,7 +435,7 @@ export function PaymentsPage({
                   }}
                 >
                   <span className='text-sm font-semibold'>{client.name}</span>
-                  <span className='text-sm font-semibold' style={{ color: 'var(--accent)' }}>
+                  <span className='text-sm font-semibold' style={{ color: 'var(--tertiary)' }}>
                     {formatCurrency(balance)}
                   </span>
                 </button>
