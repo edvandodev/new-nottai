@@ -1,17 +1,20 @@
 @import 'tailwindcss';
 
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
 body {
-  background-color: #020617;
-  /* slate-950 */
-  color: #f8fafc;
-  /* slate-50 */
+  background: var(--bg, #f3f6f1);
+  color: var(--text, #192a20);
   font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-  /* App-like feel: prevent text selection */
 }
 
-/* Allow text selection only on inputs */
 input,
 textarea {
   user-select: text;
@@ -24,7 +27,33 @@ select {
   font-family: inherit;
 }
 
-/* Hide scrollbar for cleaner mobile look but allow scroll */
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary, #2b694b) 30%, transparent);
+  outline-offset: 2px;
+}
+
+/* Native form controls follow the active palette unless a component sets a color. */
+[data-theme] input,
+[data-theme] select,
+[data-theme] textarea {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+[data-theme] input::placeholder,
+[data-theme] textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.82;
+}
+
+/* Quiet, readable scrollbars for the light interface. */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -34,46 +63,34 @@ select {
   scrollbar-width: none;
 }
 
-/* Custom scrollbar for modals if needed */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: var(--surface-2, #edf3ed);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 3px;
+  background: #b9c8ba;
+  border-radius: 999px;
 }
 
 @theme {
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --color-slate-850: #1e293b;
-  --color-slate-950: #020617;
-
+  --color-slate-850: #e8efe8;
+  --color-slate-950: #f3f6f1;
   --animate-fade-in: fade-in 0.2s ease-out;
   --animate-bounce-short: bounce-short 1s ease-in-out 1;
 }
 
 @keyframes fade-in {
-  0% {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0% { opacity: 0; transform: translateY(5px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes bounce-short {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
+

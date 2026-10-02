@@ -337,8 +337,8 @@ export const AddClientModal = ({
               style={
                 priceType === 'STANDARD'
                   ? {
-                      background: 'rgba(184, 255, 44, 0.18)',
-                      borderColor: 'rgba(184, 255, 44, 0.7)',
+                      background: 'var(--accent-soft)',
+                      borderColor: 'var(--accent)',
                       color: 'var(--text)'
                     }
                   : {
@@ -359,8 +359,8 @@ export const AddClientModal = ({
               style={
                 priceType === 'CUSTOM'
                   ? {
-                      background: 'rgba(184, 255, 44, 0.18)',
-                      borderColor: 'rgba(184, 255, 44, 0.7)',
+                      background: 'var(--accent-soft)',
+                      borderColor: 'var(--accent)',
                       color: 'var(--text)'
                     }
                   : {
@@ -549,8 +549,8 @@ export const AddSaleModal = ({
         className='w-full max-w-xl rounded-[24px] overflow-hidden flex flex-col max-h-[90vh] border'
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'rgba(18, 24, 33, 0.9)',
-          borderColor: 'rgba(30, 42, 56, 0.85)',
+          background: 'var(--surface)',
+          borderColor: 'var(--border)',
           backdropFilter: 'blur(12px)',
           boxShadow: '0 28px 60px -36px rgba(0, 0, 0, 0.6)'
         }}
@@ -697,16 +697,16 @@ export const AddSaleModal = ({
             className='rounded-2xl p-4 text-center border'
             style={{
               background:
-                'linear-gradient(135deg, rgba(120, 155, 32, 0.5) 0%, rgba(72, 96, 20, 0.55) 100%)',
-              borderColor: 'rgba(184, 255, 44, 0.35)'
+                'linear-gradient(135deg, var(--accent-soft) 0%, #f7fbf4 100%)',
+              borderColor: 'color-mix(in srgb, var(--accent) 36%, var(--border))'
             }}
           >
-            <p className='text-xs' style={{ color: 'rgba(224, 236, 196, 0.7)' }}>
+            <p className='text-xs' style={{ color: 'var(--muted)' }}>
               Total da venda
             </p>
             <p
               className='text-3xl font-bold mt-1 tabular-nums'
-              style={{ color: 'var(--accent, #b8ff2c)' }}
+              style={{ color: 'var(--primary)' }}
             >
               {formatCurrency(totalValue || 0)}
             </p>
@@ -724,12 +724,12 @@ export const AddSaleModal = ({
                 style={
                   paymentStatus === 'PRAZO'
                     ? {
-                        background: 'rgba(184, 255, 44, 0.18)',
-                        borderColor: 'rgba(184, 255, 44, 0.7)',
+                        background: 'var(--accent-soft)',
+                        borderColor: 'var(--accent)',
                         color: 'var(--text)'
                       }
                     : {
-                        background: 'rgba(14, 20, 28, 0.7)',
+                        background: 'var(--surface-2)',
                         borderColor: 'rgba(42, 56, 72, 0.9)',
                         color: 'var(--text)'
                       }
@@ -741,7 +741,7 @@ export const AddSaleModal = ({
                   style={{
                     color:
                       paymentStatus === 'PRAZO'
-                        ? 'rgba(224, 236, 196, 0.75)'
+                        ? 'var(--muted)'
                         : 'var(--muted)'
                   }}
                 >
@@ -755,12 +755,12 @@ export const AddSaleModal = ({
                 style={
                   paymentStatus === 'AVISTA'
                     ? {
-                        background: 'rgba(184, 255, 44, 0.18)',
-                        borderColor: 'rgba(184, 255, 44, 0.7)',
+                        background: 'var(--accent-soft)',
+                        borderColor: 'var(--accent)',
                         color: 'var(--text)'
                       }
                     : {
-                        background: 'rgba(14, 20, 28, 0.7)',
+                        background: 'var(--surface-2)',
                         borderColor: 'rgba(42, 56, 72, 0.9)',
                         color: 'var(--text)'
                       }
@@ -772,7 +772,7 @@ export const AddSaleModal = ({
                   style={{
                     color:
                       paymentStatus === 'AVISTA'
-                        ? 'rgba(224, 236, 196, 0.75)'
+                        ? 'var(--muted)'
                         : 'var(--muted)'
                   }}
                 >
@@ -816,9 +816,9 @@ export const AddSaleModal = ({
             className='flex-1 h-11 rounded-xl font-semibold transition-colors active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed'
             style={{
               background:
-                'linear-gradient(135deg, rgba(184, 255, 44, 1) 0%, rgba(154, 236, 38, 1) 100%)',
+                'linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 82%, #ffffff) 100%)',
               boxShadow:
-                '0 16px 30px -18px rgba(184, 255, 44, 0.55), 0 0 18px rgba(184, 255, 44, 0.2)',
+                '0 14px 28px -20px var(--shadow)',
               color: 'var(--accent-ink, #0c1014)'
             }}
           >

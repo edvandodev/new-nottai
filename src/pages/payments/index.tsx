@@ -278,7 +278,7 @@ export function PaymentsPage({
             paddingLeft: 16,
             paddingRight: 16,
             background:
-              'linear-gradient(180deg, rgba(11, 15, 20, 0.98) 0%, rgba(11, 15, 20, 0.7) 45%, rgba(11, 15, 20, 0) 100%)',
+              'linear-gradient(180deg, color-mix(in srgb, var(--bg) 98%, transparent) 0%, color-mix(in srgb, var(--bg) 78%, transparent) 52%, transparent 100%)',
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)'
           }}
@@ -327,9 +327,9 @@ export function PaymentsPage({
               }
               className='h-7 w-7 rounded-full flex items-center justify-center border'
               style={{
-                background: 'rgba(34, 197, 94, 0.18)',
-                borderColor: 'rgba(34, 197, 94, 0.45)',
-                color: '#4ade80'
+                background: 'var(--success-soft)',
+                borderColor: 'color-mix(in srgb, var(--success) 24%, var(--border))',
+                color: 'var(--success)'
               }}
               aria-label={
                 receivedMode === 'month' ? 'Mostrar total geral' : 'Mostrar total mensal'
@@ -435,7 +435,7 @@ export function PaymentsPage({
                   }}
                 >
                   <span className='text-sm font-semibold'>{client.name}</span>
-                  <span className='text-sm font-semibold' style={{ color: 'var(--accent)' }}>
+                  <span className='text-sm font-semibold' style={{ color: 'var(--tertiary)' }}>
                     {formatCurrency(balance)}
                   </span>
                 </button>
@@ -505,8 +505,8 @@ export function PaymentsPage({
           className='rounded-[22px] border overflow-hidden pb-1'
           style={{
             background:
-              'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(14, 19, 26, 0.92) 100%)',
-            borderColor: 'rgba(30, 42, 56, 0.9)',
+              'var(--surface)',
+            borderColor: 'var(--border)',
             boxShadow: '0 18px 36px -28px rgba(0, 0, 0, 0.7)'
           }}
         >
@@ -516,7 +516,7 @@ export function PaymentsPage({
                 <div
                   className='h-px'
                   style={{
-                    background: 'rgba(255, 255, 255, 0.06)',
+                    background: 'var(--border)',
                     marginLeft: 16,
                     marginRight: 16
                   }}

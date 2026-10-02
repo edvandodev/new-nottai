@@ -32,11 +32,10 @@ export function ClientActionBarInline({
         aria-label='Nova venda'
         className={`${baseButton} ${interactive} flex-[1.1] min-w-[0]`}
         style={{
-          background:
-            'linear-gradient(135deg, var(--primary, #2373ff), #1f5cc8)',
+          background: 'linear-gradient(135deg, var(--primary), var(--primary-2))',
           color: '#ffffff',
-          boxShadow: '0 10px 30px -16px rgba(35, 115, 255, 0.6)',
-          border: '1px solid rgba(71, 123, 255, 0.45)'
+          boxShadow: '0 10px 30px -16px rgba(16, 59, 45, 0.46)',
+          border: '1px solid var(--primary-2)'
         }}
       >
         <Plus size={18} strokeWidth={2.6} className='shrink-0' />

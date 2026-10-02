@@ -30,7 +30,7 @@ export function PaymentRow({
   const textColor = isPending ? 'var(--text)' : 'var(--accent)'
   const containerClassName = variant === 'card' ? 'flat-card overflow-hidden' : ''
   const rowPadding = variant === 'list' ? 'py-4' : 'py-3'
-  const dividerColor = variant === 'list' ? 'rgba(255, 255, 255, 0.06)' : 'var(--border)'
+  const dividerColor = 'var(--border)'
   const expandedBg = variant === 'list' ? 'transparent' : 'var(--surface)'
 
   return (

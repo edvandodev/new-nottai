@@ -8,8 +8,6 @@ import {
   ChevronRight,
   DollarSign,
   Droplets,
-  Users,
-  X
 } from 'lucide-react'
 import type { Client, Payment, Sale } from '@/types'
 import '../../styles/theme-flat.css'
@@ -176,23 +174,23 @@ const MonthYearToggle = ({
   onNextMonth: () => void
   onPressCenter: () => void
 }) => (
-  <div className='inline-flex items-center gap-2'>
+    <div className='inline-flex items-center gap-2'>
     <button
       type='button'
       onClick={onPrevMonth}
       aria-label='Mês anterior'
-      className='h-8 w-8 rounded-full flex items-center justify-center border transition-colors hover:brightness-110'
+      className='h-9 w-9 rounded-full flex items-center justify-center border transition-colors hover:brightness-95'
       style={{
         borderColor: 'var(--border)',
-        background: 'var(--surface-2)',
+        background: 'var(--surface)',
         color: 'var(--muted)'
       }}
     >
       <ChevronLeft size={16} />
     </button>
     <div
-      className='flex items-center gap-1.5 text-sm font-semibold'
-      style={{ color: 'var(--text)' }}
+      className='flex items-center gap-1 rounded-xl border px-3 h-9'
+      style={{ color: 'var(--text)', background: 'var(--surface)', borderColor: 'var(--border)' }}
     >
       <button
         type='button'
@@ -203,25 +201,16 @@ const MonthYearToggle = ({
       >
         {monthLabel}
       </button>
-      <span style={{ color: 'var(--muted)' }}>/</span>
-      <button
-        type='button'
-        onClick={onPressCenter}
-        className='transition-colors hover:brightness-110'
-        aria-label='Selecionar mês e ano'
-        style={{ color: 'var(--text)' }}
-      >
-        {yearLabel}
-      </button>
+      <span style={{ color: 'var(--muted)' }}>{yearLabel}</span>
     </div>
     <button
       type='button'
       onClick={onNextMonth}
       aria-label='Próximo mês'
-      className='h-8 w-8 rounded-full flex items-center justify-center border transition-colors hover:brightness-110'
+      className='h-9 w-9 rounded-full flex items-center justify-center border transition-colors hover:brightness-95'
       style={{
         borderColor: 'var(--border)',
-        background: 'var(--surface-2)',
+        background: 'var(--surface)',
         color: 'var(--muted)'
       }}
     >
@@ -292,10 +281,9 @@ const StatsSummaryCard = ({
   const isAccent = tone === 'accent'
   const cardStyle = isAccent
     ? {
-        background:
-          'linear-gradient(160deg, rgba(184, 255, 44, 0.16) 0%, rgba(18, 24, 33, 0.95) 60%, rgba(11, 15, 20, 0.98) 100%)',
-        borderColor: 'rgba(184, 255, 44, 0.35)',
-        boxShadow: '0 18px 40px -28px rgba(184, 255, 44, 0.35)'
+        background: 'var(--accent)',
+        borderColor: 'var(--accent)',
+        boxShadow: '0 18px 40px -28px var(--shadow)'
       }
     : {
         background: 'var(--surface)',
@@ -305,9 +293,9 @@ const StatsSummaryCard = ({
 
   const iconStyle = isAccent
     ? {
-        background: 'rgba(184, 255, 44, 0.18)',
-        color: 'var(--accent)',
-        borderColor: 'rgba(184, 255, 44, 0.35)'
+        background: 'color-mix(in srgb, var(--tertiary) 12%, var(--accent))',
+        color: 'var(--tertiary)',
+        borderColor: 'color-mix(in srgb, var(--tertiary) 22%, var(--accent))'
       }
     : {
         background: 'var(--surface-2)',
@@ -316,11 +304,11 @@ const StatsSummaryCard = ({
       }
 
   const valueStyle = {
-    color: isAccent ? 'var(--accent)' : 'var(--text)'
+    color: isAccent ? 'var(--accent-ink)' : 'var(--text)'
   }
 
   const dividerStyle = {
-    background: isAccent ? 'rgba(184, 255, 44, 0.22)' : 'var(--border)'
+    background: isAccent ? 'color-mix(in srgb, var(--primary) 18%, var(--border))' : 'var(--border)'
   }
 
   const changeColor =
@@ -583,7 +571,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
           </div>
           <div className='relative' ref={monthYearRef}>
             <MonthYearToggle
-              monthLabel={MONTHS_SHORT[reportMonth]}
+              monthLabel={MONTHS_FULL[reportMonth]}
               yearLabel={String(reportYear)}
               onPrevMonth={goPrevMonth}
               onNextMonth={goNextMonth}
@@ -700,8 +688,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
             <div
               className='flat-card p-4'
               style={{
-                background:
-                  'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(11, 15, 20, 0.98) 100%)',
+                background: 'var(--surface)',
                 borderColor: 'var(--border)'
               }}
             >
@@ -713,7 +700,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                   <span className='font-semibold' style={{ color: 'var(--accent)' }}>
                     {formatCurrency(monthlyTotals[reportMonth]?.totalValue || 0)}
                   </span>
-                  <span style={{ color: 'var(--muted)' }}>•</span>
+                  <span style={{ color: 'var(--muted)' }}>·</span>
                   <span className='font-semibold' style={{ color: 'var(--muted)' }}>
                     {(monthlyTotals[reportMonth]?.totalLiters || 0).toLocaleString('pt-BR')} L
                   </span>
@@ -767,12 +754,12 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                 {isActive && (
                                   <span
                                     className='absolute inset-y-0 w-0.5 z-0'
-                                    style={{ background: 'rgba(184, 255, 44, 0.12)' }}
+                                    style={{ background: 'color-mix(in srgb, var(--tertiary) 12%, transparent)' }}
                                   />
                                 )}
                                 <div
                                   className='h-32 sm:h-40 w-[65%] overflow-hidden flex items-end justify-center relative z-10'
-                                  style={{ background: 'rgba(148, 163, 184, 0.08)' }}
+                                  style={{ background: 'color-mix(in srgb, var(--tertiary) 5%, var(--surface-2))' }}
                                 >
                                   <div
                                     className='w-full transition-all'
@@ -780,10 +767,11 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                       height: `${barHeightPct}%`,
                                       opacity: isZero ? 0.2 : 1,
                                       background: isActive
-                                        ? 'var(--accent)'
-                                        : 'rgba(148, 163, 184, 0.55)',
+                                        ? 'var(--tertiary)'
+                                        : 'var(--accent)',
+                                      borderRadius: '4px 4px 0 0',
                                       boxShadow: isActive
-                                        ? '0 12px 24px -18px rgba(184, 255, 44, 0.55)'
+                                        ? '0 12px 24px -18px color-mix(in srgb, var(--tertiary) 48%, transparent)'
                                         : 'none'
                                     }}
                                   />
@@ -808,7 +796,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                 <span
                                   className='text-[11px] font-semibold uppercase tracking-wide'
                                   style={{
-                                    color: isActive ? 'var(--accent)' : 'var(--muted)'
+                                    color: isActive ? 'var(--tertiary)' : 'var(--muted)'
                                   }}
                                 >
                                   {MONTHS_SHORT[idx]}
@@ -825,12 +813,12 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               <div className='mt-2.5'>
                 <div
                   className='relative h-0.5 w-full rounded-full overflow-hidden'
-                  style={{ background: 'rgba(148, 163, 184, 0.2)' }}
+                  style={{ background: 'color-mix(in srgb, var(--tertiary) 18%, var(--border))' }}
                 >
                   <div
                     className='absolute top-0 h-full rounded-full transition-all'
                     style={{
-                      background: 'rgba(184, 255, 44, 0.45)',
+                      background: 'var(--tertiary)',
                       width: `${chartScroll.widthPct}%`,
                       left: `${chartScroll.leftPct}%`
                     }}
@@ -883,320 +871,9 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
           </div>
         )}
       </div>
-
-      <div className='space-y-3'>
-        <div className='flex items-center gap-2'>
-          <Users size={16} style={{ color: 'var(--muted)' }} />
-          <h3
-            className='text-xs font-semibold uppercase tracking-wider'
-            style={{ color: 'var(--muted)' }}
-          >
-            TOP CLIENTES ({MONTHS_FULL[reportMonth].toUpperCase()})
-          </h3>
-          {monthlyRanking.length > 0 && (
-            <span
-              role='button'
-              tabIndex={0}
-              onClick={() => setIsRankingOpen(true)}
-              onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setIsRankingOpen(true)}
-              className='ml-auto text-xs font-semibold cursor-pointer inline-flex items-center gap-1'
-              style={{ color: 'var(--accent)' }}
-            >
-              VER TODOS
-              <ChevronRight size={18} strokeWidth={3} />
-            </span>
-          )}
-        </div>
-
-        {topClients.length === 0 ? (
-          <div
-            className='flat-card px-4 py-6 text-center text-sm'
-            style={{ borderStyle: 'dashed', borderColor: 'var(--border)', color: 'var(--muted)' }}
-          >
-            Nenhuma venda registrada neste período.
-          </div>
-        ) : (
-            <div className='flex gap-3 overflow-x-auto no-scrollbar pb-1'>
-              {topClients.map((client, idx) => {
-                const initials = client.name
-                  .trim()
-                  .split(/\s+/)
-                  .slice(0, 2)
-                  .map((p) => p[0]?.toUpperCase() || '')
-                  .join('')
-                const colors = getAvatarColors(client.clientId || client.name)
-                const isLeader = idx === 0
-                const cardStyle = isLeader
-                  ? {
-                      background:
-                        'linear-gradient(160deg, rgba(184, 255, 44, 0.16) 0%, rgba(18, 24, 33, 0.96) 70%)',
-                      borderColor: 'rgba(184, 255, 44, 0.35)',
-                      boxShadow: '0 16px 30px -24px rgba(184, 255, 44, 0.35)'
-                    }
-                  : {
-                      background: 'var(--surface)',
-                      borderColor: 'var(--border)'
-                    }
-                const badgeStyle = isLeader
-                  ? {
-                      background: 'rgba(184, 255, 44, 0.18)',
-                      color: 'var(--accent)',
-                      borderColor: 'rgba(184, 255, 44, 0.35)'
-                    }
-                  : {
-                      background: 'var(--surface-2)',
-                      color: 'var(--text)',
-                      borderColor: 'var(--border)'
-                    }
-
-                return (
-                  <div
-                    key={client.clientId + idx}
-                    className='flat-card relative min-w-[200px] p-3 flex-1 shadow-sm border'
-                    style={cardStyle}
-                  >
-                    <span
-                      className='absolute top-2 right-2 text-[10px] font-extrabold rounded-full px-2 py-0.5 border'
-                      style={badgeStyle}
-                    >
-                      #{idx + 1}
-                    </span>
-                    <div className='flex items-center gap-3'>
-                      <div
-                        className='h-11 w-11 rounded-full border flex items-center justify-center shrink-0 overflow-hidden'
-                        style={{
-                          backgroundColor: colors.bg,
-                          color: colors.text,
-                          borderColor: 'var(--border)'
-                        }}
-                      >
-                        {client.avatar ? (
-                          <img
-                            src={client.avatar}
-                            alt={client.name}
-                            className='h-full w-full object-cover'
-                          />
-                        ) : (
-                          <span className='text-sm font-bold'>{initials}</span>
-                        )}
-                      </div>
-                      <div className='space-y-1 min-w-0'>
-                        <p
-                          className='text-sm font-semibold truncate'
-                          style={{ color: 'var(--text)' }}
-                          title={client.name}
-                        >
-                          {client.name}
-                        </p>
-                        <p
-                          className='text-sm font-semibold'
-                          style={{ color: isLeader ? 'var(--accent)' : 'var(--text)' }}
-                        >
-                          {formatCurrency(client.totalValue)}
-                        </p>
-                        <p className='text-xs' style={{ color: 'var(--muted)' }}>
-                          {client.totalLiters.toLocaleString('pt-BR')} L
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-          </div>
-        )}
-      </div>
-
-      {isRankingOpen && (
-        <div
-          className='fixed inset-0 z-50 flex items-center justify-center px-4'
-          style={{ background: 'rgba(2, 6, 23, 0.72)' }}
-        >
-          <div
-            className='w-full max-w-lg rounded-3xl border overflow-hidden'
-            style={{
-              background: 'var(--surface)',
-              borderColor: 'var(--border)',
-              boxShadow: '0 30px 60px -40px var(--shadow)'
-            }}
-          >
-            <div
-              className='flex items-center justify-between px-5 py-4 border-b'
-              style={{
-                borderColor: 'var(--border)',
-                background:
-                  'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(11, 15, 20, 0.98) 100%)'
-              }}
-            >
-              <div className='flex flex-col gap-1'>
-                <div className='flex items-center gap-2'>
-                  <Users size={16} style={{ color: 'var(--muted)' }} />
-                  <h3 className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                    Ranking de clientes
-                  </h3>
-                </div>
-                <div className='flex items-center gap-2 text-xs' style={{ color: 'var(--muted)' }}>
-                  <span>{MONTHS_FULL[reportMonth]}</span>
-                  <span>•</span>
-                  <span>por valor (R$)</span>
-                </div>
-              </div>
-              <button
-                type='button'
-                onClick={() => setIsRankingOpen(false)}
-                className='h-9 w-9 rounded-full flex items-center justify-center border transition-colors hover:brightness-110'
-                style={{
-                  borderColor: 'var(--border)',
-                  background: 'var(--surface-2)',
-                  color: 'var(--muted)'
-                }}
-                aria-label='Fechar'
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className='max-h-[70vh] overflow-y-auto custom-scrollbar p-4 space-y-3'>
-              {monthlyRanking.length === 0 ? (
-                <div
-                  className='flat-card p-6 text-center text-sm'
-                  style={{ borderStyle: 'dashed', borderColor: 'var(--border)', color: 'var(--muted)' }}
-                >
-                  Nenhuma venda registrada neste período.
-                </div>
-              ) : (
-                monthlyRanking.map((client, idx) => {
-                  const initials = client.name
-                    .trim()
-                    .split(/\s+/)
-                    .slice(0, 2)
-                    .map((p) => p[0]?.toUpperCase() || '')
-                    .join('')
-                  const colors = getAvatarColors(client.clientId || client.name)
-                  const isTopThree = idx < 3
-                  const primaryValue = formatCurrency(client.totalValue)
-                  const secondaryValue = `${client.totalLiters.toLocaleString('pt-BR')} L`
-                  const sharePct =
-                    rankingTotalValue > 0
-                      ? Math.round((client.totalValue / rankingTotalValue) * 100)
-                      : 0
-                  const barWidth =
-                    maxRankingValue > 0
-                      ? Math.min((client.totalValue / maxRankingValue) * 100, 100)
-                      : 0
-                  const rowStyle = isTopThree
-                    ? {
-                        background: 'rgba(184, 255, 44, 0.06)',
-                        borderColor: 'rgba(184, 255, 44, 0.28)'
-                      }
-                    : {
-                        background: 'var(--surface-2)',
-                        borderColor: 'var(--border)'
-                      }
-                  const badgeStyle = isTopThree
-                    ? {
-                        background: 'rgba(184, 255, 44, 0.18)',
-                        color: 'var(--accent)',
-                        borderColor: 'rgba(184, 255, 44, 0.35)'
-                      }
-                    : {
-                        background: 'var(--surface)',
-                        color: 'var(--text)',
-                        borderColor: 'var(--border)'
-                      }
-
-                  return (
-                    <div
-                      key={client.clientId + idx}
-                      className='relative overflow-hidden rounded-xl border p-3'
-                      style={rowStyle}
-                    >
-                      <div
-                        className='absolute inset-y-0 left-0'
-                        style={{
-                          width: `${barWidth}%`,
-                          background: 'rgba(184, 255, 44, 0.12)'
-                        }}
-                      />
-                      <div className='relative z-10 flex items-center gap-3'>
-                        <div
-                          className='h-8 w-8 rounded-full border flex items-center justify-center text-[11px] font-bold shrink-0'
-                          style={badgeStyle}
-                        >
-                          {idx + 1}
-                        </div>
-                        <div
-                          className='h-9 w-9 rounded-full border flex items-center justify-center shrink-0 overflow-hidden'
-                          style={{
-                            backgroundColor: colors.bg,
-                            color: colors.text,
-                            borderColor: 'var(--border)'
-                          }}
-                        >
-                          {client.avatar ? (
-                            <img src={client.avatar} alt={client.name} className='h-full w-full object-cover' />
-                          ) : (
-                            <span className='text-[11px] font-bold'>{initials}</span>
-                          )}
-                        </div>
-                        <div className='min-w-0 flex-1'>
-                          <p
-                            className='text-sm font-semibold truncate'
-                            style={{ color: 'var(--text)' }}
-                            title={client.name}
-                          >
-                            {client.name}
-                          </p>
-                          <p className='text-xs' style={{ color: 'var(--muted)' }}>
-                            {secondaryValue}
-                          </p>
-                        </div>
-                        <div className='text-right'>
-                          <p
-                            className='text-sm font-semibold'
-                            style={{ color: isTopThree ? 'var(--accent)' : 'var(--text)' }}
-                          >
-                            {primaryValue}
-                          </p>
-                          <p className='text-[10px]' style={{ color: 'var(--muted)' }}>
-                            {sharePct > 0 ? `${sharePct}% do total` : '-'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-
-            <div
-              className='border-t px-5 py-4 flex items-center justify-between'
-              style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
-            >
-              <div className='flex items-center gap-2 text-xs font-semibold' style={{ color: 'var(--muted)' }}>
-                <span>Total do mês:</span>
-                <span style={{ color: 'var(--accent)' }}>
-                  {formatCurrency(rankingTotalValue)}
-                </span>
-                <span>•</span>
-                <span style={{ color: 'var(--muted)' }}>
-                  {rankingTotalLiters.toLocaleString('pt-BR')} L
-                </span>
-              </div>
-              <div className='text-xs' style={{ color: 'var(--muted)' }}>
-                Clientes ativos:{' '}
-                <span style={{ color: 'var(--text)', fontWeight: 600 }}>
-                  {monthlyRanking.length}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
-
-
 
 
 
