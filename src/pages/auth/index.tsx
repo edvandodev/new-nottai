@@ -14,8 +14,7 @@ type ResetState = {
   loading: boolean
 }
 
-const accentColor = '#C7F000'
-const gradientBackground = 'linear-gradient(180deg, #0B1220 0%, #05070D 100%)'
+const gradientBackground = 'linear-gradient(180deg, var(--bg) 0%, var(--surface-2) 100%)'
 
 const translateError = (error: any) => {
   const code = (error?.code || error?.message || '').toString()
@@ -165,7 +164,7 @@ export function AuthPage() {
       className='relative min-h-screen text-white'
       style={{
         background: gradientBackground,
-        color: '#FFFFFF',
+        color: 'var(--text)',
         fontFamily: "'Inter','Poppins','DM Sans','Segoe UI',sans-serif"
       }}
     >
@@ -198,17 +197,17 @@ export function AuthPage() {
                 top: '55%',
                 zIndex: 0,
                 background:
-                  'linear-gradient(180deg, rgba(5,7,13,0) 0%, rgba(5,7,13,0.2) 45%, rgba(5,7,13,0.55) 100%)'
+                  'linear-gradient(180deg, rgba(244, 246, 243, 0) 0%, rgba(244, 246, 243, 0.45) 100%)'
               }}
             />
 
             <div className='space-y-6 relative z-10'>
               <div className='space-y-1 text-center'>
-                <p className='text-xs font-semibold uppercase tracking-[0.2em] text-[#A7B0BF]'>
+                <p className='text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]'>
                   login
                 </p>
                 <h1 className='text-[26px] font-semibold leading-tight'>{title}</h1>
-                <p className='text-sm text-[#A7B0BF]'>{subtitle}</p>
+                <p className='text-sm text-[var(--muted)]'>{subtitle}</p>
               </div>
 
               {error && (
@@ -221,9 +220,9 @@ export function AuthPage() {
                 <div
                   className='p-3 rounded-xl text-sm'
                   style={{
-                    border: `1px solid ${accentColor}40`,
-                    backgroundColor: `${accentColor}14`,
-                    color: '#d8ff4a'
+                    border: '1px solid color-mix(in srgb, var(--accent) 34%, var(--border))',
+                    backgroundColor: 'var(--accent-soft)',
+                    color: 'var(--text)'
                   }}
                 >
                   {info}
@@ -232,15 +231,15 @@ export function AuthPage() {
 
               <form className='space-y-4' onSubmit={handleSubmit}>
                 <div className='space-y-2'>
-                  <div className='flex items-center gap-3 rounded-[14px] bg-[rgba(15,23,42,0.55)] border border-white/10 px-4 h-[52px] transition-all focus-within:border-[#C7F000] focus-within:ring-1 focus-within:ring-[#C7F000]'>
-                    <Mail size={18} className='text-[#C7F000]' />
+                  <div className='flex items-center gap-3 rounded-[14px] bg-[var(--surface)] border border-[var(--border)] px-4 h-[52px] transition-all focus-within:border-[var(--primary)] focus-within:ring-1 focus-within:ring-[var(--primary)]'>
+                    <Mail size={18} className='text-[var(--primary)]' />
                     <input
                       type='email'
                       inputMode='email'
                       autoComplete='email'
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className='flex-1 bg-transparent text-white placeholder:text-[#6b7484] focus:outline-none'
+                      className='flex-1 bg-transparent text-white placeholder:text-[var(--muted)] focus:outline-none'
                       placeholder='Seu e-mail'
                       disabled={loading}
                       required
@@ -249,14 +248,14 @@ export function AuthPage() {
                 </div>
 
                 <div className='space-y-2'>
-                  <div className='flex items-center gap-3 rounded-[14px] bg-[rgba(15,23,42,0.55)] border border-white/10 px-4 h-[52px] transition-all focus-within:border-[#C7F000] focus-within:ring-1 focus-within:ring-[#C7F000]'>
-                    <Lock size={18} className='text-[#C7F000]' />
+                  <div className='flex items-center gap-3 rounded-[14px] bg-[var(--surface)] border border-[var(--border)] px-4 h-[52px] transition-all focus-within:border-[var(--primary)] focus-within:ring-1 focus-within:ring-[var(--primary)]'>
+                    <Lock size={18} className='text-[var(--primary)]' />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       autoComplete='current-password'
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className='flex-1 bg-transparent text-white placeholder:text-[#6b7484] focus:outline-none'
+                      className='flex-1 bg-transparent text-white placeholder:text-[var(--muted)] focus:outline-none'
                       placeholder='Sua senha'
                       disabled={loading}
                       minLength={6}
@@ -265,7 +264,7 @@ export function AuthPage() {
                     <button
                       type='button'
                       onClick={() => setShowPassword((prev) => !prev)}
-                      className='text-[#A7B0BF] hover:text-white transition-colors'
+                      className='text-[var(--muted)] hover:text-white transition-colors'
                       aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -275,14 +274,14 @@ export function AuthPage() {
 
                 {mode === 'signup' && (
                   <div className='space-y-2'>
-                    <div className='flex items-center gap-3 rounded-[14px] bg-[rgba(15,23,42,0.55)] border border-white/10 px-4 h-[52px] transition-all focus-within:border-[#C7F000] focus-within:ring-1 focus-within:ring-[#C7F000]'>
-                      <Lock size={18} className='text-[#C7F000]' />
+                    <div className='flex items-center gap-3 rounded-[14px] bg-[var(--surface)] border border-[var(--border)] px-4 h-[52px] transition-all focus-within:border-[var(--primary)] focus-within:ring-1 focus-within:ring-[var(--primary)]'>
+                      <Lock size={18} className='text-[var(--primary)]' />
                       <input
                         type='password'
                         autoComplete='new-password'
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className='flex-1 bg-transparent text-white placeholder:text-[#6b7484] focus:outline-none'
+                        className='flex-1 bg-transparent text-white placeholder:text-[var(--muted)] focus:outline-none'
                         placeholder='Confirme sua senha'
                         disabled={loading}
                         minLength={6}
@@ -297,7 +296,7 @@ export function AuthPage() {
                     <button
                       type='button'
                       onClick={openReset}
-                      className='text-xs font-semibold text-[#C7F000] hover:underline underline-offset-4 transition-colors'
+                      className='text-xs font-semibold text-[var(--primary)] hover:underline underline-offset-4 transition-colors'
                       disabled={loading}
                     >
                       Esqueceu sua senha?
@@ -311,8 +310,8 @@ export function AuthPage() {
                     disabled={loading}
                     className={`w-full h-[52px] rounded-[14px] font-semibold flex items-center justify-center gap-2 transition-transform duration-150 active:translate-y-[1px] disabled:opacity-70 ${
                       mode === 'signup'
-                        ? 'bg-[#2563EB] text-white hover:bg-[#2f6df0]'
-                        : 'bg-[#C7F000] text-[#05070D] hover:bg-[#d4ff33]'
+                        ? 'bg-[var(--primary)] text-white hover:bg-[var(--primary-2)]'
+                        : 'bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-95'
                     }`}
                   >
                     {loading ? (
@@ -330,7 +329,7 @@ export function AuthPage() {
                       type='button'
                       onClick={handleGuestSignIn}
                       disabled={guestLoading || loading}
-                      className='w-full h-[52px] rounded-[14px] border border-[#C7F000] text-[#C7F000] font-semibold flex items-center justify-center gap-2 transition-colors hover:bg-[#c7f000]/10 disabled:opacity-60'
+                      className='w-full h-[52px] rounded-[14px] border border-[var(--primary)] text-[var(--primary)] font-semibold flex items-center justify-center gap-2 transition-colors hover:bg-[var(--accent-soft)] disabled:opacity-60'
                     >
                       {guestLoading ? (
                         'Entrando...'
@@ -345,13 +344,13 @@ export function AuthPage() {
                 </div>
               </form>
 
-              <div className='pt-2 text-center text-sm text-[#A7B0BF]'>
+              <div className='pt-2 text-center text-sm text-[var(--muted)]'>
                 {mode === 'signin' ? (
                   <>
                     Não tem uma conta?{' '}
                     <button
                       type='button'
-                      className='text-[#C7F000] font-semibold hover:underline underline-offset-4 transition-colors'
+                      className='text-[var(--primary)] font-semibold hover:underline underline-offset-4 transition-colors'
                       onClick={() => {
                         setMode('signup')
                         setError(null)
@@ -367,7 +366,7 @@ export function AuthPage() {
                     Já tem uma conta?{' '}
                     <button
                       type='button'
-                      className='text-[#C7F000] font-semibold hover:underline underline-offset-4 transition-colors'
+                      className='text-[var(--primary)] font-semibold hover:underline underline-offset-4 transition-colors'
                       onClick={() => {
                         setMode('signin')
                         setError(null)
@@ -388,15 +387,15 @@ export function AuthPage() {
 
       {reset.open && (
         <div className='fixed inset-0 z-30 bg-black/70 flex items-center justify-center px-4'>
-          <div className='w-full max-w-sm rounded-2xl bg-[#0F172A] border border-[#1f2a3c] p-6 shadow-[0_18px_42px_-36px_rgba(0,0,0,0.85)] space-y-4'>
+          <div className='w-full max-w-sm rounded-2xl bg-[var(--surface)] border border-[var(--border)] p-6 shadow-[0_18px_42px_-36px_rgba(0,0,0,0.85)] space-y-4'>
             <div className='flex items-center justify-between gap-4'>
               <div>
                 <p className='text-base font-semibold text-white'>Recuperar senha</p>
-                <p className='text-xs text-[#9AA4B2]'>Enviaremos um link para o seu e-mail.</p>
+                <p className='text-xs text-[var(--muted)]'>Enviaremos um link para o seu e-mail.</p>
               </div>
               <button
                 onClick={closeReset}
-                className='text-[#9AA4B2] hover:text-white text-sm'
+                className='text-[var(--muted)] hover:text-white text-sm'
                 disabled={reset.loading}
               >
                 Fechar
@@ -409,7 +408,7 @@ export function AuthPage() {
               </div>
             )}
             {reset.success && (
-              <div className='p-3 rounded-xl border border-[#c7f000]/30 bg-[#c7f000]/10 text-[#d8ff4a] text-sm'>
+              <div className='p-3 rounded-xl border border-[var(--border)] bg-[var(--accent-soft)] text-[var(--text)] text-sm'>
                 {reset.success}
               </div>
             )}
@@ -417,13 +416,13 @@ export function AuthPage() {
             <form className='space-y-3' onSubmit={handleResetSubmit}>
               <div className='space-y-2'>
                 <label className='text-sm font-medium text-white'>E-mail</label>
-                <div className='flex items-center gap-3 rounded-xl border border-[#1f2a3c] bg-[#0F172A] px-4 py-3 transition-all focus-within:border-[#C7F000] focus-within:ring-1 focus-within:ring-[#C7F000]'>
-                  <Mail size={18} className='text-[#C7F000]' />
+                <div className='flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 transition-all focus-within:border-[var(--primary)] focus-within:ring-1 focus-within:ring-[var(--primary)]'>
+                  <Mail size={18} className='text-[var(--primary)]' />
                   <input
                     type='email'
                     value={reset.email}
                     onChange={(e) => setReset((prev) => ({ ...prev, email: e.target.value }))}
-                    className='flex-1 bg-transparent text-white placeholder:text-[#6b7484] focus:outline-none'
+                    className='flex-1 bg-transparent text-white placeholder:text-[var(--muted)] focus:outline-none'
                     placeholder='Seu e-mail'
                     disabled={reset.loading}
                     required
@@ -434,7 +433,7 @@ export function AuthPage() {
               <button
                 type='submit'
                 disabled={reset.loading}
-                className='w-full h-11 rounded-[12px] bg-[#C7F000] text-[#05070D] font-semibold flex items-center justify-center gap-2 transition-transform duration-150 hover:bg-[#d4ff33] active:translate-y-[1px] disabled:opacity-70'
+                className='w-full h-11 rounded-[12px] bg-[var(--accent)] text-[var(--accent-ink)] font-semibold flex items-center justify-center gap-2 transition-transform duration-150 hover:brightness-95 active:translate-y-[1px] disabled:opacity-70'
               >
                 {reset.loading ? 'Enviando...' : 'Enviar link'}
               </button>

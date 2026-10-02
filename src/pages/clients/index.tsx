@@ -526,7 +526,7 @@ export function ClientsPage({
             paddingLeft: 16,
             paddingRight: 16,
             background:
-              'linear-gradient(180deg, rgba(11, 15, 20, 0.98) 0%, rgba(11, 15, 20, 0.7) 45%, rgba(11, 15, 20, 0) 100%)',
+              'linear-gradient(180deg, color-mix(in srgb, var(--bg) 98%, transparent) 0%, color-mix(in srgb, var(--bg) 78%, transparent) 52%, transparent 100%)',
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)'
           }}
@@ -885,7 +885,7 @@ export function ClientsPage({
         <div
           className='relative h-32 rounded-b-[2rem] shadow-md overflow-hidden'
           style={{
-            background: 'linear-gradient(135deg, rgba(184, 255, 44, 0.22), rgba(11, 15, 20, 0.96))'
+            background: 'linear-gradient(135deg, #e8f7e1 0%, #c7eeae 55%, #f8faf7 100%)'
           }}
         >
           <div
@@ -1019,8 +1019,8 @@ export function ClientsPage({
                             color: 'var(--text)'
                           }
                         : {
-                            background: 'rgba(14, 20, 28, 0.7)',
-                            borderColor: 'rgba(30, 42, 56, 0.9)',
+                            background: 'var(--surface-2)',
+                            borderColor: 'var(--border)',
                             color: 'var(--muted)'
                           }
                     }
@@ -1111,14 +1111,14 @@ export function ClientsPage({
                 className='rounded-[22px] border overflow-hidden'
                 style={{
                   background:
-                    'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(14, 19, 26, 0.92) 100%)',
-                  borderColor: 'rgba(30, 42, 56, 0.9)',
+                    'var(--surface)',
+                  borderColor: 'var(--border)',
                   boxShadow: '0 18px 36px -28px rgba(0, 0, 0, 0.7)'
                 }}
               >
                 <div
                   className='flex items-center gap-3 px-4 py-3 border-b'
-                  style={{ borderColor: 'rgba(30, 42, 56, 0.9)' }}
+                  style={{ borderColor: 'var(--border)' }}
                 >
                   <ShoppingCart size={16} style={{ color: 'var(--text)' }} />
                   <span className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
@@ -1156,7 +1156,7 @@ export function ClientsPage({
                           <div
                             className='h-px'
                             style={{
-                              background: 'rgba(255, 255, 255, 0.06)',
+                              background: 'var(--border)',
                               marginLeft: 0,
                               marginRight: 0
                             }}
@@ -1169,14 +1169,14 @@ export function ClientsPage({
                               style={
                                 isSale
                                   ? {
-                                      background: 'rgba(255, 193, 7, 0.18)',
-                                      borderColor: 'rgba(255, 193, 7, 0.45)',
-                                      color: '#fbbf24'
+                                      background: 'var(--warning-soft)',
+                                      borderColor: 'color-mix(in srgb, var(--warning) 28%, var(--border))',
+                                      color: 'var(--warning)'
                                     }
                                   : {
-                                      background: 'rgba(34, 197, 94, 0.18)',
-                                      borderColor: 'rgba(34, 197, 94, 0.45)',
-                                      color: '#4ade80'
+                                      background: 'var(--success-soft)',
+                                      borderColor: 'color-mix(in srgb, var(--success) 24%, var(--border))',
+                                      color: 'var(--success)'
                                     }
                               }
                             >

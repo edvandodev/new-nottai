@@ -195,9 +195,9 @@ export const ReceivePaymentModal = ({
         aria-labelledby={titleId}
         className='relative w-[92vw] max-w-[420px] max-h-[80vh] overflow-hidden rounded-[24px] shadow-2xl border flex flex-col'
         style={{
-          background: 'rgba(18, 24, 33, 0.9)',
+          background: 'var(--surface)',
           backdropFilter: 'blur(12px)',
-          borderColor: 'rgba(30, 42, 56, 0.8)',
+          borderColor: 'var(--border)',
           opacity: isVisible ? 1 : 0,
           transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.98)',
           transition: `opacity ${ANIMATION_DURATION}ms ease, transform ${ANIMATION_DURATION}ms ease`,
@@ -241,15 +241,15 @@ export const ReceivePaymentModal = ({
                   src={client.avatarUrl}
                   alt={client.name}
                   className='h-14 w-14 rounded-full object-cover border'
-                  style={{ borderColor: 'rgba(255, 255, 255, 0.08)' }}
+                  style={{ borderColor: 'var(--border)' }}
                 />
               ) : (
                 <div
                   className='h-14 w-14 rounded-full flex items-center justify-center text-sm font-semibold'
                   style={{
-                    background: 'rgba(184, 255, 44, 0.12)',
+                    background: 'var(--accent-soft)',
                     color: 'var(--accent)',
-                    border: '1px solid rgba(184, 255, 44, 0.3)'
+                    border: '1px solid color-mix(in srgb, var(--accent) 34%, var(--border))'
                   }}
                 >
                   {(client.name || '?').trim().charAt(0).toUpperCase()}
@@ -294,9 +294,9 @@ export const ReceivePaymentModal = ({
                 <div
                   className='h-9 w-9 rounded-xl flex items-center justify-center'
                   style={{
-                    background: 'rgba(188, 255, 56, 0.12)',
+                    background: 'var(--accent-soft)',
                     color: 'var(--accent)',
-                    border: '1px solid rgba(188, 255, 56, 0.2)'
+                    border: '1px solid color-mix(in srgb, var(--accent) 34%, var(--border))'
                   }}
                 >
                   <DollarSign size={18} />
@@ -321,7 +321,7 @@ export const ReceivePaymentModal = ({
                 placeholder='0,00'
                 className='w-full h-14 pl-24 pr-4 rounded-2xl text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400/60'
                 style={{
-                  background: 'rgba(11, 15, 20, 0.55)',
+                  background: 'var(--surface-2)',
                   border: '1px solid var(--border)',
                   color: 'var(--text)',
                   caretColor: 'var(--accent)'
@@ -354,7 +354,7 @@ export const ReceivePaymentModal = ({
               onChange={(event) => setPaymentDateInput(event.target.value)}
               className='w-full h-12 rounded-2xl px-4 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400/60'
               style={{
-                background: 'rgba(11, 15, 20, 0.55)',
+                background: 'var(--surface-2)',
                 border: '1px solid var(--border)',
                 color: 'var(--text)'
               }}
@@ -365,8 +365,8 @@ export const ReceivePaymentModal = ({
           <div
             className='rounded-2xl p-3 flex gap-3 border'
             style={{
-              background: 'rgba(255, 216, 77, 0.12)',
-              borderColor: 'rgba(255, 216, 77, 0.3)'
+              background: 'var(--warning-soft)',
+              borderColor: 'color-mix(in srgb, var(--warning) 28%, var(--border))'
             }}
           >
             <AlertTriangle
@@ -374,7 +374,7 @@ export const ReceivePaymentModal = ({
               className='shrink-0 mt-0.5'
               style={{ color: 'var(--warning)' }}
             />
-            <p className='text-xs' style={{ color: 'rgba(255, 236, 194, 0.9)' }}>
+            <p className='text-xs' style={{ color: 'var(--warning)' }}>
               {warningText}
             </p>
           </div>
@@ -394,10 +394,10 @@ export const ReceivePaymentModal = ({
             className='w-full h-14 rounded-2xl font-semibold transition-all active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed'
             style={{
               background:
-                'linear-gradient(135deg, rgba(184, 255, 44, 1) 0%, rgba(154, 236, 38, 1) 100%)',
+                'linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 82%, #ffffff) 100%)',
               color: 'var(--accent-ink, #0c1014)',
               boxShadow:
-                '0 16px 30px -18px rgba(184, 255, 44, 0.55), 0 0 18px rgba(184, 255, 44, 0.2)'
+                '0 14px 28px -20px var(--shadow)'
             }}
           >
             {isSubmitting ? 'Processando...' : 'Receber'}

@@ -1,48 +1,45 @@
-/* Small set of reusable surfaces shared by the refreshed screens. */
+/* Shared light surfaces for the lime and deep-green palette. */
 .flat-card {
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #dce6dc);
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e2e9e2);
   border-radius: 20px;
-  box-shadow: 0 12px 34px -28px var(--shadow, rgba(37, 63, 43, 0.14));
+  box-shadow: 0 12px 34px -28px var(--shadow, rgba(21, 55, 43, 0.11));
 }
 
 .flat-card-muted {
-  background: var(--surface-2, #edf3ed);
-  border: 1px solid var(--border, #dce6dc);
+  background: var(--surface-2, #f8faf7);
+  border: 1px solid var(--border, #e2e9e2);
 }
 
 .flat-chip {
-  background: var(--surface-2, #edf3ed);
-  border: 1px solid var(--border, #dce6dc);
-  color: var(--muted, #718075);
+  background: var(--surface-2, #f8faf7);
+  border: 1px solid var(--border, #e2e9e2);
+  color: var(--muted, #728078);
 }
 
 .flat-chip.is-active {
-  background: var(--accent, #d9f2ad);
-  color: var(--accent-ink, #21452c);
-  border-color: var(--accent, #d9f2ad);
+  background: var(--accent, #91e264);
+  color: var(--accent-ink, #15372b);
+  border-color: var(--accent, #91e264);
 }
 
 .flat-input {
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #dce6dc);
-  color: var(--text, #192a20);
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e2e9e2);
+  color: var(--text, #15372b);
   border-radius: 14px;
 }
 
-.flat-input::placeholder {
-  color: var(--muted, #718075);
-}
+.flat-input::placeholder { color: var(--muted, #728078); }
 
 .flat-pill {
-  background: var(--surface-2, #edf3ed);
-  border: 1px solid var(--border, #dce6dc);
-  color: var(--muted, #718075);
+  background: var(--surface-2, #f8faf7);
+  border: 1px solid var(--border, #e2e9e2);
+  color: var(--muted, #728078);
 }
 
 .flat-pill.warning {
-  background: #fff1d6;
-  color: #8a5d11;
-  border-color: #f1d7a8;
+  background: var(--warning-soft, #fff6df);
+  color: var(--warning, #a86f14);
+  border-color: color-mix(in srgb, var(--warning, #a86f14) 28%, var(--border, #e2e9e2));
 }
-

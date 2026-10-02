@@ -210,7 +210,7 @@ const preparePhotoFromFile = async (file: File): Promise<string> => {
 const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'F�mea')
 
 
-const dividerColor = '#1e2a38'
+const dividerColor = 'var(--border)'
 
 const InfoChip = ({
   label,

@@ -173,12 +173,12 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
     >
       <div
         className='max-w-xl mx-auto min-h-screen pb-24'
-        style={{ background: 'linear-gradient(180deg, rgba(12,16,23,0.96), rgba(10,12,18,0.92))' }}
+        style={{ background: 'var(--bg)' }}
       >
         <header
           className='sticky top-0 z-50 backdrop-blur-xl'
           style={{
-            background: 'rgba(11, 15, 20, 0.7)',
+            background: 'color-mix(in srgb, var(--surface) 92%, transparent)',
             borderBottom: '1px solid var(--border)'
           }}
         >
@@ -224,7 +224,7 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
               ) : null}
             </div>
             <div className='px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border'
-              style={{ color: statusColor, borderColor: statusColor + '55', background: 'rgba(183, 246, 10, 0.08)' }}
+              style={{ color: statusColor, borderColor: statusColor + '55', background: 'var(--accent-soft)' }}
             >
               {statusLabel}
             </div>
@@ -269,11 +269,11 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
 
           <div
             className='flat-card p-4 relative overflow-hidden'
-            style={{ background: 'linear-gradient(135deg, rgba(184,255,44,0.12), var(--surface))' }}
+            style={{ background: 'linear-gradient(135deg, var(--accent-soft), var(--surface))' }}
           >
             <div
               className='absolute -top-6 -right-10 w-32 h-32 rounded-full blur-3xl'
-              style={{ background: 'rgba(184, 255, 44, 0.18)' }}
+              style={{ background: 'color-mix(in srgb, var(--accent) 22%, transparent)' }}
             />
             <div className='flex items-start justify-between gap-3 relative z-10'>
               <div>
@@ -330,7 +330,7 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
         <div
           className='fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-3'
           style={{
-            background: 'linear-gradient(180deg, transparent, rgba(9, 12, 18, 0.95))'
+            background: 'linear-gradient(180deg, transparent, color-mix(in srgb, var(--bg) 96%, transparent))'
           }}
         >
           <div className='max-w-xl mx-auto flex gap-3'>
