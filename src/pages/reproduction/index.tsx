@@ -105,13 +105,13 @@ const compressImageDataUrl = async (
   const maxDim = opts.maxDim ?? 1024
   const quality = opts.quality ?? 0.78
 
-  // Se n�o for imagem, retorna como est�.
+  // Se não for imagem, retorna como está.
   if (!dataUrl.startsWith('data:image/')) return dataUrl
 
   const img = new Image()
   const loaded = new Promise<void>((resolve, reject) => {
     img.onload = () => resolve()
-    img.onerror = () => reject(new Error('Imagem inv�lida'))
+    img.onerror = () => reject(new Error('Imagem inválida'))
   })
   img.src = dataUrl
   try {
@@ -141,7 +141,7 @@ const compressImageDataUrl = async (
     return dataUrl
   }
 
-  // JPEG costuma ficar bem menor e � o esperado para foto.
+  // JPEG costuma ficar bem menor e é o esperado para foto.
   try {
     return canvas.toDataURL('image/jpeg', quality)
   } catch {
@@ -207,7 +207,7 @@ const preparePhotoFromFile = async (file: File): Promise<string> => {
 }
 
 
-const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'F�mea')
+const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'Fêmea')
 
 
 const dividerColor = 'var(--border)'
@@ -493,7 +493,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
             </div>
             <div>
                 <div className='text-lg font-bold leading-tight' style={{ color: 'var(--text)' }}>
-                Reprodu��o</div>
+                Reprodução</div>
               <div className='text-xs' style={{ color: 'var(--muted)' }}>
                 Anote partos por vaca, com data, sexo e foto.
               </div>
@@ -597,7 +597,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
                       </div>
                       <div className="text-xs mt-1" style={{ color: "var(--muted)" }}>
                         {lastEvent
-                          ? `�ltimo parto: ${lastDateLabel}${lastSexLabel ? ` � ${lastSexLabel}` : ''}`
+                          ? `Último parto: ${lastDateLabel}${lastSexLabel ? ` · ${lastSexLabel}` : ''}`
                           : 'Nenhum parto registrado'}
                       </div>
                       {elapsedLabel && (

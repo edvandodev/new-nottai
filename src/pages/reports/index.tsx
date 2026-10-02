@@ -22,7 +22,7 @@ const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'S
 const MONTHS_FULL = [
   'Janeiro',
   'Fevereiro',
-  'Mar�o',
+  'Março',
   'Abril',
   'Maio',
   'Junho',
@@ -178,7 +178,7 @@ const MonthYearToggle = ({
     <button
       type='button'
       onClick={onPrevMonth}
-      aria-label='M�s anterior'
+      aria-label='Mês anterior'
       className='h-9 w-9 rounded-full flex items-center justify-center border transition-colors hover:brightness-95'
       style={{
         borderColor: 'var(--border)',
@@ -196,7 +196,7 @@ const MonthYearToggle = ({
         type='button'
         onClick={onPressCenter}
         className='transition-colors hover:brightness-110'
-        aria-label='Selecionar m�s e ano'
+        aria-label='Selecionar mês e ano'
         style={{ color: 'var(--text)' }}
       >
         {monthLabel}
@@ -206,7 +206,7 @@ const MonthYearToggle = ({
     <button
       type='button'
       onClick={onNextMonth}
-      aria-label='Pr�ximo m�s'
+      aria-label='Próximo mês'
       className='h-9 w-9 rounded-full flex items-center justify-center border transition-colors hover:brightness-95'
       style={{
         borderColor: 'var(--border)',
@@ -256,7 +256,7 @@ const ViewToggle = ({
         className={optionClasses('month')}
         style={value === 'month' ? activeStyle : inactiveStyle}
       >
-        M�s
+        Mês
       </button>
       <button
         type='button'
@@ -281,8 +281,8 @@ const StatsSummaryCard = ({
   const isAccent = tone === 'accent'
   const cardStyle = isAccent
     ? {
-        background: 'linear-gradient(160deg, color-mix(in srgb, var(--accent) 48%, white) 0%, var(--surface) 76%)',
-        borderColor: 'color-mix(in srgb, var(--primary) 24%, var(--border))',
+        background: 'var(--accent)',
+        borderColor: 'var(--accent)',
         boxShadow: '0 18px 40px -28px var(--shadow)'
       }
     : {
@@ -293,9 +293,9 @@ const StatsSummaryCard = ({
 
   const iconStyle = isAccent
     ? {
-        background: 'color-mix(in srgb, var(--accent) 56%, white)',
-        color: 'var(--primary)',
-        borderColor: 'color-mix(in srgb, var(--primary) 20%, var(--border))'
+        background: 'color-mix(in srgb, var(--tertiary) 12%, var(--accent))',
+        color: 'var(--tertiary)',
+        borderColor: 'color-mix(in srgb, var(--tertiary) 22%, var(--accent))'
       }
     : {
         background: 'var(--surface-2)',
@@ -304,7 +304,7 @@ const StatsSummaryCard = ({
       }
 
   const valueStyle = {
-    color: isAccent ? 'var(--accent)' : 'var(--text)'
+    color: isAccent ? 'var(--accent-ink)' : 'var(--text)'
   }
 
   const dividerStyle = {
@@ -361,7 +361,7 @@ const StatsSummaryCard = ({
 
       <div className='space-y-1'>
         <p className='text-[11px] font-medium' style={{ color: 'var(--muted)' }}>
-          M�s passado
+          Mês passado
         </p>
         <div className='flex items-center justify-between text-xs' style={{ color: 'var(--muted)' }}>
           <span
@@ -552,9 +552,9 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
     <div className='space-y-6 animate-fade-in' style={{ color: 'var(--text)' }}>
       <div className='mt-6 flex items-start justify-between gap-4 mb-4'>
         <div>
-          <h1 className='text-[28px] font-semibold leading-none'>Relat�rios</h1>
+          <h1 className='text-[28px] font-semibold leading-none'>Relatórios</h1>
           <p className='mt-2 text-xs' style={{ color: 'var(--muted)' }}>
-            Vis�o geral de vendas e pagamentos
+            Visão geral de vendas e pagamentos
           </p>
         </div>
       </div>
@@ -566,7 +566,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               className='text-xs font-semibold uppercase tracking-wider'
               style={{ color: 'var(--muted)' }}
             >
-              Resumo do per�odo
+              Resumo do período
             </h3>
           </div>
           <div className='relative' ref={monthYearRef}>
@@ -612,7 +612,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                       background: 'var(--surface-2)',
                       color: 'var(--muted)'
                     }}
-                    aria-label='Pr�ximo ano'
+                    aria-label='Próximo ano'
                   >
                     <ChevronRight size={16} />
                   </button>
@@ -677,7 +677,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               className='text-xs font-semibold uppercase tracking-wider'
               style={{ color: 'var(--muted)' }}
             >
-              {viewMode === 'month' ? 'Vendas por M�s' : 'Vendas por Semana'}
+              {viewMode === 'month' ? 'Vendas por Mês' : 'Vendas por Semana'}
             </h3>
           </div>
           <ViewToggle value={viewMode} onChange={setViewMode} />
@@ -700,7 +700,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                   <span className='font-semibold' style={{ color: 'var(--accent)' }}>
                     {formatCurrency(monthlyTotals[reportMonth]?.totalValue || 0)}
                   </span>
-                  <span style={{ color: 'var(--muted)' }}></span>
+                  <span style={{ color: 'var(--muted)' }}>·</span>
                   <span className='font-semibold' style={{ color: 'var(--muted)' }}>
                     {(monthlyTotals[reportMonth]?.totalLiters || 0).toLocaleString('pt-BR')} L
                   </span>
@@ -754,12 +754,12 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                 {isActive && (
                                   <span
                                     className='absolute inset-y-0 w-0.5 z-0'
-                                    style={{ background: 'rgba(184, 255, 44, 0.12)' }}
+                                    style={{ background: 'color-mix(in srgb, var(--accent) 16%, transparent)' }}
                                   />
                                 )}
                                 <div
                                   className='h-32 sm:h-40 w-[65%] overflow-hidden flex items-end justify-center relative z-10'
-                                  style={{ background: 'rgba(148, 163, 184, 0.08)' }}
+                                  style={{ background: 'color-mix(in srgb, var(--tertiary) 5%, var(--surface-2))' }}
                                 >
                                   <div
                                     className='w-full transition-all'
@@ -768,9 +768,9 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                       opacity: isZero ? 0.2 : 1,
                                       background: isActive
                                         ? 'var(--accent)'
-                                        : 'rgba(148, 163, 184, 0.55)',
+                                        : 'var(--tertiary)',
                                       boxShadow: isActive
-                                        ? '0 12px 24px -18px rgba(184, 255, 44, 0.55)'
+                                        ? '0 12px 24px -18px color-mix(in srgb, var(--accent) 60%, transparent)'
                                         : 'none'
                                     }}
                                   />
@@ -812,12 +812,12 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               <div className='mt-2.5'>
                 <div
                   className='relative h-0.5 w-full rounded-full overflow-hidden'
-                  style={{ background: 'rgba(148, 163, 184, 0.2)' }}
+                  style={{ background: 'color-mix(in srgb, var(--tertiary) 18%, var(--border))' }}
                 >
                   <div
                     className='absolute top-0 h-full rounded-full transition-all'
                     style={{
-                      background: 'rgba(184, 255, 44, 0.45)',
+                      background: 'var(--tertiary)',
                       width: `${chartScroll.widthPct}%`,
                       left: `${chartScroll.leftPct}%`
                     }}
@@ -831,7 +831,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               style={{ borderStyle: 'dashed', borderColor: 'var(--border)' }}
             >
               <p className='text-sm' style={{ color: 'var(--muted)' }}>
-                Nenhuma venda registrada neste per�odo.
+                Nenhuma venda registrada neste período.
               </p>
             </div>
           )
@@ -841,7 +841,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
             style={{ borderStyle: 'dashed', borderColor: 'var(--border)' }}
           >
             <p className='text-sm' style={{ color: 'var(--muted)' }}>
-              Nenhuma venda registrada neste per�odo.
+              Nenhuma venda registrada neste período.
             </p>
           </div>
         ) : (
