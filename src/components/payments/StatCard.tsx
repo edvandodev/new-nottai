@@ -36,8 +36,8 @@ export function StatCard({
   const valueColor = resolvedTone === 'accent' ? accentBase : 'var(--text)'
 
   if (isTinted) {
-    const bgTint = backgroundTintColor ?? 'rgba(184, 255, 44, 0.12)'
-    const borderTint = borderColor ?? 'rgba(184, 255, 44, 0.32)'
+    const bgTint = backgroundTintColor ?? 'color-mix(in srgb, var(--accent) 8%, var(--surface))'
+    const borderTint = borderColor ?? 'color-mix(in srgb, var(--accent) 16%, var(--border))'
 
     return (
       <div
@@ -81,9 +81,9 @@ export function StatCard({
   const accentColors =
     accentTone === 'lime'
       ? {
-          border: 'rgba(184, 255, 44, 0.6)',
-          glow: 'rgba(184, 255, 44, 0.45)',
-          glowSoft: 'rgba(184, 255, 44, 0.4)'
+          border: 'color-mix(in srgb, var(--accent) 30%, var(--border))',
+          glow: 'color-mix(in srgb, var(--accent) 22%, transparent)',
+          glowSoft: 'color-mix(in srgb, var(--accent) 18%, transparent)'
         }
       : {
           border: 'rgba(34, 197, 94, 0.6)',
@@ -99,7 +99,7 @@ export function StatCard({
               borderColor: accentColors.border,
               boxShadow: `0 0 0 1px ${accentColors.glowSoft}, 0 14px 30px -26px ${accentColors.glow}`,
               background:
-                'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(14, 19, 26, 0.92) 100%)'
+                'linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, var(--surface)) 0%, var(--surface) 100%)'
             }
           : undefined
       }
@@ -119,3 +119,4 @@ export function StatCard({
     </div>
   )
 }
+

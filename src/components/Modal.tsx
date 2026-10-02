@@ -22,17 +22,18 @@ export function Modal({
   if (!open) return null
   return (
     <div
-      data-theme='flat-lime'
       className='fixed inset-0 z-50 flex items-center justify-center px-4'
       style={{
-        background: 'rgba(11, 15, 20, 0.72)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)'
+        background: 'rgba(19, 36, 25, 0.38)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))'
       }}
       onClick={closeOnBackdrop ? onClose : undefined}
     >
       <div
-        className='w-full max-w-lg rounded-2xl p-6 shadow-xl space-y-4 border'
+        className='w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl p-5 sm:p-6 shadow-xl space-y-4 border custom-scrollbar'
         style={{
           background: 'var(--surface)',
           borderColor: 'var(--border)',
@@ -65,3 +66,4 @@ export function Modal({
     </div>
   )
 }
+

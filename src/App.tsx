@@ -1207,13 +1207,13 @@ function App() {
       case 'CLIENTS':
         return 'Meus Clientes'
       case 'REPORTS':
-        return 'RelatÃ³rios'
+        return 'Relat��rios'
       case 'REPRODUCTION':
-        return 'ReproduÃ§Ã£o'
+        return 'Reprodu��ǜo'
       case 'SETTINGS':
         return 'Ajustes'
       case 'PAYMENTS':
-        return 'HistÃ³rico'
+        return 'Hist��rico'
       default:
         return ''
     }
@@ -1239,7 +1239,7 @@ function App() {
       style={{
         background: 'var(--surface, #0b1221)',
         borderTop: '1px solid var(--border, #1e293b)',
-        boxShadow: '0 -12px 30px -22px rgba(0, 0, 0, 0.55)'
+        boxShadow: '0 -12px 30px -22px rgba(32, 74, 49, 0.2)'
       }}
     >
       <div className='flex items-center justify-between gap-2 max-w-lg mx-auto w-full px-4'>
@@ -1260,7 +1260,7 @@ function App() {
               className={navIndicator}
               style={{
                 background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
+                boxShadow: '0 2px 10px rgba(32, 74, 49, 0.18)'
               }}
             />
           )}
@@ -1289,7 +1289,7 @@ function App() {
               className={navIndicator}
               style={{
                 background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
+                boxShadow: '0 2px 10px rgba(32, 74, 49, 0.18)'
               }}
             />
           )}
@@ -1317,7 +1317,7 @@ function App() {
               className={navIndicator}
               style={{
                 background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
+                boxShadow: '0 2px 10px rgba(32, 74, 49, 0.18)'
               }}
             />
           )}
@@ -1327,7 +1327,7 @@ function App() {
             className='mb-1 transition-transform group-active:scale-90'
           />
           <span className='text-[10px] font-medium tracking-wide'>
-            Relatórios
+            Relat�rios
           </span>
         </button>
 
@@ -1344,7 +1344,7 @@ function App() {
               className={navIndicator}
               style={{
                 background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
+                boxShadow: '0 2px 10px rgba(32, 74, 49, 0.18)'
               }}
             />
           )}
@@ -1353,7 +1353,7 @@ function App() {
             className='mb-1 transition-transform group-active:scale-90'
           />
           <span className='text-[10px] font-medium tracking-wide'>
-            Reprodução
+            Reprodu��o
           </span>
         </button>
 
@@ -1370,7 +1370,7 @@ function App() {
               className={navIndicator}
               style={{
                 background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
+                boxShadow: '0 2px 10px rgba(32, 74, 49, 0.18)'
               }}
             />
           )}
@@ -1571,6 +1571,7 @@ function App() {
 }
 
 export default App
+
 
 
 

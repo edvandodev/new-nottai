@@ -1,63 +1,48 @@
-[data-theme='flat-lime'] {
-  --bg: #0b0f14;
-  --surface: #121821;
-  --surface-2: #161f2a;
-  --border: #1e2a38;
-  --text: #eaf0f7;
-  --muted: #94a3b8;
-  --accent: #b8ff2c;
-  --accent-ink: #0b0f14;
-  --warning: #ffd84d;
-  --danger: #ff5a6a;
-  --shadow: rgba(0, 0, 0, 0.35);
-
-  color: var(--text);
-  background-color: var(--bg);
+/* Small set of reusable surfaces shared by the refreshed screens. */
+.flat-card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #dce6dc);
+  border-radius: 20px;
+  box-shadow: 0 12px 34px -28px var(--shadow, rgba(37, 63, 43, 0.14));
 }
 
-[data-theme='flat-lime'] .flat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  box-shadow: 0 16px 40px -32px var(--shadow);
+.flat-card-muted {
+  background: var(--surface-2, #edf3ed);
+  border: 1px solid var(--border, #dce6dc);
 }
 
-[data-theme='flat-lime'] .flat-card-muted {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+.flat-chip {
+  background: var(--surface-2, #edf3ed);
+  border: 1px solid var(--border, #dce6dc);
+  color: var(--muted, #718075);
 }
 
-[data-theme='flat-lime'] .flat-chip {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--muted);
+.flat-chip.is-active {
+  background: var(--accent, #d9f2ad);
+  color: var(--accent-ink, #21452c);
+  border-color: var(--accent, #d9f2ad);
 }
 
-[data-theme='flat-lime'] .flat-chip.is-active {
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-color: var(--accent);
-}
-
-[data-theme='flat-lime'] .flat-input {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--text);
+.flat-input {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #dce6dc);
+  color: var(--text, #192a20);
   border-radius: 14px;
 }
 
-[data-theme='flat-lime'] .flat-input::placeholder {
-  color: var(--muted);
+.flat-input::placeholder {
+  color: var(--muted, #718075);
 }
 
-[data-theme='flat-lime'] .flat-pill {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--muted);
+.flat-pill {
+  background: var(--surface-2, #edf3ed);
+  border: 1px solid var(--border, #dce6dc);
+  color: var(--muted, #718075);
 }
 
-[data-theme='flat-lime'] .flat-pill.warning {
-  background: var(--warning);
-  color: var(--accent-ink);
-  border-color: var(--warning);
+.flat-pill.warning {
+  background: #fff1d6;
+  color: #8a5d11;
+  border-color: #f1d7a8;
 }
+

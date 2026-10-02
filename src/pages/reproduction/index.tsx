@@ -26,15 +26,15 @@ type ReproductionPageProps = {
 }
 
 const cowCardColors = {
-  accent: '#b9ff45',
-  background: 'rgba(185, 255, 69, 0.12)',
-  border: 'rgba(185, 255, 69, 0.32)'
+  accent: '#2b694b',
+  background: 'rgba(43, 105, 75, 0.08)',
+  border: 'rgba(43, 105, 75, 0.16)'
 }
 
 const birthsCardColors = {
-  accent: '#35e6b5',
-  background: 'rgba(53, 230, 181, 0.12)',
-  border: 'rgba(53, 230, 181, 0.32)'
+  accent: '#54806a',
+  background: 'rgba(84, 128, 106, 0.08)',
+  border: 'rgba(84, 128, 106, 0.16)'
 }
 
 const iconColor = '#94a3b8'
@@ -105,13 +105,13 @@ const compressImageDataUrl = async (
   const maxDim = opts.maxDim ?? 1024
   const quality = opts.quality ?? 0.78
 
-  // Se não for imagem, retorna como está.
+  // Se n�o for imagem, retorna como est�.
   if (!dataUrl.startsWith('data:image/')) return dataUrl
 
   const img = new Image()
   const loaded = new Promise<void>((resolve, reject) => {
     img.onload = () => resolve()
-    img.onerror = () => reject(new Error('Imagem inválida'))
+    img.onerror = () => reject(new Error('Imagem inv�lida'))
   })
   img.src = dataUrl
   try {
@@ -141,7 +141,7 @@ const compressImageDataUrl = async (
     return dataUrl
   }
 
-  // JPEG costuma ficar bem menor e é o esperado para foto.
+  // JPEG costuma ficar bem menor e � o esperado para foto.
   try {
     return canvas.toDataURL('image/jpeg', quality)
   } catch {
@@ -207,7 +207,7 @@ const preparePhotoFromFile = async (file: File): Promise<string> => {
 }
 
 
-const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'Fêmea')
+const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'F�mea')
 
 
 const dividerColor = '#1e2a38'
@@ -237,8 +237,8 @@ const InfoChip = ({
 
 const CowHeader = ({ name, subtitle }: { name: string; subtitle?: string }) => (
   <div className='flex flex-col gap-1 text-left'>
-    <div className='text-2xl font-semibold leading-tight' style={{ color: 'var(--text)' }}>
-      {`Partos \u2014 ${name}`}
+    <div className='text-lg font-bold leading-tight' style={{ color: 'var(--text)' }}>
+      {`Perfil de ${name}`}
     </div>
     {subtitle ? (
       <div className='text-sm' style={{ color: 'var(--muted)' }}>
@@ -279,19 +279,19 @@ const CowIdentityStrip = ({
 
   return (
     <div
-      className='rounded-2xl border p-3 flex items-center gap-3'
-      style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+      className='rounded-3xl border p-4 flex items-center gap-4'
+      style={{ background: 'var(--surface)', borderColor: 'var(--border)', boxShadow: '0 12px 30px -26px var(--shadow)' }}
     >
       <button
         type='button'
         onClick={onAvatarClick}
-        className='h-12 w-12 rounded-full border flex items-center justify-center overflow-hidden'
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+        className='h-[76px] w-[76px] shrink-0 rounded-2xl border flex items-center justify-center overflow-hidden'
+        style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--primary)' }}
       >
         {cow.photoDataUrl ? (
           <img src={cow.photoDataUrl} alt={cow.name} className='h-full w-full object-cover' />
         ) : (
-          <span className='text-lg font-semibold'>{initial}</span>
+          <span className='text-2xl font-bold'>{initial}</span>
         )}
       </button>
 
@@ -478,22 +478,22 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
   }, [selectedCow, calvingsByCow])
 
   return (
-    <div className='max-w-2xl mx-auto space-y-4'>
+    <div className='max-w-2xl mx-auto space-y-4 px-1'>
       <div
         className='rounded-2xl p-4 border'
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
       >
         <div className='flex items-center justify-between gap-3'>
           <div className='flex items-center gap-2'>
-            <div
-              className='h-10 w-10 rounded-xl flex items-center justify-center border'
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+              <div
+                className='h-11 w-11 rounded-2xl flex items-center justify-center'
+                style={{ background: 'var(--accent)', color: 'var(--primary)' }}
             >
-              <CalendarDays size={18} style={{ color: 'var(--muted)' }} />
+              <CalendarDays size={18} style={{ color: 'var(--accent-ink)' }} />
             </div>
             <div>
-              <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                Reprodução</div>
+                <div className='text-lg font-bold leading-tight' style={{ color: 'var(--text)' }}>
+                Reprodu��o</div>
               <div className='text-xs' style={{ color: 'var(--muted)' }}>
                 Anote partos por vaca, com data, sexo e foto.
               </div>
@@ -518,26 +518,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
           </button>
         </div>
 
-        <div className='mt-4 relative'>
-          <Search
-            size={16}
-            className='absolute left-3 top-1/2 -translate-y-1/2'
-            style={{ color: 'var(--muted)' }}
-          />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder='Buscar vaca pelo nome...'
-            className='w-full h-11 pl-10 pr-3 rounded-xl border outline-none'
-            style={{
-              background: 'var(--surface-2)',
-              borderColor: 'var(--border)',
-              color: 'var(--text)'
-            }}
-          />
-        </div>
-
-        <div className='mt-4 grid grid-cols-2 gap-3'>
+        <div className='mt-5 grid grid-cols-2 gap-3'>
           <StatCard
             label='Total de Vacas'
             value={String(cows.length)}
@@ -555,6 +536,25 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
             backgroundTintColor={birthsCardColors.background}
             borderColor={birthsCardColors.border}
             icon={<MaskIcon src={calfIcon} size={26} color={birthsCardColors.accent} />}
+          />
+        </div>
+
+        <div className='mt-4 relative'>
+          <Search
+            size={16}
+            className='absolute left-3 top-1/2 -translate-y-1/2'
+            style={{ color: 'var(--muted)' }}
+          />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder='Buscar vaca pelo nome...'
+            className='w-full h-11 pl-10 pr-3 rounded-xl border outline-none'
+            style={{
+              background: 'var(--surface-2)',
+              borderColor: 'var(--border)',
+              color: 'var(--text)'
+            }}
           />
         </div>
       </div>
@@ -579,30 +579,36 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
                 key={r.cow.id}
                 type="button"
                 onClick={() => openCow(r.cow)}
-                className="w-full text-left rounded-2xl p-4 border transition hover:brightness-110"
-                style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+                className="w-full text-left rounded-3xl p-4 border transition hover:-translate-y-0.5"
+                style={{ background: "var(--surface)", borderColor: "var(--border)", boxShadow: "0 10px 30px -27px var(--shadow)" }}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                      {r.cow.name}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-12 w-12 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 font-bold" style={{ background: "var(--surface-2)", color: "var(--primary)" }}>
+                      {r.cow.photoDataUrl ? (
+                        <img src={r.cow.photoDataUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <span>{r.cow.name.trim().charAt(0).toUpperCase() || '?'}</span>
+                      )}
                     </div>
-                    <div className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-                      {lastEvent
-                        ? `Último parto: ${lastDateLabel}${lastSexLabel ? ` · ${lastSexLabel}` : ''}`
-                        : 'Nenhum parto registrado'}
-                    </div>
-                    {elapsedLabel && (
-                      <div
-                        className="text-xs font-semibold mt-1"
-                        style={{ color: "var(--accent, #b8ff2c)" }}
-                      >
-                        {elapsedLabel}
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold truncate" style={{ color: "var(--text)" }}>
+                        {r.cow.name}
                       </div>
-                    )}
+                      <div className="text-xs mt-1" style={{ color: "var(--muted)" }}>
+                        {lastEvent
+                          ? `�ltimo parto: ${lastDateLabel}${lastSexLabel ? ` � ${lastSexLabel}` : ''}`
+                          : 'Nenhum parto registrado'}
+                      </div>
+                      {elapsedLabel && (
+                        <div className="text-xs font-semibold mt-1" style={{ color: "var(--primary)" }}>
+                          {elapsedLabel}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div
-                    className="h-10 w-10 rounded-xl border flex items-center justify-center"
+                    className="h-10 min-w-10 px-2 rounded-full border flex items-center justify-center"
                     style={{ background: "var(--surface-2)", borderColor: "var(--border)" }}
                   >
                     <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
@@ -1443,7 +1449,7 @@ function CalvingGalleryModal({
                 >
                   {`${activeIndex + 1}/${photos.length}`}
                 </div>
-                <div className='h-64 flex items-center justify-center bg-[#0f1624]'>
+                <div className='h-[min(68dvh,520px)] min-h-64 flex items-center justify-center' style={{ background: 'var(--surface-2)' }}>
                   <img
                     src={photos[activeIndex]}
                     alt='Foto do parto'
@@ -1633,12 +1639,12 @@ function ImageViewerModal({
   return (
     <>
       <div
-        className='fixed inset-0 z-50 flex flex-col p-4'
-        style={{ background: 'rgba(0, 0, 0, 0.85)' }}
+        className='fixed inset-0 z-50 flex flex-col p-0'
+        style={{ background: 'rgba(12, 27, 18, 0.96)' }}
         onClick={onClose}
       >
         <div className='flex flex-col h-full w-full max-w-5xl mx-auto' onClick={(e) => e.stopPropagation()}>
-          <div className='flex items-center justify-between gap-2 pb-3'>
+          <div className='flex items-center justify-between gap-2 px-3 pb-3 pt-[max(12px,env(safe-area-inset-top,0px))] shrink-0'>
             <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
               {title}
             </div>
@@ -1716,19 +1722,19 @@ function ImageViewerModal({
           </div>
           <div
             ref={viewportRef}
-            className='flex-1 overflow-auto rounded-2xl border bg-[#0b111a]'
-            style={{ borderColor: 'var(--border)' }}
+            className='flex-1 min-h-0 overflow-hidden'
+            style={{ borderColor: 'transparent' }}
             onWheel={(e) => {
               if (!e.ctrlKey) return
               e.preventDefault()
               adjustZoom(e.deltaY > 0 ? -0.1 : 0.1)
             }}
           >
-            <div className='min-h-full min-w-full flex items-center justify-center p-3'>
+            <div className='min-h-full min-w-full flex items-center justify-center p-0'>
               <img
                 src={src}
                 alt={title}
-                className='object-contain rounded-2xl'
+                className='h-full w-full object-contain rounded-none'
                 style={{ transform: `scale(${zoom})`, transformOrigin: 'center center', maxWidth: '100%', maxHeight: '100%' }}
               />
             </div>
@@ -1961,7 +1967,7 @@ function CalvingModal({
           <div
             className='rounded-2xl border p-4 space-y-3'
             style={{
-              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+              background: 'var(--surface)',
               borderColor: 'var(--border)',
               boxShadow: '0 18px 40px -32px var(--shadow)'
             }}
@@ -2063,7 +2069,7 @@ function CalvingModal({
           <div
             className='rounded-2xl border p-4 space-y-4'
             style={{
-              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+              background: 'var(--surface)',
               borderColor: 'var(--border)',
               boxShadow: '0 18px 40px -32px var(--shadow)'
             }}
@@ -2091,7 +2097,7 @@ function CalvingModal({
                     style={{
                       background: isTodaySelected ? 'var(--accent)' : 'var(--surface)',
                       borderColor: isTodaySelected ? 'var(--accent)' : 'var(--border)',
-                      color: isTodaySelected ? '#0a120a' : 'var(--text)',
+                      color: isTodaySelected ? 'var(--accent-ink)' : 'var(--text)',
                       boxShadow: isTodaySelected ? '0 12px 32px -22px var(--shadow)' : 'none'
                     }}
                   >
@@ -2104,7 +2110,7 @@ function CalvingModal({
                     style={{
                       background: isYesterdaySelected ? 'var(--accent)' : 'var(--surface)',
                       borderColor: isYesterdaySelected ? 'var(--accent)' : 'var(--border)',
-                      color: isYesterdaySelected ? '#0a120a' : 'var(--text)',
+                      color: isYesterdaySelected ? 'var(--accent-ink)' : 'var(--text)',
                       boxShadow: isYesterdaySelected ? '0 12px 32px -22px var(--shadow)' : 'none'
                     }}
                   >
@@ -2145,7 +2151,7 @@ function CalvingModal({
                   onClick={() => setSex('MACHO')}
                   className='h-12 rounded-full border px-4 text-sm font-semibold flex items-center justify-center gap-2 transition'
                   style={{
-                    background: sex === 'MACHO' ? 'rgba(184, 255, 44, 0.12)' : 'var(--surface-2)',
+                    background: sex === 'MACHO' ? 'color-mix(in srgb, var(--accent) 42%, white)' : 'var(--surface-2)',
                     borderColor: sex === 'MACHO' ? 'var(--accent)' : 'var(--border)',
                     color: sex === 'MACHO' ? 'var(--text)' : 'var(--muted)',
                     boxShadow: sex === 'MACHO' ? '0 12px 32px -22px var(--shadow)' : 'none'
@@ -2159,7 +2165,7 @@ function CalvingModal({
                   onClick={() => setSex('FEMEA')}
                   className='h-12 rounded-full border px-4 text-sm font-semibold flex items-center justify-center gap-2 transition'
                   style={{
-                    background: sex === 'FEMEA' ? 'rgba(184, 255, 44, 0.12)' : 'var(--surface-2)',
+                    background: sex === 'FEMEA' ? 'color-mix(in srgb, var(--accent) 42%, white)' : 'var(--surface-2)',
                     borderColor: sex === 'FEMEA' ? 'var(--accent)' : 'var(--border)',
                     color: sex === 'FEMEA' ? 'var(--text)' : 'var(--muted)',
                     boxShadow: sex === 'FEMEA' ? '0 12px 32px -22px var(--shadow)' : 'none'
@@ -2175,7 +2181,7 @@ function CalvingModal({
           <div
             className='rounded-2xl border p-4 space-y-3'
             style={{
-              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+              background: 'var(--surface)',
               borderColor: 'var(--border)',
               boxShadow: '0 18px 40px -32px var(--shadow)'
             }}
@@ -2411,17 +2417,6 @@ function NewCowModal({
     </Modal>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
