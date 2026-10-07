@@ -169,16 +169,17 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
   return (
     <div
       data-theme='flat-lime'
-      className='fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl overflow-y-auto'
+      className='fixed inset-0 z-50 backdrop-blur-xl overflow-y-auto'
+      style={{ background: 'rgba(26, 39, 29, .42)' }}
     >
       <div
         className='max-w-xl mx-auto min-h-screen pb-24'
-        style={{ background: 'linear-gradient(180deg, rgba(12,16,23,0.96), rgba(10,12,18,0.92))' }}
+        style={{ background: 'var(--bg)' }}
       >
         <header
           className='sticky top-0 z-50 backdrop-blur-xl'
           style={{
-            background: 'rgba(11, 15, 20, 0.7)',
+            background: 'rgba(245, 247, 240, 0.92)',
             borderBottom: '1px solid var(--border)'
           }}
         >

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { CheckCircle, FileText, Plus, Search, Trash2, Wallet, X } from 'lucide-react'
+import { ChevronRight, FileText, Plus, Search, Trash2, Users, Wallet, X } from 'lucide-react'
 import type { Client, Payment, Sale } from '@/types'
-import { StatCard } from '@/components/payments/StatCard'
+import { PageBrandHeader } from '@/components/common/PageBrandHeader'
 import { FilterChips } from '@/components/payments/FilterChips'
 import { PaymentRow } from '@/components/payments/PaymentRow'
 import { IconButton } from '@/components/common/IconButton'
@@ -73,6 +73,7 @@ type PaymentsPageProps = {
   sales: Sale[]
   clients: Client[]
   clientBalances: Map<string, number>
+  userName?: string | null
   onGenerateReceipt: (payment: Payment) => void
   onDeletePayment: (paymentId: string) => void
   onPayDebt: (clientId: string) => void
@@ -93,6 +94,7 @@ export function PaymentsPage({
   sales,
   clients,
   clientBalances,
+  userName,
   onGenerateReceipt,
   onDeletePayment,
   onPayDebt
@@ -103,6 +105,7 @@ export function PaymentsPage({
   const [showPaymentPicker, setShowPaymentPicker] = useState(false)
   const [expandedPaymentId, setExpandedPaymentId] = useState<string | null>(null)
   const [showFloatingHeader, setShowFloatingHeader] = useState(false)
+  const [showFullHistory, setShowFullHistory] = useState(false)
 
   const paymentCandidates = useMemo(
     () =>
@@ -185,6 +188,18 @@ export function PaymentsPage({
       return acc + (payment.amount || 0)
     }, 0)
   }, [payments])
+  const todaySummary = useMemo(() => {
+    const today = startOfDay(new Date())
+    const todayPayments = payments.filter((payment) => startOfDay(new Date(normalizeTs(payment.date))) === today)
+    return {
+      amount: todayPayments.reduce((total, payment) => total + (payment.amount || 0), 0),
+      count: todayPayments.length
+    }
+  }, [payments])
+  const clientsWithBalance = useMemo(
+    () => clients.filter((client) => (clientBalances.get(client.id) || 0) > 0).length,
+    [clients, clientBalances]
+  )
 
   const totalReceivable = useMemo(() => {
     return clients.reduce((acc, client) => {
@@ -207,7 +222,7 @@ export function PaymentsPage({
         name: payment.clientName || 'Pagamento',
         amount: payment.amount || 0,
         date: ts,
-        subtitle: `${formatDayWithTime(ts)} - Recebido`,
+        subtitle: formatDayWithTime(ts).replace(', ', ' · '),
         payment
       }
     })
@@ -269,6 +284,7 @@ export function PaymentsPage({
         paddingRight: 16
       }}
     >
+      <PageBrandHeader userName={userName} />
       {showFloatingHeader && (
         <div
           className='fixed top-0 left-0 right-0 z-30 flex items-center pointer-events-none'
@@ -277,8 +293,7 @@ export function PaymentsPage({
             paddingBottom: 10,
             paddingLeft: 16,
             paddingRight: 16,
-            background:
-              'linear-gradient(180deg, rgba(11, 15, 20, 0.98) 0%, rgba(11, 15, 20, 0.7) 45%, rgba(11, 15, 20, 0) 100%)',
+            background: 'rgba(245, 247, 240, 0.94)',
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)'
           }}
@@ -291,9 +306,9 @@ export function PaymentsPage({
 
       <div className='mt-6 flex items-start justify-between gap-4 mb-4'>
         <div>
-          <h1 className='text-[28px] font-semibold leading-none'>Pagamentos</h1>
-          <p className='mt-2 text-xs' style={{ color: 'var(--muted)' }}>
-            {payments.length} {payments.length === 1 ? 'registro' : 'registros'}
+          <h1 className='text-[24px] font-bold leading-none'>Pagamentos</h1>
+          <p className='mt-1.5 text-[11px]' style={{ color: 'var(--muted)' }}>
+            Acompanhe entradas e valores em aberto.
           </p>
         </div>
         <IconButton
@@ -312,59 +327,35 @@ export function PaymentsPage({
         />
       </div>
 
-      <div className='grid grid-cols-2 gap-3 mb-4'>
-        <StatCard
-          label='Recebido'
-          value={formatCurrency(receivedMode === 'month' ? totalReceivedMonthly : totalReceived)}
-          valueTone='neutral'
-          variant='accent'
-          helperText={receivedMode === 'month' ? 'Total mensal' : 'Total geral'}
-          headerAction={
+      <section className='space-y-2 mb-5'>
+        <div className='rounded-2xl p-4 text-white' style={{ background: 'var(--primary)' }}>
+          <p className='text-[10px] font-medium text-white/75'>Total em aberto</p>
+          <div className='mt-1 flex items-end justify-between gap-2'>
+            <p className='text-[25px] leading-tight font-bold whitespace-nowrap'>{formatCurrency(totalReceivable)}</p>
             <button
               type='button'
-              onClick={() =>
-                setReceivedMode((prev) => (prev === 'month' ? 'total' : 'month'))
-              }
-              className='h-7 w-7 rounded-full flex items-center justify-center border'
-              style={{
-                background: 'rgba(34, 197, 94, 0.18)',
-                borderColor: 'rgba(34, 197, 94, 0.45)',
-                color: '#4ade80'
-              }}
-              aria-label={
-                receivedMode === 'month' ? 'Mostrar total geral' : 'Mostrar total mensal'
-              }
+              onClick={() => setShowFullHistory(true)}
+              className='mb-1 inline-flex items-center gap-1 text-[10px] font-semibold text-[#d7e996]'
             >
-              <CheckCircle size={12} />
+              Ver lista <ChevronRight size={14} />
             </button>
-          }
-        />
-        <StatCard
-          label='Total a receber'
-          value={formatCurrency(totalReceivable)}
-          valueTone='neutral'
-          variant='accent'
-          accentTone='lime'
-          helperText={`${litersReceivable.toLocaleString('pt-BR', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
-          })} L`}
-          headerAction={
-            <div
-              className='h-7 w-7 rounded-full flex items-center justify-center border'
-              style={{
-                background: 'rgba(184, 255, 44, 0.18)',
-                borderColor: 'rgba(184, 255, 44, 0.45)',
-                color: 'var(--accent)'
-              }}
-              aria-hidden='true'
-            >
-              <Wallet size={12} />
-            </div>
-          }
-        />
-      </div>
-      <div className='relative mb-3'>
+          </div>
+          <p className='mt-1 text-[10px] text-white/75'>{clientsWithBalance} clientes com saldo</p>
+        </div>
+        <div className='grid grid-cols-2 gap-2'>
+          <div className='flat-card p-3' style={{ background: 'var(--accent-soft)', borderColor: '#dce9c1' }}>
+            <p className='text-[10px]' style={{ color: 'var(--muted)' }}>Recebido hoje</p>
+            <p className='mt-1 text-lg leading-tight font-bold' style={{ color: 'var(--text)' }}>{formatCurrency(todaySummary.amount)}</p>
+            <p className='mt-1 text-[10px]' style={{ color: 'var(--muted)' }}>{todaySummary.count} pagamentos</p>
+          </div>
+          <div className='flat-card p-3'>
+            <p className='text-[10px]' style={{ color: 'var(--muted)' }}>Recebido no mês</p>
+            <p className='mt-1 text-lg leading-tight font-bold' style={{ color: 'var(--text)' }}>{formatCurrency(totalReceivedMonthly)}</p>
+            <p className='mt-1 text-[10px]' style={{ color: 'var(--muted)' }}>Até {String(new Date().getDate()).padStart(2, '0')} {new Date().toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}</p>
+          </div>
+        </div>
+      </section>
+      <div className={`relative mb-3 ${showFullHistory ? '' : 'hidden'}`}>
         <div className='absolute inset-y-0 left-3 flex items-center pointer-events-none'>
           <Search size={18} style={{ color: 'var(--muted)' }} />
         </div>
@@ -396,7 +387,7 @@ export function PaymentsPage({
         )}
       </div>
 
-      <FilterChips
+      {showFullHistory && <FilterChips
         value={filterMode}
         onChange={setFilterMode}
         options={[
@@ -405,7 +396,7 @@ export function PaymentsPage({
           { label: 'Semana', value: 'WEEK' },
           { label: 'M\u00eas', value: 'MONTH' }
         ]}
-      />
+      />}
 
       {showPaymentPicker && paymentCandidates.length > 1 && (
         <div className='flat-card p-4 mt-4 space-y-3'>
@@ -445,10 +436,20 @@ export function PaymentsPage({
         </div>
       )}
 
-      <div className='mt-6 mb-3 flex items-center justify-between'>
-        <h3 className='text-sm font-semibold uppercase tracking-wide' style={{ color: 'var(--muted)' }}>
-          {'Lan\u00e7amentos recentes'}
+      <div className='mt-5 mb-2 flex items-center justify-between'>
+        <h3 className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+          {'Movimentações'}
         </h3>
+        {payments.length > 0 && (
+          <button
+            type='button'
+            onClick={() => setShowFullHistory((current) => !current)}
+            className='text-[10px] font-semibold'
+            style={{ color: 'var(--primary)' }}
+          >
+            {showFullHistory ? 'Ver recentes' : 'Ver hist\u00f3rico'}
+          </button>
+        )}
       </div>
 
       {payments.length === 0 ? (
@@ -501,22 +502,14 @@ export function PaymentsPage({
           </button>
         </div>
       ) : (
-        <div
-          className='rounded-[22px] border overflow-hidden pb-1'
-          style={{
-            background:
-              'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(14, 19, 26, 0.92) 100%)',
-            borderColor: 'rgba(30, 42, 56, 0.9)',
-            boxShadow: '0 18px 36px -28px rgba(0, 0, 0, 0.7)'
-          }}
-        >
-          {filteredItems.map((item, index) => (
+        <div className='flat-card overflow-hidden'>
+          {(showFullHistory ? filteredItems : filteredItems.slice(0, 5)).map((item, index) => (
             <div key={item.id}>
               {index > 0 && (
                 <div
                   className='h-px'
                   style={{
-                    background: 'rgba(255, 255, 255, 0.06)',
+                    background: 'var(--border)',
                     marginLeft: 16,
                     marginRight: 16
                   }}

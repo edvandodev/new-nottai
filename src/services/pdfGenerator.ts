@@ -1169,7 +1169,7 @@ export const generateReceipt = (
             dialogTitle: 'Compartilhar PDF'
           })
         } else {
-          await FileOpener.openFile({ path: target, contentType: 'application/pdf' })
+          await FileOpener.openFile({ path: target, mimeType: 'application/pdf' })
         }
         return
       }

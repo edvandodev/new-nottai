@@ -12,12 +12,14 @@ import {
   X
 } from 'lucide-react'
 import type { Client, Payment, Sale } from '@/types'
+import { PageBrandHeader } from '@/components/common/PageBrandHeader'
 import '../../styles/theme-flat.css'
 
 type ReportsPageProps = {
   sales: Sale[]
   payments: Payment[]
   clients: Client[]
+  userName?: string | null
 }
 
 const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -159,6 +161,7 @@ type StatsSummaryCardProps = {
   mainValue: string
   previousValue: string
   change: { direction: ChangeDirection; percent: number }
+  comparisonMonth: string
 }
 
 type ViewMode = 'month' | 'week'
@@ -176,22 +179,23 @@ const MonthYearToggle = ({
   onNextMonth: () => void
   onPressCenter: () => void
 }) => (
-  <div className='inline-flex items-center gap-2'>
+  <div
+    className='flex w-full items-center justify-between rounded-full border px-3 py-2'
+    style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+  >
     <button
       type='button'
       onClick={onPrevMonth}
       aria-label='Mês anterior'
-      className='h-8 w-8 rounded-full flex items-center justify-center border transition-colors hover:brightness-110'
+      className='h-7 w-7 rounded-full flex items-center justify-center transition-colors hover:brightness-110'
       style={{
-        borderColor: 'var(--border)',
-        background: 'var(--surface-2)',
-        color: 'var(--muted)'
+        color: 'var(--primary)'
       }}
     >
       <ChevronLeft size={16} />
     </button>
     <div
-      className='flex items-center gap-1.5 text-sm font-semibold'
+      className='flex items-center gap-1.5 text-xs font-semibold'
       style={{ color: 'var(--text)' }}
     >
       <button
@@ -218,11 +222,9 @@ const MonthYearToggle = ({
       type='button'
       onClick={onNextMonth}
       aria-label='Próximo mês'
-      className='h-8 w-8 rounded-full flex items-center justify-center border transition-colors hover:brightness-110'
+      className='h-7 w-7 rounded-full flex items-center justify-center transition-colors hover:brightness-110'
       style={{
-        borderColor: 'var(--border)',
-        background: 'var(--surface-2)',
-        color: 'var(--muted)'
+        color: 'var(--primary)'
       }}
     >
       <ChevronRight size={16} />
@@ -287,15 +289,15 @@ const StatsSummaryCard = ({
   tone = 'neutral',
   mainValue,
   previousValue,
-  change
+  change,
+  comparisonMonth
 }: StatsSummaryCardProps) => {
   const isAccent = tone === 'accent'
   const cardStyle = isAccent
     ? {
-        background:
-          'linear-gradient(160deg, rgba(184, 255, 44, 0.16) 0%, rgba(18, 24, 33, 0.95) 60%, rgba(11, 15, 20, 0.98) 100%)',
-        borderColor: 'rgba(184, 255, 44, 0.35)',
-        boxShadow: '0 18px 40px -28px rgba(184, 255, 44, 0.35)'
+        background: 'var(--accent-soft, #eff6d9)',
+        borderColor: '#d5e7a4',
+        boxShadow: '0 12px 30px -26px rgba(59, 103, 65, 0.24)'
       }
     : {
         background: 'var(--surface)',
@@ -303,32 +305,14 @@ const StatsSummaryCard = ({
         boxShadow: '0 16px 32px -28px var(--shadow)'
       }
 
-  const iconStyle = isAccent
-    ? {
-        background: 'rgba(184, 255, 44, 0.18)',
-        color: 'var(--accent)',
-        borderColor: 'rgba(184, 255, 44, 0.35)'
-      }
-    : {
-        background: 'var(--surface-2)',
-        color: 'var(--accent)',
-        borderColor: 'var(--border)'
-      }
-
-  const valueStyle = {
-    color: isAccent ? 'var(--accent)' : 'var(--text)'
-  }
-
-  const dividerStyle = {
-    background: isAccent ? 'rgba(184, 255, 44, 0.22)' : 'var(--border)'
-  }
+  const valueStyle = { color: 'var(--text)' }
 
   const changeColor =
     change.direction === 'up'
-      ? 'text-emerald-400'
+      ? 'text-emerald-700'
       : change.direction === 'down'
-      ? 'text-red-400'
-      : 'text-slate-400'
+      ? 'text-red-700'
+      : 'text-slate-500'
 
   const renderChangeIcon = () => {
     if (change.direction === 'up') return <ArrowUpRight size={16} />
@@ -336,63 +320,37 @@ const StatsSummaryCard = ({
     return null
   }
 
-  const sign =
-    change.direction === 'down' ? '-' : change.direction === 'up' ? '+' : ''
-  const percentLabel = `${sign}${change.percent}%`
+  const percentLabel = `${change.percent}% vs. ${comparisonMonth}`
 
   return (
     <div
-      className='flat-card p-4 flex flex-col gap-3 shadow-sm overflow-hidden'
+      className='flat-card min-h-[86px] p-3 flex flex-col justify-between gap-1.5 overflow-hidden'
       style={cardStyle}
     >
-      <div className='flex items-start justify-between gap-3'>
-        <div className='space-y-1 flex-1 min-w-0'>
+      <div className='space-y-1 min-w-0'>
           <p
-            className='text-xs uppercase tracking-wide font-semibold'
+            className='text-[11px] font-medium'
             style={{ color: 'var(--muted)' }}
           >
             {title}
           </p>
           <p
-            className='text-lg font-extrabold whitespace-nowrap overflow-hidden text-ellipsis'
+            className='text-[20px] leading-tight font-bold whitespace-nowrap overflow-hidden text-ellipsis'
             style={valueStyle}
             title={mainValue}
           >
             {mainValue}
           </p>
-        </div>
-        <div
-          className='h-8 w-8 rounded-full flex items-center justify-center shrink-0 border'
-          style={iconStyle}
-        >
-          {icon}
-        </div>
       </div>
-
-      <div className='h-px w-full' style={dividerStyle} />
-
-      <div className='space-y-1'>
-        <p className='text-[11px] font-medium' style={{ color: 'var(--muted)' }}>
-          Mês passado
-        </p>
-        <div className='flex items-center justify-between text-xs' style={{ color: 'var(--muted)' }}>
-          <span
-            className='font-semibold whitespace-nowrap overflow-hidden text-ellipsis'
-            style={{ color: 'var(--text)' }}
-          >
-            {previousValue}
-          </span>
-          <span className={`flex items-center gap-1 font-bold ${changeColor}`}>
-            {renderChangeIcon()}
-            {percentLabel}
-          </span>
-        </div>
+      <div className={`flex items-center gap-1 text-[10px] font-medium ${changeColor}`}>
+        {renderChangeIcon()}
+        <span className='truncate'>{percentLabel}</span>
       </div>
     </div>
   )
 }
 
-export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
+export function ReportsPage({ sales, payments, clients, userName }: ReportsPageProps) {
   const [reportDate, setReportDate] = useState(() => ({
     year: new Date().getFullYear(),
     month: new Date().getMonth()
@@ -514,6 +472,8 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
   const litersChange = computeChange(reportData.totalLiters, previousTotals.liters)
   const valueChange = computeChange(reportData.totalValue, previousTotals.value)
 
+  const comparisonMonth = MONTHS_FULL[reportMonth === 0 ? 11 : reportMonth - 1].toLowerCase()
+
   const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [tooltipMonth, setTooltipMonth] = useState<number | null>(null)
   const [isRankingOpen, setIsRankingOpen] = useState(false)
@@ -522,7 +482,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
     () => getMonthlyTotals(mergedSales, reportYear),
     [mergedSales, reportYear]
   )
-  const hasMonthlyData = monthlyTotals.some((m) => m.totalValue > 0)
+  const hasMonthlyData = monthlyTotals.some((m) => m.totalLiters > 0)
 
   useEffect(() => {
     if (viewMode === 'month') setTooltipMonth(reportMonth)
@@ -561,29 +521,20 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
   }
 
   return (
-    <div className='space-y-6 animate-fade-in' style={{ color: 'var(--text)' }}>
-      <div className='mt-6 flex items-start justify-between gap-4 mb-4'>
+    <div className='space-y-4 animate-fade-in' style={{ color: 'var(--text)' }}>
+      <PageBrandHeader userName={userName} />
+      <div className='mt-2 flex items-start justify-between gap-4 mb-2'>
         <div>
-          <h1 className='text-[28px] font-semibold leading-none'>Relatórios</h1>
-          <p className='mt-2 text-xs' style={{ color: 'var(--muted)' }}>
-            Visão geral de vendas e pagamentos
+          <h1 className='text-[24px] font-bold leading-none'>Relatórios</h1>
+          <p className='mt-1.5 text-[11px]' style={{ color: 'var(--muted)' }}>
+            Veja o ritmo do seu negócio.
           </p>
         </div>
       </div>
-      <div className='space-y-3'>
-        <div className='flex items-center justify-between gap-4'>
-          <div className='flex items-center gap-2'>
-            <CalendarDays size={16} style={{ color: 'var(--muted)' }} />
-            <h3
-              className='text-xs font-semibold uppercase tracking-wider'
-              style={{ color: 'var(--muted)' }}
-            >
-              Resumo do período
-            </h3>
-          </div>
+      <div className='space-y-2'>
           <div className='relative' ref={monthYearRef}>
             <MonthYearToggle
-              monthLabel={MONTHS_SHORT[reportMonth]}
+              monthLabel={MONTHS_FULL[reportMonth]}
               yearLabel={String(reportYear)}
               onPrevMonth={goPrevMonth}
               onNextMonth={goNextMonth}
@@ -660,52 +611,51 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               </div>
             )}
           </div>
-        </div>
 
-        <div className='grid grid-cols-2 gap-4'>
+        <div className='grid grid-cols-2 gap-2'>
           <StatsSummaryCard
-            title='Total Litros'
+            title='Leite vendido'
             icon={<Droplets size={12} />}
-            tone='neutral'
-            mainValue={`${reportData.totalLiters} L`}
+            tone='accent'
+            mainValue={`${reportData.totalLiters.toLocaleString('pt-BR')} L`}
             previousValue={`${previousTotals.liters} L`}
             change={litersChange}
+            comparisonMonth={comparisonMonth}
           />
           <StatsSummaryCard
-            title='Valor Total'
+            title='Faturamento'
             icon={<DollarSign size={12} />}
-            tone='accent'
+            tone='neutral'
             mainValue={formatCurrency(reportData.totalValue)}
             previousValue={formatCurrency(previousTotals.value)}
             change={valueChange}
+            comparisonMonth={comparisonMonth}
           />
         </div>
       </div>
       <div>
-        <div className='flex items-center justify-between gap-3 mb-4'>
+        <div className='flex items-center justify-between gap-3 mb-2'>
           <div className='flex items-center gap-2'>
-            <BarChart3 size={18} style={{ color: 'var(--muted)' }} />
+            <BarChart3 size={16} style={{ color: 'var(--primary)' }} />
             <h3
-              className='text-xs font-semibold uppercase tracking-wider'
-              style={{ color: 'var(--muted)' }}
+              className='text-sm font-semibold'
+              style={{ color: 'var(--text)' }}
             >
-              {viewMode === 'month' ? 'Vendas por Mês' : 'Vendas por Semana'}
+              Leite vendido
             </h3>
           </div>
-          <ViewToggle value={viewMode} onChange={setViewMode} />
+          <span className='text-[10px] font-medium' style={{ color: 'var(--muted)' }}>
+            12 meses · {reportYear}
+          </span>
         </div>
 
         {viewMode === 'month' ? (
           hasMonthlyData ? (
             <div
-              className='flat-card p-4'
-              style={{
-                background:
-                  'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(11, 15, 20, 0.98) 100%)',
-                borderColor: 'var(--border)'
-              }}
+              className='flat-card p-3'
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
             >
-              <div className='flex items-center justify-between text-sm mb-4'>
+              <div className='hidden'>
                 <span className='font-semibold' style={{ color: 'var(--text)' }}>
                   {MONTHS_FULL[reportMonth]}
                 </span>
@@ -719,14 +669,18 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                   </span>
                 </div>
               </div>
-              <div className='overflow-x-auto no-scrollbar' ref={chartScrollRef}>
-                <div className='min-w-[640px]'>
+              <div
+                className='overflow-x-auto no-scrollbar'
+                ref={chartScrollRef}
+                aria-label='Gráfico anual. Deslize para ver os 12 meses.'
+              >
+                <div className='min-w-[470px]'>
                   {(() => {
-                    const maxValue = Math.max(...monthlyTotals.map((m) => m.totalValue), 1)
+                    const maxValue = Math.max(...monthlyTotals.map((m) => m.totalLiters), 1)
                     return (
-                      <div className='flex gap-3'>
+                      <div className='flex gap-2'>
                         <div
-                          className='flex h-48 flex-col justify-between text-[10px]'
+                          className='flex h-44 flex-col justify-between text-[10px]'
                           style={{ color: 'var(--muted)' }}
                         >
                           <div className='flex items-center gap-2'>
@@ -745,12 +699,12 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                             <span>0</span>
                           </div>
                         </div>
-                        <div className='grid grid-cols-12 gap-0.5 h-48 items-end flex-1'>
+                        <div className='grid grid-cols-12 gap-1 h-44 items-end flex-1'>
                           {monthlyTotals.map((entry, idx) => {
-                            const isZero = entry.totalValue === 0
+                            const isZero = entry.totalLiters === 0
                             const barHeightPct = isZero
                               ? 6
-                              : Math.max((entry.totalValue / maxValue) * 100, 8)
+                              : Math.max((entry.totalLiters / maxValue) * 100, 8)
                             const isActive = idx === reportMonth
                             const showTooltip = tooltipMonth === idx || idx === reportMonth
                             return (
@@ -767,12 +721,12 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                 {isActive && (
                                   <span
                                     className='absolute inset-y-0 w-0.5 z-0'
-                                    style={{ background: 'rgba(184, 255, 44, 0.12)' }}
+                                    style={{ background: 'rgba(200, 227, 106, 0.18)' }}
                                   />
                                 )}
                                 <div
-                                  className='h-32 sm:h-40 w-[65%] overflow-hidden flex items-end justify-center relative z-10'
-                                  style={{ background: 'rgba(148, 163, 184, 0.08)' }}
+                                  className='h-36 sm:h-40 w-[72%] overflow-hidden flex items-end justify-center relative z-10'
+                                  style={{ background: 'var(--surface-2)' }}
                                 >
                                   <div
                                     className='w-full transition-all'
@@ -780,10 +734,12 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                       height: `${barHeightPct}%`,
                                       opacity: isZero ? 0.2 : 1,
                                       background: isActive
-                                        ? 'var(--accent)'
-                                        : 'rgba(148, 163, 184, 0.55)',
+                                        ? 'var(--primary)'
+                                        : isZero
+                                          ? '#e2e9dd'
+                                          : '#c8d891',
                                       boxShadow: isActive
-                                        ? '0 12px 24px -18px rgba(184, 255, 44, 0.55)'
+                                        ? '0 12px 24px -18px rgba(36, 75, 45, 0.34)'
                                         : 'none'
                                     }}
                                   />
@@ -797,19 +753,17 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                       color: 'var(--text)'
                                     }}
                                   >
-                                    <span className='font-semibold'>{formatCurrency(entry.totalValue)}</span>
+                                    <span className='font-semibold'>{entry.totalLiters.toLocaleString('pt-BR')} L</span>
                                     {entry.totalLiters ? (
                                       <span className='ml-2' style={{ color: 'var(--muted)' }}>
-                                        {entry.totalLiters.toLocaleString('pt-BR')} L
+                                        {formatCurrency(entry.totalValue)}
                                       </span>
                                     ) : null}
                                   </div>
                                 )}
                                 <span
                                   className='text-[11px] font-semibold uppercase tracking-wide'
-                                  style={{
-                                    color: isActive ? 'var(--accent)' : 'var(--muted)'
-                                  }}
+                                  style={{ color: isActive ? 'var(--primary)' : 'var(--muted)' }}
                                 >
                                   {MONTHS_SHORT[idx]}
                                 </span>
@@ -822,15 +776,15 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                   })()}
                 </div>
               </div>
-              <div className='mt-2.5'>
+              <div className='mt-4'>
                 <div
                   className='relative h-0.5 w-full rounded-full overflow-hidden'
-                  style={{ background: 'rgba(148, 163, 184, 0.2)' }}
+                  style={{ background: 'var(--border)' }}
                 >
                   <div
                     className='absolute top-0 h-full rounded-full transition-all'
                     style={{
-                      background: 'rgba(184, 255, 44, 0.45)',
+                      background: 'var(--primary-2)',
                       width: `${chartScroll.widthPct}%`,
                       left: `${chartScroll.leftPct}%`
                     }}
@@ -884,7 +838,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
         )}
       </div>
 
-      <div className='space-y-3'>
+      <div className='hidden'>
         <div className='flex items-center gap-2'>
           <Users size={16} style={{ color: 'var(--muted)' }} />
           <h3

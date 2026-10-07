@@ -116,13 +116,14 @@ export function SettingsPage({
     onClose: () => void
   }) =>
     !open ? null : (
-      <div className='fixed inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center px-4 z-50'>
-        <div className='w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4'>
+      <div className='fixed inset-0 backdrop-blur-sm flex items-center justify-center px-4 z-50' style={{ background: 'rgba(26, 39, 29, .42)' }}>
+        <div className='w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 border' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className='flex items-center justify-between'>
-            <h2 className='text-lg font-semibold text-white'>{title}</h2>
+            <h2 className='text-lg font-semibold' style={{ color: 'var(--text)' }}>{title}</h2>
             <button
               onClick={onClose}
-              className='text-slate-400 hover:text-white text-sm'
+              className='text-sm'
+              style={{ color: 'var(--muted)' }}
             >
               Fechar
             </button>
@@ -189,25 +190,27 @@ export function SettingsPage({
         )}
         <div className='space-y-3'>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>Novo e-mail</label>
+            <label className='text-sm' style={{ color: 'var(--muted)' }}>Novo e-mail</label>
             <input
               type='email'
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className='w-full px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2'
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)', outlineColor: 'var(--primary)' }}
               placeholder='novo@email.com'
               disabled={loadingEmail}
             />
           </div>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>
+            <label className='text-sm' style={{ color: 'var(--muted)' }}>
               Senha atual (pode ser solicitada)
             </label>
             <input
               type='password'
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className='w-full px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2'
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)', outlineColor: 'var(--primary)' }}
               placeholder='Sua senha'
               disabled={loadingEmail}
             />
@@ -215,7 +218,8 @@ export function SettingsPage({
           <button
             onClick={() => handleUpdateEmail()}
             disabled={loadingEmail}
-            className='w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg font-semibold transition-all active:scale-[0.99]'
+            className='w-full py-2.5 rounded-lg font-semibold transition-all active:scale-[0.99] disabled:opacity-50'
+            style={{ background: 'var(--primary)', color: '#fff' }}
           >
             {loadingEmail ? 'Salvando...' : 'Salvar novo e-mail'}
           </button>
@@ -288,34 +292,37 @@ export function SettingsPage({
         )}
         <div className='space-y-3'>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>Senha atual</label>
+            <label className='text-sm' style={{ color: 'var(--muted)' }}>Senha atual</label>
             <input
               type='password'
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className='w-full px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2'
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)', outlineColor: 'var(--primary)' }}
               placeholder='Senha atual'
               disabled={loading}
             />
           </div>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>Nova senha</label>
+            <label className='text-sm' style={{ color: 'var(--muted)' }}>Nova senha</label>
             <input
               type='password'
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className='w-full px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2'
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)', outlineColor: 'var(--primary)' }}
               placeholder='Nova senha'
               disabled={loading}
             />
           </div>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>Confirmar nova senha</label>
+            <label className='text-sm' style={{ color: 'var(--muted)' }}>Confirmar nova senha</label>
             <input
               type='password'
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className='w-full px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2'
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)', outlineColor: 'var(--primary)' }}
               placeholder='Repita a senha'
               disabled={loading}
             />
@@ -323,7 +330,8 @@ export function SettingsPage({
           <button
             onClick={() => handleUpdatePassword()}
             disabled={loading}
-            className='w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg font-semibold transition-all active:scale-[0.99]'
+            className='w-full py-2.5 rounded-lg font-semibold transition-all active:scale-[0.99] disabled:opacity-50'
+            style={{ background: 'var(--primary)', color: '#fff' }}
           >
             {loading ? 'Salvando...' : 'Salvar nova senha'}
           </button>
@@ -385,26 +393,28 @@ export function SettingsPage({
           </div>
         )}
         <div className='space-y-3'>
-          <p className='text-sm text-slate-300'>
+          <p className='text-sm' style={{ color: 'var(--muted)' }}>
             Isso apaga sua conta e seus dados deste dispositivo.
           </p>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>Digite EXCLUIR</label>
+            <label className='text-sm' style={{ color: 'var(--muted)' }}>Digite EXCLUIR</label>
             <input
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500'
+              className='w-full px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2'
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)' }}
               placeholder='EXCLUIR'
               disabled={loading}
             />
           </div>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>Senha atual (pode ser solicitada)</label>
+            <label className='text-sm' style={{ color: 'var(--muted)' }}>Senha atual (pode ser solicitada)</label>
             <input
               type='password'
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500'
+              className='w-full px-4 py-2.5 rounded-lg focus:outline-none focus:ring-2'
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)' }}
               placeholder='Senha'
               disabled={loading}
             />
@@ -412,7 +422,8 @@ export function SettingsPage({
           <button
             onClick={() => handleDelete()}
             disabled={loading || confirmText !== 'EXCLUIR'}
-            className='w-full py-2.5 bg-red-600 hover:bg-red-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg font-semibold transition-all active:scale-[0.99]'
+            className='w-full py-2.5 rounded-lg font-semibold transition-all active:scale-[0.99] disabled:opacity-50'
+            style={{ background: 'var(--danger)', color: '#fff' }}
           >
             {loading ? 'Excluindo...' : 'Excluir permanentemente'}
           </button>

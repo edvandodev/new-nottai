@@ -34,7 +34,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
       data-theme='flat-lime'
       className='fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in'
       style={{
-        background: 'rgba(11, 15, 20, 0.72)',
+        background: 'rgba(26, 39, 29, 0.42)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)'
       }}
@@ -549,8 +549,8 @@ export const AddSaleModal = ({
         className='w-full max-w-xl rounded-[24px] overflow-hidden flex flex-col max-h-[90vh] border'
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'rgba(18, 24, 33, 0.9)',
-          borderColor: 'rgba(30, 42, 56, 0.85)',
+          background: 'var(--surface)',
+          borderColor: 'var(--border)',
           backdropFilter: 'blur(12px)',
           boxShadow: '0 28px 60px -36px rgba(0, 0, 0, 0.6)'
         }}
@@ -654,16 +654,17 @@ export const AddSaleModal = ({
                 type='button'
                 onClick={handleDecrement}
                 disabled={litersValue <= 1}
-                className='h-12 w-12 rounded-2xl border text-slate-900 font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center'
+                className='h-12 w-12 rounded-2xl border font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center'
                 style={{
-                  background: 'var(--accent, var(--primary, #b8ff2c))',
-                  borderColor: 'var(--accent, #b8ff2c)'
+                  background: 'var(--accent)',
+                  borderColor: 'var(--accent)',
+                  color: 'var(--primary)'
                 }}
               >
                 <Minus size={20} />
               </button>
             <div className='flex-1 flex flex-col items-center justify-center gap-1'>
-                  <div className='flex items-end gap-2 text-white font-bold'>
+                  <div className='flex items-end gap-2 font-bold' style={{ color: 'var(--text)' }}>
                     <input
                       type='number'
                       inputMode='decimal'
@@ -673,19 +674,21 @@ export const AddSaleModal = ({
                       onFocus={() => setLitersInput('')}
                       onChange={(e) => setLitersInput(e.target.value)}
                       onBlur={() => setLitersInput(String(Math.max(1, parseLiters(litersInput))))}
-                      className='w-24 bg-transparent text-center text-3xl font-bold text-white focus:outline-none tabular-nums'
+                      className='w-24 bg-transparent text-center text-3xl font-bold focus:outline-none tabular-nums'
+                      style={{ color: 'var(--text)' }}
                       aria-label='Litros'
                     />
-                    <span className='text-base text-slate-400 font-semibold pb-1'>L</span>
+                    <span className='text-base font-semibold pb-1' style={{ color: 'var(--muted)' }}>L</span>
                   </div>
                 </div>
               <button
                 type='button'
                 onClick={handleIncrement}
-                className='h-12 w-12 rounded-2xl border text-slate-900 font-bold transition-all active:scale-95 flex items-center justify-center'
+                className='h-12 w-12 rounded-2xl border font-bold transition-all active:scale-95 flex items-center justify-center'
                 style={{
-                  background: 'var(--accent, var(--primary, #b8ff2c))',
-                  borderColor: 'var(--accent, #b8ff2c)'
+                  background: 'var(--accent)',
+                  borderColor: 'var(--accent)',
+                  color: 'var(--primary)'
                 }}
               >
                 <Plus size={20} />
@@ -696,17 +699,16 @@ export const AddSaleModal = ({
           <div
             className='rounded-2xl p-4 text-center border'
             style={{
-              background:
-                'linear-gradient(135deg, rgba(120, 155, 32, 0.5) 0%, rgba(72, 96, 20, 0.55) 100%)',
-              borderColor: 'rgba(184, 255, 44, 0.35)'
+              background: 'var(--accent-soft)',
+              borderColor: '#dce9c1'
             }}
           >
-            <p className='text-xs' style={{ color: 'rgba(224, 236, 196, 0.7)' }}>
+            <p className='text-xs' style={{ color: 'var(--muted)' }}>
               Total da venda
             </p>
             <p
               className='text-3xl font-bold mt-1 tabular-nums'
-              style={{ color: 'var(--accent, #b8ff2c)' }}
+              style={{ color: 'var(--primary)' }}
             >
               {formatCurrency(totalValue || 0)}
             </p>
@@ -724,13 +726,13 @@ export const AddSaleModal = ({
                 style={
                   paymentStatus === 'PRAZO'
                     ? {
-                        background: 'rgba(184, 255, 44, 0.18)',
-                        borderColor: 'rgba(184, 255, 44, 0.7)',
+                        background: 'var(--accent-soft)',
+                        borderColor: '#c8dca2',
                         color: 'var(--text)'
                       }
                     : {
-                        background: 'rgba(14, 20, 28, 0.7)',
-                        borderColor: 'rgba(42, 56, 72, 0.9)',
+                        background: 'var(--surface)',
+                        borderColor: 'var(--border)',
                         color: 'var(--text)'
                       }
                 }
@@ -741,7 +743,7 @@ export const AddSaleModal = ({
                   style={{
                     color:
                       paymentStatus === 'PRAZO'
-                        ? 'rgba(224, 236, 196, 0.75)'
+                      ? 'var(--primary)'
                         : 'var(--muted)'
                   }}
                 >
@@ -755,13 +757,13 @@ export const AddSaleModal = ({
                 style={
                   paymentStatus === 'AVISTA'
                     ? {
-                        background: 'rgba(184, 255, 44, 0.18)',
-                        borderColor: 'rgba(184, 255, 44, 0.7)',
+                        background: 'var(--accent-soft)',
+                        borderColor: '#c8dca2',
                         color: 'var(--text)'
                       }
                     : {
-                        background: 'rgba(14, 20, 28, 0.7)',
-                        borderColor: 'rgba(42, 56, 72, 0.9)',
+                        background: 'var(--surface)',
+                        borderColor: 'var(--border)',
                         color: 'var(--text)'
                       }
                 }
@@ -772,7 +774,7 @@ export const AddSaleModal = ({
                   style={{
                     color:
                       paymentStatus === 'AVISTA'
-                        ? 'rgba(224, 236, 196, 0.75)'
+                      ? 'var(--primary)'
                         : 'var(--muted)'
                   }}
                 >
@@ -783,7 +785,7 @@ export const AddSaleModal = ({
           </div>
 
           {validationMessage && (
-            <div className='bg-red-500/10 border border-red-500/25 text-red-200 text-xs px-3 py-2 rounded-xl'>
+            <div className='text-xs px-3 py-2 rounded-xl' style={{ background: 'rgba(180, 59, 59, 0.08)', border: '1px solid rgba(180, 59, 59, 0.22)', color: 'var(--danger)' }}>
               {validationMessage}
             </div>
           )}

@@ -130,6 +130,8 @@ function App() {
   // Navigation State
   const [activeTab, setActiveTab] = useState<TabState>('CLIENTS')
   const [isClientDetailsView, setIsClientDetailsView] = useState(false)
+  const [isReproductionDetailOpen, setIsReproductionDetailOpen] = useState(false)
+  const reproductionDetailCloseRef = useRef<(() => void) | null>(null)
   const [isMinimalHeaderScrolled, setIsMinimalHeaderScrolled] =
     useState(false)
 
@@ -321,7 +323,7 @@ function App() {
 
     return () => {
       cancelled = true
-      cleanup?.()
+      if (typeof cleanup === 'function') cleanup()
     }
   }, [authReady, user, retryTick])
 
@@ -593,6 +595,11 @@ function App() {
           return
         }
 
+        if (activeTab === 'REPRODUCTION' && isReproductionDetailOpen) {
+          reproductionDetailCloseRef.current?.()
+          return
+        }
+
         if (activeTab !== 'CLIENTS') {
           setActiveTab('CLIENTS')
           setIsClientDetailsView(false)
@@ -618,7 +625,7 @@ function App() {
     register()
 
     return () => {
-      backHandler?.remove?.()
+      if (backHandler && 'remove' in backHandler) backHandler.remove()
     }
   }, [
     activeTab,
@@ -629,6 +636,7 @@ function App() {
     isReceiptModalOpen,
     isSaleModalOpen,
     isReceiptViewerOpen,
+    isReproductionDetailOpen,
     isNoteViewerOpen,
     location.pathname,
     navigate,
@@ -1161,9 +1169,23 @@ function App() {
           />
         )
       case 'REPORTS':
-        return <ReportsPage sales={sales} payments={payments} clients={clients} />
+        return (
+          <ReportsPage
+            sales={sales}
+            payments={payments}
+            clients={clients}
+            userName={user?.displayName || user?.email?.split('@')[0] || 'Perfil'}
+          />
+        )
       case 'REPRODUCTION':
-        return <ReproductionPage cows={cows} calvings={calvings} />
+        return (
+          <ReproductionPage
+            cows={cows}
+            calvings={calvings}
+            onDetailScreenChange={setIsReproductionDetailOpen}
+            detailCloseRef={reproductionDetailCloseRef}
+          />
+        )
       case 'SETTINGS':
         return (
           <SettingsPage
@@ -1192,6 +1214,7 @@ function App() {
             sales={sales}
             clients={clients}
             clientBalances={clientBalances}
+            userName={user?.displayName || user?.email?.split('@')[0] || 'Perfil'}
             onGenerateReceipt={handleGenerateReceipt}
             onDeletePayment={setPaymentToDeleteId}
             onPayDebt={handlePayDebt}
@@ -1230,7 +1253,7 @@ function App() {
     'absolute -top-2 w-8 h-1 rounded-b-full animate-fade-in'
   const navActive = 'font-semibold'
   const navInactive = 'opacity-80 hover:opacity-100'
-  const navActiveStyle = { color: 'var(--accent, var(--primary, #b8ff2c))' }
+  const navActiveStyle = { color: '#244b2d' }
   const navInactiveStyle = { color: 'var(--muted, #94a3b8)' }
 
   const renderBottomNav = () => (
@@ -1385,11 +1408,16 @@ function App() {
     </div>
   )
 
-  const mainPaddingClass =
-    activeTab === 'CLIENTS' ? 'p-0' : activeTab === 'PAYMENTS' ? 'p-0' : 'p-4'
+  const mainPaddingClass = isReproductionDetailOpen
+    ? 'p-0'
+    : activeTab === 'CLIENTS'
+      ? 'p-0'
+      : activeTab === 'PAYMENTS'
+        ? 'p-0'
+        : 'p-4'
   const mainAdditionalTop =
     minimalHeaderActive && activeTab !== 'CLIENTS' ? 'pt-6' : ''
-  const isFullBleedPage = false
+  const isFullBleedPage = isReproductionDetailOpen
 
   if (!authReady) {
     return (
@@ -1436,8 +1464,8 @@ function App() {
   // Main content renderer (Tabs)
   const mainContent = (
     <>
-      {renderHeader()}
-      {renderVerificationBanner()}
+      {!isReproductionDetailOpen ? renderHeader() : null}
+      {!isReproductionDetailOpen ? renderVerificationBanner() : null}
       <main
         className={`${
           isFullBleedPage ? 'w-full' : 'max-w-2xl mx-auto'
@@ -1446,7 +1474,7 @@ function App() {
         {renderActivePage()}
       </main>
 
-      {renderBottomNav()}
+      {!isReproductionDetailOpen ? renderBottomNav() : null}
 
       {/* --- Modals --- */}
       <AddClientModal
@@ -1541,7 +1569,7 @@ function App() {
   return (
     <div
       data-theme={appTheme}
-      className='min-h-screen font-sans pb-32'
+      className={`min-h-screen font-sans ${isReproductionDetailOpen ? '' : 'pb-32'}`}
       style={{
         backgroundColor: 'var(--bg)',
         color: 'var(--text)'
