@@ -292,10 +292,9 @@ const StatsSummaryCard = ({
   const isAccent = tone === 'accent'
   const cardStyle = isAccent
     ? {
-        background:
-          'linear-gradient(160deg, rgba(184, 255, 44, 0.16) 0%, rgba(18, 24, 33, 0.95) 60%, rgba(11, 15, 20, 0.98) 100%)',
-        borderColor: 'rgba(184, 255, 44, 0.35)',
-        boxShadow: '0 18px 40px -28px rgba(184, 255, 44, 0.35)'
+        background: 'var(--accent-soft, #eff6d9)',
+        borderColor: '#d5e7a4',
+        boxShadow: '0 12px 30px -26px rgba(59, 103, 65, 0.24)'
       }
     : {
         background: 'var(--surface)',
@@ -305,9 +304,9 @@ const StatsSummaryCard = ({
 
   const iconStyle = isAccent
     ? {
-        background: 'rgba(184, 255, 44, 0.18)',
-        color: 'var(--accent)',
-        borderColor: 'rgba(184, 255, 44, 0.35)'
+        background: 'rgba(255, 255, 255, 0.72)',
+        color: 'var(--primary)',
+        borderColor: '#d5e7a4'
       }
     : {
         background: 'var(--surface-2)',
@@ -315,20 +314,18 @@ const StatsSummaryCard = ({
         borderColor: 'var(--border)'
       }
 
-  const valueStyle = {
-    color: isAccent ? 'var(--accent)' : 'var(--text)'
-  }
+  const valueStyle = { color: isAccent ? 'var(--primary)' : 'var(--text)' }
 
   const dividerStyle = {
-    background: isAccent ? 'rgba(184, 255, 44, 0.22)' : 'var(--border)'
+    background: isAccent ? '#d5e7a4' : 'var(--border)'
   }
 
   const changeColor =
     change.direction === 'up'
-      ? 'text-emerald-400'
+      ? 'text-emerald-700'
       : change.direction === 'down'
-      ? 'text-red-400'
-      : 'text-slate-400'
+      ? 'text-red-700'
+      : 'text-slate-500'
 
   const renderChangeIcon = () => {
     if (change.direction === 'up') return <ArrowUpRight size={16} />
@@ -664,7 +661,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
 
         <div className='grid grid-cols-2 gap-4'>
           <StatsSummaryCard
-            title='Total Litros'
+            title='Leite vendido'
             icon={<Droplets size={12} />}
             tone='neutral'
             mainValue={`${reportData.totalLiters} L`}
@@ -672,7 +669,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
             change={litersChange}
           />
           <StatsSummaryCard
-            title='Valor Total'
+            title='Faturamento'
             icon={<DollarSign size={12} />}
             tone='accent'
             mainValue={formatCurrency(reportData.totalValue)}
@@ -689,7 +686,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               className='text-xs font-semibold uppercase tracking-wider'
               style={{ color: 'var(--muted)' }}
             >
-              {viewMode === 'month' ? 'Vendas por Mês' : 'Vendas por Semana'}
+              {viewMode === 'month' ? 'Leite vendido por mês' : 'Leite vendido por semana'}
             </h3>
           </div>
           <ViewToggle value={viewMode} onChange={setViewMode} />
@@ -699,11 +696,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
           hasMonthlyData ? (
             <div
               className='flat-card p-4'
-              style={{
-                background:
-                  'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(11, 15, 20, 0.98) 100%)',
-                borderColor: 'var(--border)'
-              }}
+              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
             >
               <div className='flex items-center justify-between text-sm mb-4'>
                 <span className='font-semibold' style={{ color: 'var(--text)' }}>
@@ -719,10 +712,14 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                   </span>
                 </div>
               </div>
-              <div className='overflow-x-auto no-scrollbar' ref={chartScrollRef}>
+              <div
+                className='overflow-x-auto no-scrollbar'
+                ref={chartScrollRef}
+                aria-label='Gráfico anual. Deslize para ver os 12 meses.'
+              >
                 <div className='min-w-[640px]'>
                   {(() => {
-                    const maxValue = Math.max(...monthlyTotals.map((m) => m.totalValue), 1)
+                    const maxValue = Math.max(...monthlyTotals.map((m) => m.totalLiters), 1)
                     return (
                       <div className='flex gap-3'>
                         <div
@@ -747,10 +744,10 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                         </div>
                         <div className='grid grid-cols-12 gap-0.5 h-48 items-end flex-1'>
                           {monthlyTotals.map((entry, idx) => {
-                            const isZero = entry.totalValue === 0
+                            const isZero = entry.totalLiters === 0
                             const barHeightPct = isZero
                               ? 6
-                              : Math.max((entry.totalValue / maxValue) * 100, 8)
+                              : Math.max((entry.totalLiters / maxValue) * 100, 8)
                             const isActive = idx === reportMonth
                             const showTooltip = tooltipMonth === idx || idx === reportMonth
                             return (
@@ -767,7 +764,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                 {isActive && (
                                   <span
                                     className='absolute inset-y-0 w-0.5 z-0'
-                                    style={{ background: 'rgba(184, 255, 44, 0.12)' }}
+                                    style={{ background: 'rgba(200, 227, 106, 0.18)' }}
                                   />
                                 )}
                                 <div
@@ -780,10 +777,12 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                       height: `${barHeightPct}%`,
                                       opacity: isZero ? 0.2 : 1,
                                       background: isActive
-                                        ? 'var(--accent)'
-                                        : 'rgba(148, 163, 184, 0.55)',
+                                        ? 'var(--primary)'
+                                        : isZero
+                                          ? '#e2e9dd'
+                                          : '#c8d891',
                                       boxShadow: isActive
-                                        ? '0 12px 24px -18px rgba(184, 255, 44, 0.55)'
+                                        ? '0 12px 24px -18px rgba(36, 75, 45, 0.34)'
                                         : 'none'
                                     }}
                                   />
@@ -797,19 +796,17 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                                       color: 'var(--text)'
                                     }}
                                   >
-                                    <span className='font-semibold'>{formatCurrency(entry.totalValue)}</span>
+                                    <span className='font-semibold'>{entry.totalLiters.toLocaleString('pt-BR')} L</span>
                                     {entry.totalLiters ? (
                                       <span className='ml-2' style={{ color: 'var(--muted)' }}>
-                                        {entry.totalLiters.toLocaleString('pt-BR')} L
+                                        {formatCurrency(entry.totalValue)}
                                       </span>
                                     ) : null}
                                   </div>
                                 )}
                                 <span
                                   className='text-[11px] font-semibold uppercase tracking-wide'
-                                  style={{
-                                    color: isActive ? 'var(--accent)' : 'var(--muted)'
-                                  }}
+                                  style={{ color: isActive ? 'var(--primary)' : 'var(--muted)' }}
                                 >
                                   {MONTHS_SHORT[idx]}
                                 </span>
@@ -825,12 +822,12 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               <div className='mt-2.5'>
                 <div
                   className='relative h-0.5 w-full rounded-full overflow-hidden'
-                  style={{ background: 'rgba(148, 163, 184, 0.2)' }}
+                  style={{ background: 'var(--border)' }}
                 >
                   <div
                     className='absolute top-0 h-full rounded-full transition-all'
                     style={{
-                      background: 'rgba(184, 255, 44, 0.45)',
+                      background: 'var(--primary-2)',
                       width: `${chartScroll.widthPct}%`,
                       left: `${chartScroll.leftPct}%`
                     }}

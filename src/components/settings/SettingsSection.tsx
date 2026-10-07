@@ -13,17 +13,17 @@ export function SettingsSection({
 }: SettingsSectionProps) {
   return (
     <section
-      className={`bg-slate-900/70 border border-slate-800 rounded-2xl overflow-hidden shadow-sm ${className}`}
+      className={`flat-card rounded-2xl overflow-hidden shadow-sm ${className}`}
       style={{
         backgroundColor: 'var(--surface)',
         borderColor: 'var(--border)',
         boxShadow: 'var(--shadow)'
       }}
     >
-      <div className='px-4 pt-3 pb-2 text-[11px] uppercase tracking-[0.08em] font-semibold text-slate-500'>
+      <div className='px-4 pt-3 pb-2 text-[11px] uppercase tracking-[0.08em] font-semibold' style={{ color: 'var(--muted)' }}>
         {title}
       </div>
-      <div className='divide-y divide-slate-800/80'>{children}</div>
+      <div className='settings-items'>{children}</div>
     </section>
   )
 }

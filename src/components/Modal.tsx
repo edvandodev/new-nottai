@@ -23,16 +23,16 @@ export function Modal({
   return (
     <div
       data-theme='flat-lime'
-      className='fixed inset-0 z-50 flex items-center justify-center px-4'
+      className='fixed inset-0 z-50 flex items-center justify-center px-4 py-4'
       style={{
-        background: 'rgba(11, 15, 20, 0.72)',
+        background: 'rgba(26, 39, 29, 0.42)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)'
       }}
       onClick={closeOnBackdrop ? onClose : undefined}
     >
       <div
-        className='w-full max-w-lg rounded-2xl p-6 shadow-xl space-y-4 border'
+        className='w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl p-6 shadow-xl space-y-4 border'
         style={{
           background: 'var(--surface)',
           borderColor: 'var(--border)',

@@ -30,7 +30,7 @@ export function SettingsItem({
       disabled={isDisabled}
       className={`w-full min-h-[52px] flex items-center gap-3 px-4 py-3.5 text-left transition-all ${
         isInteractive
-          ? 'active:scale-[0.995] hover:bg-slate-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60'
+          ? 'active:scale-[0.995] hover:brightness-[0.98] focus-visible:outline-none focus-visible:ring-2'
           : 'cursor-default'
       } ${isDisabled ? 'opacity-70' : ''}`}
       style={{ color: danger ? 'var(--danger)' : 'var(--text)' }}

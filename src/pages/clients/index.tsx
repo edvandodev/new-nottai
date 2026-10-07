@@ -503,6 +503,11 @@ export function ClientsPage({
     onPayDebt(clientId)
   }
 
+  const totalOpenBalance = clients.reduce(
+    (total, client) => total + (clientBalances.get(client.id) || 0),
+    0
+  )
+
   const renderClientList = () => (
     <div
       data-theme='flat-lime'
@@ -526,7 +531,7 @@ export function ClientsPage({
             paddingLeft: 16,
             paddingRight: 16,
             background:
-              'linear-gradient(180deg, rgba(11, 15, 20, 0.98) 0%, rgba(11, 15, 20, 0.7) 45%, rgba(11, 15, 20, 0) 100%)',
+              'linear-gradient(180deg, rgba(245, 247, 240, 0.98) 0%, rgba(245, 247, 240, 0.84) 62%, rgba(245, 247, 240, 0) 100%)',
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)'
           }}
@@ -555,6 +560,32 @@ export function ClientsPage({
           <Plus size={12} strokeWidth={3} />
           Novo
         </button>
+      </div>
+      <div className='grid grid-cols-2 gap-3 mb-5'>
+        <div className='flat-accent-card rounded-2xl p-4'>
+          <div className='flex items-center gap-2 text-xs font-semibold' style={{ color: 'var(--primary)' }}>
+            <Users size={15} />
+            Clientes ativos
+          </div>
+          <p className='mt-2 text-2xl font-bold tabular-nums' style={{ color: 'var(--text)' }}>
+            {clients.length}
+          </p>
+          <p className='mt-1 text-[11px]' style={{ color: 'var(--muted)' }}>
+            {clients.length === 1 ? 'cliente cadastrado' : 'clientes cadastrados'}
+          </p>
+        </div>
+        <div className='flat-card rounded-2xl p-4'>
+          <div className='flex items-center gap-2 text-xs font-semibold' style={{ color: 'var(--muted)' }}>
+            <Wallet size={15} />
+            Em aberto
+          </div>
+          <p className='mt-2 text-xl font-bold tabular-nums' style={{ color: 'var(--text)' }}>
+            {formatCurrency(totalOpenBalance)}
+          </p>
+          <p className='mt-1 text-[11px]' style={{ color: 'var(--muted)' }}>
+            saldo dos clientes
+          </p>
+        </div>
       </div>
       {showPaymentPicker && paymentCandidates.length > 1 && (
         <div className='flat-card p-4 space-y-3'>
@@ -885,16 +916,16 @@ export function ClientsPage({
         <div
           className='relative h-32 rounded-b-[2rem] shadow-md overflow-hidden'
           style={{
-            background: 'linear-gradient(135deg, rgba(184, 255, 44, 0.22), rgba(11, 15, 20, 0.96))'
+            background: 'linear-gradient(135deg, #e6f0c4 0%, #f5f7f0 82%)'
           }}
         >
           <div
             className='absolute top-[-30%] left-[-10%] w-44 h-44 rounded-full blur-3xl'
-            style={{ background: 'rgba(184, 255, 44, 0.14)' }}
+            style={{ background: 'rgba(200, 227, 106, 0.28)' }}
           />
           <div
             className='absolute bottom-[-35%] right-[-10%] w-44 h-44 rounded-full blur-3xl'
-            style={{ background: 'rgba(184, 255, 44, 0.1)' }}
+            style={{ background: 'rgba(200, 227, 106, 0.2)' }}
           />
         </div>
 
@@ -965,8 +996,8 @@ export function ClientsPage({
                 balance > 0
                   ? {
                       borderColor: 'var(--accent)',
-                      background: 'rgba(184, 255, 44, 0.14)',
-                      color: 'var(--accent)'
+                      background: 'var(--accent-soft)',
+                      color: 'var(--primary)'
                     }
                   : {
                       borderColor: 'var(--border)',
@@ -1014,13 +1045,13 @@ export function ClientsPage({
                     style={
                       isActive
                         ? {
-                            background: 'rgba(184, 255, 44, 0.15)',
-                            borderColor: 'rgba(184, 255, 44, 0.7)',
-                            color: 'var(--text)'
+                            background: 'var(--accent-soft)',
+                            borderColor: '#d5e7a4',
+                            color: 'var(--primary)'
                           }
                         : {
-                            background: 'rgba(14, 20, 28, 0.7)',
-                            borderColor: 'rgba(30, 42, 56, 0.9)',
+                            background: 'var(--surface)',
+                            borderColor: 'var(--border)',
                             color: 'var(--muted)'
                           }
                     }
@@ -1050,7 +1081,7 @@ export function ClientsPage({
                     <span className='inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold uppercase rounded-full bg-amber-500/20 text-amber-50 border border-amber-500/40'>
                       Pendente
                     </span>
-                    <p className='text-sm font-semibold text-slate-100 flex-1 min-w-0 truncate'>
+                    <p className='text-sm font-semibold flex-1 min-w-0 truncate' style={{ color: 'var(--text)' }}>
                       Saldo pendente:
                     </p>
                     <span className='text-xs font-semibold text-amber-100 flex items-center gap-1 shrink-0'>
@@ -1067,8 +1098,8 @@ export function ClientsPage({
                       isDebtOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'
                     }`}
                   >
-                    <div className='px-3 pb-3 pt-2 border-t border-slate-700/70 space-y-2'>
-                      <p className='text-xs leading-snug text-slate-300'>
+                    <div className='px-3 pb-3 pt-2 border-t space-y-2' style={{ borderColor: 'var(--border)' }}>
+                      <p className='text-xs leading-snug' style={{ color: 'var(--muted)' }}>
                         {selectedClientHistory.lastPaymentTs
                           ? `Após o pagamento de ${formatCurrency(
                               lastPaymentAmount
@@ -1077,17 +1108,17 @@ export function ClientsPage({
                             )} ficou com saldo pendente.`
                           : 'Sem pagamento registrado; saldo pendente atualizado com a última movimentação.'}
                       </p>
-                      <p className='text-xs leading-snug text-slate-300'>
+                      <p className='text-xs leading-snug' style={{ color: 'var(--muted)' }}>
                         Último pagamento:{' '}
-                        <span className='font-semibold text-white'>
+                        <span className='font-semibold' style={{ color: 'var(--text)' }}>
                           {selectedClientHistory.lastPaymentTs
                             ? formatDateShort(selectedClientHistory.lastPaymentTs)
                             : 'Sem pagamento'}
                         </span>
                       </p>
-                      <p className='text-sm leading-snug text-amber-100'>
+                      <p className='text-sm leading-snug' style={{ color: '#80550f' }}>
                         Saldo pendente:{' '}
-                        <span className='font-bold text-amber-200'>
+                        <span className='font-bold' style={{ color: '#80550f' }}>
                           {formatCurrency(selectedClientHistory.bannerBalance)}
                         </span>
                       </p>

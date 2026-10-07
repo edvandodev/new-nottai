@@ -26,18 +26,18 @@ type ReproductionPageProps = {
 }
 
 const cowCardColors = {
-  accent: '#b9ff45',
-  background: 'rgba(185, 255, 69, 0.12)',
-  border: 'rgba(185, 255, 69, 0.32)'
+  accent: '#527b38',
+  background: '#eff6d9',
+  border: '#dce9c1'
 }
 
 const birthsCardColors = {
-  accent: '#35e6b5',
-  background: 'rgba(53, 230, 181, 0.12)',
-  border: 'rgba(53, 230, 181, 0.32)'
+  accent: '#244b2d',
+  background: '#ffffff',
+  border: '#e2e9dd'
 }
 
-const iconColor = '#94a3b8'
+const iconColor = '#718074'
 
 const MaskIcon = ({
   src,
@@ -279,19 +279,20 @@ const CowIdentityStrip = ({
 
   return (
     <div
-      className='rounded-2xl border p-3 flex items-center gap-3'
+      className='rounded-2xl border p-4 flex items-center gap-4'
       style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
     >
       <button
         type='button'
         onClick={onAvatarClick}
-        className='h-12 w-12 rounded-full border flex items-center justify-center overflow-hidden'
+        className='h-16 w-16 rounded-2xl border flex items-center justify-center overflow-hidden shrink-0'
+        aria-label={cow.photoDataUrl ? `Ver foto de ${cow.name}` : `Adicionar foto de ${cow.name}`}
         style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
       >
         {cow.photoDataUrl ? (
           <img src={cow.photoDataUrl} alt={cow.name} className='h-full w-full object-cover' />
         ) : (
-          <span className='text-lg font-semibold'>{initial}</span>
+          <span className='text-xl font-semibold'>{initial}</span>
         )}
       </button>
 
@@ -1038,6 +1039,19 @@ function CowDetailsModal({
               savingName={savingName}
               onAvatarClick={handleAvatarClick}
             />
+
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='rounded-2xl border p-4' style={{ background: 'var(--accent-soft)', borderColor: '#dce9c1' }}>
+                <div className='text-xs font-medium' style={{ color: 'var(--muted)' }}>Partos registrados</div>
+                <div className='mt-1 text-2xl font-bold' style={{ color: 'var(--primary)' }}>{events.length}</div>
+              </div>
+              <div className='rounded-2xl border p-4' style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                <div className='text-xs font-medium' style={{ color: 'var(--muted)' }}>Último parto</div>
+                <div className='mt-1 text-sm font-bold' style={{ color: 'var(--text)' }}>
+                  {lastEvent ? formatDateBR(lastEvent.date) : 'Sem registros'}
+                </div>
+              </div>
+            </div>
 
             <div className='space-y-2'>
               <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>

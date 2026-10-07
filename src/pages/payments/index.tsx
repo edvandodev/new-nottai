@@ -327,9 +327,9 @@ export function PaymentsPage({
               }
               className='h-7 w-7 rounded-full flex items-center justify-center border'
               style={{
-                background: 'rgba(34, 197, 94, 0.18)',
-                borderColor: 'rgba(34, 197, 94, 0.45)',
-                color: '#4ade80'
+                background: 'var(--accent-soft)',
+                borderColor: '#d5e7a4',
+                color: 'var(--primary)'
               }}
               aria-label={
                 receivedMode === 'month' ? 'Mostrar total geral' : 'Mostrar total mensal'
@@ -343,8 +343,7 @@ export function PaymentsPage({
           label='Total a receber'
           value={formatCurrency(totalReceivable)}
           valueTone='neutral'
-          variant='accent'
-          accentTone='lime'
+          variant='neutral'
           helperText={`${litersReceivable.toLocaleString('pt-BR', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 2
