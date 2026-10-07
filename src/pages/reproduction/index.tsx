@@ -237,12 +237,12 @@ const InfoChip = ({
 
 const CowHeader = ({ name, subtitle }: { name: string; subtitle?: string }) => (
   <div className='flex flex-col gap-1 text-left'>
-    <div className='text-2xl font-semibold leading-tight' style={{ color: 'var(--text)' }}>
-      {`Partos \u2014 ${name}`}
+    <div className='text-base font-semibold leading-tight' style={{ color: 'var(--text)' }}>
+      Perfil da vaca
     </div>
     {subtitle ? (
       <div className='text-sm' style={{ color: 'var(--muted)' }}>
-        {subtitle}
+        {name} · {subtitle}
       </div>
     ) : null}
   </div>
@@ -278,75 +278,62 @@ const CowIdentityStrip = ({
   const initial = (cow.name || '?').trim().charAt(0).toUpperCase() || '?'
 
   return (
-    <div
-      className='rounded-2xl border p-4 flex items-center gap-4'
-      style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-    >
-      <button
-        type='button'
-        onClick={onAvatarClick}
-        className='h-16 w-16 rounded-2xl border flex items-center justify-center overflow-hidden shrink-0'
-        aria-label={cow.photoDataUrl ? `Ver foto de ${cow.name}` : `Adicionar foto de ${cow.name}`}
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-      >
+    <div className='space-y-3'>
+      <div className='relative h-[210px] overflow-hidden rounded-[24px] border' style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
         {cow.photoDataUrl ? (
-          <img src={cow.photoDataUrl} alt={cow.name} className='h-full w-full object-cover' />
+          <img src={cow.photoDataUrl} alt={`Foto de ${cow.name}`} className='absolute inset-0 h-full w-full object-cover' />
         ) : (
-          <span className='text-xl font-semibold'>{initial}</span>
+          <div className='absolute inset-0 flex items-center justify-center' style={{ background: 'linear-gradient(135deg, #eaf2df, #dce9c1)' }}>
+            <MaskIcon src={cowIcon} size={112} color='#527b38' />
+          </div>
         )}
-      </button>
-
-      <div className='flex-1 min-w-0 flex flex-col justify-center gap-2 self-center'>
-        {isEditingName ? (
-          <>
-            <input
-              value={nameDraft}
-              onChange={(e) => onNameChange(e.target.value)}
-              className='w-full h-11 rounded-xl border px-3 outline-none'
-              placeholder='Nome da vaca'
-              style={{
-                background: 'var(--surface)',
-                borderColor: 'var(--border)',
-                color: 'var(--text)'
-              }}
-            />
-            <div className='flex flex-wrap gap-2'>
-              <button
-                type='button'
-                onClick={onSaveName}
-                disabled={!canSaveName || savingName}
-                className='h-10 px-4 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
-                style={{
-                  background: 'var(--surface)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              >
-                {savingName ? 'Salvando...' : 'Salvar'}
-              </button>
-              <button
-                type='button'
-                onClick={onCancelEdit}
-                className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
-                style={{ background: 'transparent', borderColor: 'var(--border)', color: 'var(--muted)' }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className='text-xl font-semibold leading-tight truncate' style={{ color: 'var(--text)' }}>
-              {cow.name}
-            </div>
-            <div className='flex flex-wrap gap-2'>
-              {idLabel ? <InfoChip label={`ID ${idLabel}`} /> : null}
-              {breed ? <InfoChip label={breed} /> : null}
-              {status ? <InfoChip label={status} tone='accent' /> : null}
-            </div>
-          </>
-        )}
+        {cow.photoDataUrl ? <div className='absolute inset-0' style={{ background: 'linear-gradient(180deg, rgba(20,35,23,.02) 25%, rgba(20,35,23,.78) 100%)' }} /> : null}
+        <button
+          type='button'
+          onClick={onAvatarClick}
+          className='absolute inset-0 z-10'
+          aria-label={cow.photoDataUrl ? `Abrir foto de ${cow.name}` : `Adicionar foto de ${cow.name}`}
+        />
+        <div className='absolute inset-x-4 bottom-4 z-20 pointer-events-none'>
+          <p className='text-[9px] font-bold uppercase tracking-[.16em]' style={{ color: cow.photoDataUrl ? 'rgba(255,255,255,.8)' : 'var(--primary)' }}>Perfil do animal</p>
+          <p className='mt-1 text-[26px] font-bold leading-tight truncate' style={{ color: cow.photoDataUrl ? '#fff' : 'var(--primary)' }}>{cow.name || initial}</p>
+          <div className='mt-2 flex flex-wrap gap-2'>
+            {idLabel ? <InfoChip label={`ID ${idLabel}`} /> : null}
+            {breed ? <InfoChip label={breed} /> : null}
+            {status ? <InfoChip label={status} tone='accent' /> : null}
+          </div>
+        </div>
+        <button
+          type='button'
+          onClick={onAvatarClick}
+          aria-label={cow.photoDataUrl ? 'Ver e trocar foto' : 'Adicionar foto'}
+          className='absolute right-3 top-3 z-30 h-10 w-10 rounded-full border flex items-center justify-center shadow-sm'
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--primary)' }}
+        >
+          <Camera size={17} />
+        </button>
       </div>
+
+      {isEditingName && (
+        <div className='flat-card p-3 space-y-2'>
+          <label className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>Nome da vaca</label>
+          <input
+            value={nameDraft}
+            onChange={(e) => onNameChange(e.target.value)}
+            className='w-full h-11 rounded-xl border px-3 outline-none'
+            placeholder='Nome da vaca'
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+          />
+          <div className='flex gap-2'>
+            <button type='button' onClick={onSaveName} disabled={!canSaveName || savingName} className='h-10 px-4 rounded-xl text-sm font-semibold disabled:opacity-60' style={{ background: 'var(--primary)', color: '#fff' }}>
+              {savingName ? 'Salvando...' : 'Salvar nome'}
+            </button>
+            <button type='button' onClick={onCancelEdit} className='h-10 px-3 rounded-xl text-sm font-semibold border' style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1457,7 +1444,7 @@ function CalvingGalleryModal({
                 >
                   {`${activeIndex + 1}/${photos.length}`}
                 </div>
-                <div className='h-64 flex items-center justify-center bg-[#0f1624]'>
+                <div className='h-64 flex items-center justify-center' style={{ background: 'var(--surface-2)' }}>
                   <img
                     src={photos[activeIndex]}
                     alt='Foto do parto'
@@ -1648,7 +1635,7 @@ function ImageViewerModal({
     <>
       <div
         className='fixed inset-0 z-50 flex flex-col p-4'
-        style={{ background: 'rgba(0, 0, 0, 0.85)' }}
+        style={{ background: 'var(--bg)' }}
         onClick={onClose}
       >
         <div className='flex flex-col h-full w-full max-w-5xl mx-auto' onClick={(e) => e.stopPropagation()}>
@@ -1730,8 +1717,8 @@ function ImageViewerModal({
           </div>
           <div
             ref={viewportRef}
-            className='flex-1 overflow-auto rounded-2xl border bg-[#0b111a]'
-            style={{ borderColor: 'var(--border)' }}
+            className='flex-1 overflow-auto rounded-[24px] border'
+            style={{ borderColor: 'var(--border)', background: 'var(--surface-2)' }}
             onWheel={(e) => {
               if (!e.ctrlKey) return
               e.preventDefault()

@@ -1161,7 +1161,14 @@ function App() {
           />
         )
       case 'REPORTS':
-        return <ReportsPage sales={sales} payments={payments} clients={clients} />
+        return (
+          <ReportsPage
+            sales={sales}
+            payments={payments}
+            clients={clients}
+            userName={user?.displayName || user?.email?.split('@')[0] || 'Perfil'}
+          />
+        )
       case 'REPRODUCTION':
         return <ReproductionPage cows={cows} calvings={calvings} />
       case 'SETTINGS':
@@ -1192,6 +1199,7 @@ function App() {
             sales={sales}
             clients={clients}
             clientBalances={clientBalances}
+            userName={user?.displayName || user?.email?.split('@')[0] || 'Perfil'}
             onGenerateReceipt={handleGenerateReceipt}
             onDeletePayment={setPaymentToDeleteId}
             onPayDebt={handlePayDebt}

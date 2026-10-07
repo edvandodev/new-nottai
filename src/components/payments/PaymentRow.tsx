@@ -1,5 +1,5 @@
 import React from 'react'
-import { ArrowDownLeft, ChevronDown, Wallet } from 'lucide-react'
+import { ArrowDownLeft, ChevronDown } from 'lucide-react'
 
 type PaymentRowProps = {
   name: string
@@ -25,13 +25,12 @@ export function PaymentRow({
   variant = 'card'
 }: PaymentRowProps) {
   const isPending = status === 'pending'
-  const iconBg = isPending ? 'var(--warning)' : 'var(--accent)'
-  const iconColor = isPending ? 'var(--accent-ink)' : 'var(--accent-ink)'
-  const textColor = isPending ? 'var(--text)' : 'var(--accent)'
+  const textColor = isPending ? 'var(--text)' : 'var(--primary)'
   const containerClassName = variant === 'card' ? 'flat-card overflow-hidden' : ''
   const rowPadding = variant === 'list' ? 'py-4' : 'py-3'
-  const dividerColor = variant === 'list' ? 'rgba(255, 255, 255, 0.06)' : 'var(--border)'
+  const dividerColor = 'var(--border)'
   const expandedBg = variant === 'list' ? 'transparent' : 'var(--surface)'
+  const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part[0] || '').join('').toUpperCase()
 
   return (
     <div className={containerClassName}>
@@ -42,18 +41,13 @@ export function PaymentRow({
       >
         <div className='flex items-center gap-3 min-w-0'>
           <div
-            className='h-11 w-11 rounded-full flex items-center justify-center shrink-0'
+            className='h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-[11px] font-semibold'
             style={{
-              background: iconBg,
-              color: iconColor,
-              boxShadow: '0 8px 20px -12px var(--shadow)'
+              background: isPending ? 'var(--accent-soft)' : 'var(--surface-2)',
+              color: 'var(--primary)'
             }}
           >
-            {isPending ? (
-              <ArrowDownLeft size={18} strokeWidth={2.4} />
-            ) : (
-              <Wallet size={22} strokeWidth={2.4} />
-            )}
+            {initials || <ArrowDownLeft size={16} strokeWidth={2.4} />}
           </div>
           <div className='min-w-0'>
             <p className='text-base font-semibold truncate'>{name}</p>
@@ -69,8 +63,8 @@ export function PaymentRow({
               {pillLabel}
             </span>
           )}
-          <span className='text-lg font-semibold tabular-nums' style={{ color: textColor }}>
-            {amount}
+          <span className='text-sm font-semibold tabular-nums whitespace-nowrap' style={{ color: textColor }}>
+            {isPending ? '' : '+ '}{amount}
           </span>
           {!isPending && <ChevronDown size={14} style={{ color: 'var(--muted)' }} />}
         </div>
