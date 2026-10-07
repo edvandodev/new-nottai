@@ -1287,8 +1287,8 @@ function CalvingGalleryModal({
 
   return (
     <>
-      <div className='fixed inset-0 z-[70] flex items-end justify-center bg-black/65 sm:items-center sm:p-4' onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-        <section role='dialog' aria-modal='true' aria-label='Detalhe do parto' className='flex h-[94dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] sm:h-[min(90dvh,780px)] sm:rounded-[28px]' style={{ background: 'var(--surface)' }}>
+      <div className='fixed inset-0 z-[70] flex justify-center' style={{ background: 'var(--bg)' }}>
+        <section role='dialog' aria-modal='true' aria-label='Detalhe do parto' className='flex h-[100dvh] w-full max-w-2xl flex-col overflow-hidden' style={{ background: 'var(--surface)' }}>
           <div className='relative h-[56%] min-h-[280px] shrink-0 overflow-hidden' style={{ background: 'linear-gradient(135deg, #eaf2df, #dce9c1)' }}>
             {hasPhotos ? <img src={photos[activeIndex]} alt={`Foto do parto de ${cowName}`} className='h-full w-full object-cover' /> : <div className='flex h-full flex-col items-center justify-center gap-3' style={{ color: 'var(--primary)' }}><Camera size={44} strokeWidth={1.4} /><span className='text-sm font-semibold'>Adicione uma foto deste parto</span></div>}
             <div className='absolute inset-x-0 top-0 flex items-start justify-between p-4' style={{ background: 'linear-gradient(180deg, rgba(0,0,0,.48), transparent)' }}>

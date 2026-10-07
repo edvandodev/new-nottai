@@ -42,27 +42,29 @@ export function Modal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='flex items-center justify-between gap-3'>
-          <h2 className='text-lg font-semibold' style={{ color: 'var(--text)' }}>
-            {title}
-          </h2>
-          <div className='flex items-center gap-2'>
-            {actions}
-            <button
-              onClick={onClose}
-              aria-label={closeAriaLabel}
-              className='h-9 w-9 rounded-full flex items-center justify-center text-sm'
-              style={{
-                background: 'var(--surface-2)',
-                border: '1px solid var(--border)',
-                color: 'var(--muted)'
-              }}
-            >
-              {closeLabel}
-            </button>
+        <div className={`space-y-4 ${fullScreen ? 'mx-auto w-full max-w-2xl' : ''}`}>
+          <div className='flex items-center justify-between gap-3'>
+            <h2 className='text-lg font-semibold' style={{ color: 'var(--text)' }}>
+              {title}
+            </h2>
+            <div className='flex items-center gap-2'>
+              {actions}
+              <button
+                onClick={onClose}
+                aria-label={closeAriaLabel}
+                className='h-9 w-9 rounded-full flex items-center justify-center text-sm'
+                style={{
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--muted)'
+                }}
+              >
+                {closeLabel}
+              </button>
+            </div>
           </div>
+          {children}
         </div>
-        {children}
       </div>
     </div>
   )

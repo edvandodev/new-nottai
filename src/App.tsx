@@ -1238,7 +1238,7 @@ function App() {
     'absolute -top-2 w-8 h-1 rounded-b-full animate-fade-in'
   const navActive = 'font-semibold'
   const navInactive = 'opacity-80 hover:opacity-100'
-  const navActiveStyle = { color: 'var(--accent, var(--primary, #b8ff2c))' }
+  const navActiveStyle = { color: '#244b2d' }
   const navInactiveStyle = { color: 'var(--muted, #94a3b8)' }
 
   const renderBottomNav = () => (
