@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   CalendarDays,
   Camera,
@@ -23,6 +23,8 @@ import '../../styles/theme-flat.css'
 type ReproductionPageProps = {
   cows: Cow[]
   calvings: CalvingEvent[]
+  onDetailScreenChange?: (open: boolean) => void
+  detailCloseRef?: React.MutableRefObject<(() => void) | null>
 }
 
 const cowCardColors = {
@@ -332,16 +334,16 @@ const CowIdentityStrip = ({
   )
 }
 
-const BirthItemRow = ({
-  event,
-  isFirst,
-  onOpen,
-  onOpenMenu
-}: {
+const BirthItemRow: React.FC<{
   event: CalvingEvent
   isFirst: boolean
   onOpen: () => void
   onOpenMenu: () => void
+}> = ({
+  event,
+  isFirst,
+  onOpen,
+  onOpenMenu
 }) => {
   const timeSinceLabel = formatTimeSince(event.date)
 
@@ -383,7 +385,7 @@ const BirthItemRow = ({
   )
 }
 
-export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
+export function ReproductionPage({ cows, calvings, onDetailScreenChange, detailCloseRef }: ReproductionPageProps) {
   const [search, setSearch] = useState('')
   const [selectedCow, setSelectedCow] = useState<Cow | null>(null)
   const [isCowModalOpen, setIsCowModalOpen] = useState(false)
@@ -444,7 +446,14 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
   const openCow = (cow: Cow) => {
     setSelectedCow(cow)
     setIsCowModalOpen(true)
+    onDetailScreenChange?.(true)
   }
+
+  const closeCow = useCallback(() => {
+    setIsCowModalOpen(false)
+    setSelectedCow(null)
+    onDetailScreenChange?.(false)
+  }, [onDetailScreenChange])
 
   const cowEvents = useMemo(() => {
     if (!selectedCow) return []
@@ -452,7 +461,9 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
   }, [selectedCow, calvingsByCow])
 
   return (
-    <div className='max-w-2xl mx-auto space-y-4'>
+    <div className={isCowModalOpen ? 'min-h-dvh w-full' : 'max-w-2xl mx-auto space-y-4'}>
+      {!isCowModalOpen ? (
+        <>
       <section className='relative overflow-hidden rounded-[28px] p-5 sm:p-6' style={{ background: 'var(--primary)', color: '#fff', boxShadow: '0 20px 44px -30px rgba(31, 68, 40, .55)' }}>
         <div className='pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full' style={{ background: 'rgba(206, 235, 143, .16)' }} />
         <div className='relative flex items-start justify-between gap-3'>
@@ -492,6 +503,8 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
           )
         })}
       </div>
+        </>
+      ) : null}
       <Modal
         open={isNewMenuOpen}
         title='Novo'
@@ -559,10 +572,8 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
         open={isCowModalOpen}
         cow={selectedCow}
         events={cowEvents}
-        onClose={() => {
-          setIsCowModalOpen(false)
-          setSelectedCow(null)
-        }}
+        onClose={closeCow}
+        detailCloseRef={detailCloseRef}
         onEditCalving={(ev) => {
           setEditingCalving(ev)
           setIsNewCalvingOpen(true)
@@ -606,7 +617,8 @@ function CowDetailsModal({
   events,
   onClose,
   onNewCalving,
-  onEditCalving
+  onEditCalving,
+  detailCloseRef
 }: {
   open: boolean
   cow: Cow | null
@@ -614,6 +626,7 @@ function CowDetailsModal({
   onClose: () => void
   onNewCalving: () => void
   onEditCalving: (ev: CalvingEvent) => void
+  detailCloseRef?: React.MutableRefObject<(() => void) | null>
 }) {
   const [nameDraft, setNameDraft] = useState('')
   const [isEditingName, setIsEditingName] = useState(false)
@@ -633,6 +646,17 @@ function CowDetailsModal({
   })
   const [activeEventMenu, setActiveEventMenu] = useState<CalvingEvent | null>(null)
   const [galleryEvent, setGalleryEvent] = useState<CalvingEvent | null>(null)
+  useEffect(() => {
+    if (!detailCloseRef) return
+    detailCloseRef.current = !open
+      ? null
+      : galleryEvent
+        ? () => setGalleryEvent(null)
+        : onClose
+    return () => {
+      detailCloseRef.current = null
+    }
+  }, [detailCloseRef, galleryEvent, onClose, open])
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null)
   const [isCowPhotoPickerOpen, setIsCowPhotoPickerOpen] = useState(false)
   const cowPhotoCameraInputRef = React.useRef<HTMLInputElement>(null)
@@ -690,7 +714,7 @@ function CowDetailsModal({
       showToast('Nome atualizado')
     } catch (e) {
       console.error('Falha ao salvar nome da vaca', e)
-      showToast('Nao foi possivel salvar. Tente novamente.', 'error')
+      window.alert('Não foi possível salvar o nome da vaca. Tente novamente.')
     } finally {
       setSavingName(false)
     }
@@ -868,31 +892,43 @@ function CowDetailsModal({
 
   return (
     <>
-      <Modal
-        open={open}
-        title={cow ? <CowHeader name={cow.name} subtitle={headerSubtitle || undefined} /> : 'Partos'}
-        fullScreen
-        onClose={onClose}
-        closeLabel={<X size={14} />}
-        closeAriaLabel='Fechar'
-        closeOnBackdrop
-        actions={
-          cow ? (
-            <button
-              type='button'
-              onClick={() => setIsActionsOpen(true)}
-              aria-label='Acoes da vaca'
-              className='h-9 w-9 rounded-full border flex items-center justify-center transition hover:brightness-110'
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
-            >
-              <MoreVertical size={16} />
-            </button>
-          ) : null
-        }
-      >
-        {!cow ? (
-          skeleton
-        ) : (
+      {open && !galleryEvent ? (
+        <main
+          data-theme='flat-lime'
+          className='min-h-dvh w-full overflow-x-hidden'
+          style={{ background: 'var(--bg)', color: 'var(--text)' }}
+        >
+          <div className='mx-auto min-h-dvh w-full max-w-2xl space-y-5 px-4 py-4 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6'>
+            <header className='flex items-center justify-between gap-3'>
+              <div className='min-w-0 flex-1'>
+                {cow ? <CowHeader name={cow.name} subtitle={headerSubtitle || undefined} /> : <h2 className='text-lg font-semibold'>Perfil da vaca</h2>}
+              </div>
+              <div className='flex shrink-0 items-center gap-2'>
+                {cow ? (
+                  <button
+                    type='button'
+                    onClick={() => setIsActionsOpen(true)}
+                    aria-label='Ações da vaca'
+                    className='h-10 w-10 rounded-full border flex items-center justify-center transition hover:brightness-110'
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+                  >
+                    <MoreVertical size={16} />
+                  </button>
+                ) : null}
+                <button
+                  type='button'
+                  onClick={onClose}
+                  aria-label='Fechar perfil da vaca'
+                  className='h-10 w-10 rounded-full border flex items-center justify-center transition hover:brightness-110'
+                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </header>
+            {!cow ? (
+              skeleton
+            ) : (
           <div className='space-y-5'>
             <div
               className='-mx-4 border-b pb-1 sm:-mx-6'
@@ -980,9 +1016,11 @@ function CowDetailsModal({
                 Novo parto
               </button>
             </div>
+            </div>
+            )}
           </div>
-        )}
-      </Modal>
+        </main>
+      ) : null}
 
       <CalvingGalleryModal
         open={Boolean(galleryEvent)}
@@ -1287,8 +1325,8 @@ function CalvingGalleryModal({
 
   return (
     <>
-      <div className='fixed inset-0 z-[70] flex justify-center' style={{ background: 'var(--bg)' }}>
-        <section role='dialog' aria-modal='true' aria-label='Detalhe do parto' className='flex h-[100dvh] w-full max-w-2xl flex-col overflow-hidden' style={{ background: 'var(--surface)' }}>
+      <main data-theme='flat-lime' className='min-h-dvh w-full' style={{ background: 'var(--bg)' }}>
+        <section aria-label='Detalhe do parto' className='mx-auto flex h-[100dvh] w-full max-w-2xl flex-col overflow-hidden' style={{ background: 'var(--surface)' }}>
           <div className='relative h-[56%] min-h-[280px] shrink-0 overflow-hidden' style={{ background: 'linear-gradient(135deg, #eaf2df, #dce9c1)' }}>
             {hasPhotos ? <img src={photos[activeIndex]} alt={`Foto do parto de ${cowName}`} className='h-full w-full object-cover' /> : <div className='flex h-full flex-col items-center justify-center gap-3' style={{ color: 'var(--primary)' }}><Camera size={44} strokeWidth={1.4} /><span className='text-sm font-semibold'>Adicione uma foto deste parto</span></div>}
             <div className='absolute inset-x-0 top-0 flex items-start justify-between p-4' style={{ background: 'linear-gradient(180deg, rgba(0,0,0,.48), transparent)' }}>
@@ -1312,7 +1350,7 @@ function CalvingGalleryModal({
             </div>
           </div>
         </section>
-      </div>
+      </main>
       <ActionSheet open={isPickerOpen} onClose={() => setIsPickerOpen(false)}>
         <div className='flex flex-col gap-1'>
           <button
@@ -1375,7 +1413,7 @@ function ActionSheet({
   if (!open) return null
   return (
     <div
-      className='fixed inset-0 z-50 flex items-end justify-center px-4 pb-6'
+      className='fixed inset-0 z-[100] flex items-end justify-center px-4 pb-6'
       style={{ background: 'rgba(0,0,0,0.4)' }}
       onClick={onClose}
     >
@@ -1743,7 +1781,7 @@ function CalvingModal({
       onSaved()
     } catch (e) {
       console.error('Falha ao salvar parto', e)
-      showToast('Nao foi possivel salvar. Tente novamente.', 'error')
+      window.alert('Não foi possível salvar o parto. Tente novamente.')
     } finally {
       setSaving(false)
     }
@@ -2164,7 +2202,7 @@ function NewCowModal({
       onSaved(newCow)
     } catch (e) {
       console.error('Falha ao salvar vaca', e)
-      showToast('Nao foi possivel salvar. Tente novamente.', 'error')
+      window.alert('Não foi possível salvar a vaca. Tente novamente.')
     } finally {
       setSaving(false)
     }

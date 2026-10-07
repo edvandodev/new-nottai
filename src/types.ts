@@ -49,8 +49,6 @@ export type PriceSettings = {
   custom: number
 }
 
-export type PaymentStatus = 'PRAZO' | 'AVISTA'
-
 export const DEFAULT_SETTINGS: PriceSettings = {
   standard: 3.0,
   custom: 3.5

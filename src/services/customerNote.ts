@@ -151,8 +151,6 @@ export const generateCustomerNotePdf = async (
     noteId,
     periodLabel: options.periodLabel,
     emittedAt,
-    totalSales: noteData.totalSales,
-    totalPaid: noteData.totalPaid,
     balance: noteData.balance,
     pendingBalance,
     totalLiters: noteData.totalLiters,

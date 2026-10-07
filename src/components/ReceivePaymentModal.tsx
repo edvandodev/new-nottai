@@ -8,7 +8,7 @@ type ReceivePaymentModalProps = {
   client: { name: string; avatarUrl?: string }
   totalDue: number
   initialValue?: number
-  onConfirm: (value: number, note?: string) => Promise<void> | void
+  onConfirm: (value: number, note?: string, paidAt?: string) => Promise<void> | void
 }
 
 const ANIMATION_DURATION = 220

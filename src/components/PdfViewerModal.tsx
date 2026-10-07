@@ -70,7 +70,10 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({ open, onClose, f
               path: file.path,
               directory: file.directory
             })
-            data = decodeBase64ToUint8(res.data)
+            data =
+              typeof res.data === 'string'
+                ? decodeBase64ToUint8(res.data)
+                : new Uint8Array(await res.data.arrayBuffer())
           } else {
             const res = await fetch(file.uri)
             const buf = await res.arrayBuffer()
