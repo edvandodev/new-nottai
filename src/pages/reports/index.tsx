@@ -472,21 +472,6 @@ export function ReportsPage({ sales, payments, clients, userName }: ReportsPageP
   const litersChange = computeChange(reportData.totalLiters, previousTotals.liters)
   const valueChange = computeChange(reportData.totalValue, previousTotals.value)
 
-  const monthPayments = useMemo(() => {
-    const filtered = payments.filter((payment) => {
-      const date = parseDate(payment.date as any)
-      return date?.getFullYear() === reportYear && date.getMonth() === reportMonth
-    })
-    return filtered.reduce((total, payment) => total + (payment.amount || 0), 0)
-  }, [payments, reportMonth, reportYear])
-  const clientsAttended = useMemo(() => {
-    const ids = new Set(
-      filterSalesByMonth(mergedSales, reportYear, reportMonth)
-        .map((sale) => sale.clientId)
-        .filter(Boolean)
-    )
-    return ids.size
-  }, [mergedSales, reportMonth, reportYear])
   const comparisonMonth = MONTHS_FULL[reportMonth === 0 ? 11 : reportMonth - 1].toLowerCase()
 
   const [viewMode, setViewMode] = useState<ViewMode>('month')
@@ -695,7 +680,7 @@ export function ReportsPage({ sales, payments, clients, userName }: ReportsPageP
                     return (
                       <div className='flex gap-2'>
                         <div
-                          className='flex h-28 flex-col justify-between text-[10px]'
+                          className='flex h-44 flex-col justify-between text-[10px]'
                           style={{ color: 'var(--muted)' }}
                         >
                           <div className='flex items-center gap-2'>
@@ -714,7 +699,7 @@ export function ReportsPage({ sales, payments, clients, userName }: ReportsPageP
                             <span>0</span>
                           </div>
                         </div>
-                        <div className='grid grid-cols-12 gap-1 h-28 items-end flex-1'>
+                        <div className='grid grid-cols-12 gap-1 h-44 items-end flex-1'>
                           {monthlyTotals.map((entry, idx) => {
                             const isZero = entry.totalLiters === 0
                             const barHeightPct = isZero
@@ -740,7 +725,7 @@ export function ReportsPage({ sales, payments, clients, userName }: ReportsPageP
                                   />
                                 )}
                                 <div
-                                  className='h-20 sm:h-24 w-[72%] overflow-hidden flex items-end justify-center relative z-10'
+                                  className='h-36 sm:h-40 w-[72%] overflow-hidden flex items-end justify-center relative z-10'
                                   style={{ background: 'var(--surface-2)' }}
                                 >
                                   <div
@@ -791,7 +776,7 @@ export function ReportsPage({ sales, payments, clients, userName }: ReportsPageP
                   })()}
                 </div>
               </div>
-              <div className='mt-2.5'>
+              <div className='mt-4'>
                 <div
                   className='relative h-0.5 w-full rounded-full overflow-hidden'
                   style={{ background: 'var(--border)' }}
@@ -852,29 +837,6 @@ export function ReportsPage({ sales, payments, clients, userName }: ReportsPageP
           </div>
         )}
       </div>
-
-      <section className='space-y-2'>
-        <div className='flex items-center justify-between'>
-          <h3 className='text-sm font-semibold' style={{ color: 'var(--text)' }}>Resumo do mês</h3>
-          <span className='text-[10px] font-medium' style={{ color: 'var(--muted)' }}>
-            {MONTHS_FULL[reportMonth]}
-          </span>
-        </div>
-        <div className='grid grid-cols-2 gap-2'>
-          <div className='flat-card p-3'>
-            <p className='text-[10px]' style={{ color: 'var(--muted)' }}>Clientes atendidos</p>
-            <p className='mt-1 text-lg font-bold' style={{ color: 'var(--text)' }}>{clientsAttended}</p>
-            <p className='text-[10px]' style={{ color: 'var(--muted)' }}>No mês</p>
-          </div>
-          <div className='flat-card p-3'>
-            <p className='text-[10px]' style={{ color: 'var(--muted)' }}>Recebido</p>
-            <p className='mt-1 text-lg font-bold whitespace-nowrap' style={{ color: 'var(--text)' }}>
-              {formatCurrency(monthPayments)}
-            </p>
-            <p className='text-[10px]' style={{ color: 'var(--muted)' }}>No período</p>
-          </div>
-        </div>
-      </section>
 
       <div className='hidden'>
         <div className='flex items-center gap-2'>
