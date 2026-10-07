@@ -871,6 +871,7 @@ function CowDetailsModal({
       <Modal
         open={open}
         title={cow ? <CowHeader name={cow.name} subtitle={headerSubtitle || undefined} /> : 'Partos'}
+        fullScreen
         onClose={onClose}
         closeLabel={<X size={14} />}
         closeAriaLabel='Fechar'
@@ -894,7 +895,7 @@ function CowDetailsModal({
         ) : (
           <div className='space-y-5'>
             <div
-              className='-mx-6 border-b pb-1'
+              className='-mx-4 border-b pb-1 sm:-mx-6'
               style={{ borderColor: 'var(--border)', opacity: 0.5 }}
             />
 
@@ -1770,7 +1771,7 @@ function CalvingModal({
           <div
             className='rounded-2xl border p-4 space-y-3'
             style={{
-              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+              background: 'var(--surface-2)',
               borderColor: 'var(--border)',
               boxShadow: '0 18px 40px -32px var(--shadow)'
             }}
@@ -1780,7 +1781,7 @@ function CalvingModal({
                 className='text-[11px] font-semibold uppercase tracking-wide'
                 style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
               >
-                Vaca (obrigatorio)
+                Vaca (obrigatória)
               </div>
               {!editing && (
                 <button
@@ -1826,7 +1827,7 @@ function CalvingModal({
                     onChange={(e) => setSelectedCowId(e.target.value)}
                     className='w-full h-11 rounded-xl border pl-9 pr-3 outline-none appearance-none'
                     style={{
-                      background: 'var(--surface-2)',
+                      background: 'var(--surface)',
                       borderColor: 'var(--border)',
                       color: 'var(--text)'
                     }}
@@ -1851,7 +1852,7 @@ function CalvingModal({
                     placeholder='Nome da vaca...'
                     className='w-full h-11 rounded-xl border pl-9 pr-3 outline-none'
                     style={{
-                      background: 'var(--surface-2)',
+                      background: 'var(--surface)',
                       borderColor: 'var(--border)',
                       color: 'var(--text)'
                     }}
@@ -1861,7 +1862,7 @@ function CalvingModal({
             ) : (
               <div
                 className='rounded-xl border px-3 py-2 text-sm'
-                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+                style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }}
               >
                 Vaca do registro:{' '}
                 <b style={{ color: 'var(--text)' }}>{cows.find((c) => c.id === editing.cowId)?.name || 'Vaca'}</b>
@@ -1872,7 +1873,7 @@ function CalvingModal({
           <div
             className='rounded-2xl border p-4 space-y-4'
             style={{
-              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+              background: 'var(--accent-soft)',
               borderColor: 'var(--border)',
               boxShadow: '0 18px 40px -32px var(--shadow)'
             }}
@@ -1881,7 +1882,7 @@ function CalvingModal({
               className='text-[11px] font-semibold uppercase tracking-wide'
               style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
             >
-              Informacoes do parto
+              Informações do parto
             </div>
 
             <div className='space-y-2'>
@@ -1890,7 +1891,7 @@ function CalvingModal({
                   className='text-[11px] font-semibold uppercase tracking-wide'
                   style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
                 >
-                  Data do parto (obrigatorio)
+                  Data do parto (obrigatória)
                 </div>
                 <div className='flex items-center gap-2'>
                   <button
@@ -1933,7 +1934,7 @@ function CalvingModal({
                   onChange={(e) => setDate(e.target.value)}
                   className='w-full h-12 rounded-xl border pl-10 pr-3 outline-none text-sm'
                   style={{
-                    background: 'var(--surface-2)',
+                    background: 'var(--surface)',
                     borderColor: 'var(--border)',
                     color: 'var(--text)'
                   }}
@@ -1954,9 +1955,9 @@ function CalvingModal({
                   onClick={() => setSex('MACHO')}
                   className='h-12 rounded-full border px-4 text-sm font-semibold flex items-center justify-center gap-2 transition'
                   style={{
-                    background: sex === 'MACHO' ? 'rgba(184, 255, 44, 0.12)' : 'var(--surface-2)',
+                    background: sex === 'MACHO' ? 'var(--accent)' : 'var(--surface)',
                     borderColor: sex === 'MACHO' ? 'var(--accent)' : 'var(--border)',
-                    color: sex === 'MACHO' ? 'var(--text)' : 'var(--muted)',
+                    color: sex === 'MACHO' ? 'var(--primary)' : 'var(--muted)',
                     boxShadow: sex === 'MACHO' ? '0 12px 32px -22px var(--shadow)' : 'none'
                   }}
                 >
@@ -1968,14 +1969,14 @@ function CalvingModal({
                   onClick={() => setSex('FEMEA')}
                   className='h-12 rounded-full border px-4 text-sm font-semibold flex items-center justify-center gap-2 transition'
                   style={{
-                    background: sex === 'FEMEA' ? 'rgba(184, 255, 44, 0.12)' : 'var(--surface-2)',
+                    background: sex === 'FEMEA' ? 'var(--accent)' : 'var(--surface)',
                     borderColor: sex === 'FEMEA' ? 'var(--accent)' : 'var(--border)',
-                    color: sex === 'FEMEA' ? 'var(--text)' : 'var(--muted)',
+                    color: sex === 'FEMEA' ? 'var(--primary)' : 'var(--muted)',
                     boxShadow: sex === 'FEMEA' ? '0 12px 32px -22px var(--shadow)' : 'none'
                   }}
                 >
                   <Circle size={16} />
-                  Femea
+                  Fêmea
                 </button>
               </div>
             </div>
@@ -1984,7 +1985,7 @@ function CalvingModal({
           <div
             className='rounded-2xl border p-4 space-y-3'
             style={{
-              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+              background: 'var(--accent-soft)',
               borderColor: 'var(--border)',
               boxShadow: '0 18px 40px -32px var(--shadow)'
             }}
@@ -1999,7 +2000,7 @@ function CalvingModal({
             {primaryPhoto ? (
               <div
                 className='rounded-xl border overflow-hidden relative'
-                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+                style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
               >
                 {photos.length > 1 ? (
                   <div
@@ -2043,7 +2044,7 @@ function CalvingModal({
                 onClick={() => setIsPhotoPickerOpen(true)}
                 className='h-12 px-4 rounded-xl border inline-flex items-center gap-2 transition hover:brightness-110 text-sm font-semibold'
                 style={{
-                  background: 'var(--surface-2)',
+                  background: 'var(--surface)',
                   borderColor: 'var(--border)',
                   color: 'var(--text)'
                 }}
@@ -2182,7 +2183,7 @@ function NewCowModal({
             placeholder='Nome da vaca...'
             className='w-full h-11 rounded-xl border px-3 outline-none'
             style={{
-              background: 'var(--surface-2)',
+              background: 'var(--surface)',
               borderColor: 'var(--border)',
               color: 'var(--text)'
             }}
