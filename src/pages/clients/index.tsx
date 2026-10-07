@@ -799,7 +799,7 @@ export function ClientsPage({
                       </span>
                       <span
                         className='text-[19px] font-semibold tabular-nums'
-                        style={{ color: balance > 0 ? 'var(--accent)' : 'var(--muted)' }}
+                        style={{ color: balance > 0 ? 'var(--primary)' : 'var(--muted)' }}
                       >
                         {formatCurrency(balance)}
                       </span>
@@ -1141,17 +1141,16 @@ export function ClientsPage({
               <div
                 className='rounded-[22px] border overflow-hidden'
                 style={{
-                  background:
-                    'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(14, 19, 26, 0.92) 100%)',
-                  borderColor: 'rgba(30, 42, 56, 0.9)',
-                  boxShadow: '0 18px 36px -28px rgba(0, 0, 0, 0.7)'
+                  background: 'var(--surface)',
+                  borderColor: 'var(--border)',
+                  boxShadow: '0 12px 32px -28px var(--shadow)'
                 }}
               >
                 <div
                   className='flex items-center gap-3 px-4 py-3 border-b'
-                  style={{ borderColor: 'rgba(30, 42, 56, 0.9)' }}
+                  style={{ borderColor: 'var(--border)' }}
                 >
-                  <ShoppingCart size={16} style={{ color: 'var(--text)' }} />
+                  <ShoppingCart size={16} style={{ color: 'var(--primary)' }} />
                   <span className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
                     {historyHeaderLabel}
                   </span>
@@ -1187,7 +1186,7 @@ export function ClientsPage({
                           <div
                             className='h-px'
                             style={{
-                              background: 'rgba(255, 255, 255, 0.06)',
+                              background: 'var(--border)',
                               marginLeft: 0,
                               marginRight: 0
                             }}
@@ -1200,14 +1199,14 @@ export function ClientsPage({
                               style={
                                 isSale
                                   ? {
-                                      background: 'rgba(255, 193, 7, 0.18)',
-                                      borderColor: 'rgba(255, 193, 7, 0.45)',
-                                      color: '#fbbf24'
+                                      background: '#fbf0d6',
+                                      borderColor: '#ecd7a5',
+                                      color: '#80550f'
                                     }
                                   : {
-                                      background: 'rgba(34, 197, 94, 0.18)',
-                                      borderColor: 'rgba(34, 197, 94, 0.45)',
-                                      color: '#4ade80'
+                                      background: 'var(--accent-soft)',
+                                      borderColor: '#d5e7a4',
+                                      color: 'var(--primary)'
                                     }
                               }
                             >
@@ -1227,7 +1226,7 @@ export function ClientsPage({
                             <div className='flex flex-col items-end'>
                               <span
                                 className='text-sm font-semibold tabular-nums'
-                                style={{ color: isSinglePayment ? 'var(--accent)' : 'var(--text)' }}
+                                style={{ color: isSinglePayment ? 'var(--primary)' : 'var(--text)' }}
                               >
                                 {formatCurrency(amount)}
                               </span>

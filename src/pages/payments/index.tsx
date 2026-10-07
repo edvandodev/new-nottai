@@ -438,7 +438,7 @@ export function PaymentsPage({
 
       <div className='mt-5 mb-2 flex items-center justify-between'>
         <h3 className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-          Movimenta\u00e7\u00f5es
+          {'Movimentações'}
         </h3>
         {payments.length > 0 && (
           <button
