@@ -58,6 +58,7 @@ export const DEFAULT_SETTINGS: PriceSettings = {
 
 export type ViewState = 'LIST' | 'DETAILS'
 export type TabState =
+  | 'DASHBOARD'
   | 'CLIENTS'
   | 'PAYMENTS'
   | 'REPORTS'

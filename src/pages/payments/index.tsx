@@ -278,7 +278,7 @@ export function PaymentsPage({
             paddingLeft: 16,
             paddingRight: 16,
             background:
-              'linear-gradient(180deg, rgba(11, 15, 20, 0.98) 0%, rgba(11, 15, 20, 0.7) 45%, rgba(11, 15, 20, 0) 100%)',
+              'linear-gradient(180deg, rgba(243, 246, 241, 0.98) 0%, rgba(243, 246, 241, 0.7) 45%, rgba(243, 246, 241, 0) 100%)',
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)'
           }}
@@ -343,8 +343,11 @@ export function PaymentsPage({
           label='Total a receber'
           value={formatCurrency(totalReceivable)}
           valueTone='neutral'
-          variant='accent'
-          accentTone='lime'
+          variant='tinted'
+          accentTone='green'
+          accentColor='var(--accent)'
+          backgroundTintColor='var(--mint)'
+          borderColor='var(--border)'
           helperText={`${litersReceivable.toLocaleString('pt-BR', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 2
@@ -505,7 +508,7 @@ export function PaymentsPage({
           className='rounded-[22px] border overflow-hidden pb-1'
           style={{
             background:
-              'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(14, 19, 26, 0.92) 100%)',
+              'linear-gradient(180deg, #ffffff 0%, #f1f6ef 100%)',
             borderColor: 'rgba(30, 42, 56, 0.9)',
             boxShadow: '0 18px 36px -28px rgba(0, 0, 0, 0.7)'
           }}
