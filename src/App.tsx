@@ -29,7 +29,7 @@ import {
 import { createReceiptFile } from './services/pdfGenerator'
 import type { ReceiptFileRef } from './services/pdfGenerator'
 import { ReceiptViewer } from './components/receipt/ReceiptViewer'
-import { BarChart3, Milk, Settings as SettingsIcon, Users } from 'lucide-react'
+import { BarChart3, Home, Milk, Settings as SettingsIcon, Users, Wallet } from 'lucide-react'
 import { PendingQueueModal } from './components/PendingQueueModal'
 import { optimisticStore } from './services/optimisticStore'
 
@@ -40,6 +40,7 @@ import { ReportsPage } from './pages/reports'
 import { ReproductionPage } from './pages/reproduction'
 import { SettingsPage } from './pages/settings'
 import { PaymentsPage } from './pages/payments'
+import { DashboardPage } from './pages/dashboard'
 import { AuthPage } from './pages/auth'
 import { NewClientPage } from './NewClientPage'
 
@@ -128,7 +129,7 @@ function App() {
   }
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<TabState>('CLIENTS')
+  const [activeTab, setActiveTab] = useState<TabState>('DASHBOARD')
   const [isClientDetailsView, setIsClientDetailsView] = useState(false)
   const [isMinimalHeaderScrolled, setIsMinimalHeaderScrolled] =
     useState(false)
@@ -1140,6 +1141,7 @@ function App() {
   // --- Render Logic ---
   const renderActivePage = () => {
     switch (activeTab) {
+      case 'DASHBOARD': return <DashboardPage clients={clients} sales={sales} clientBalances={clientBalances} userName={user?.email?.split('@')[0]} onShowClients={() => {setActiveTab('CLIENTS');setIsClientDetailsView(false);setSelectedClientId(null);setResetClientsSignal(n=>n+1)}} onShowPayments={() => setActiveTab('PAYMENTS')} onShowReports={() => setActiveTab('REPORTS')} />
       case 'CLIENTS':
         return (
           <ClientsPage
@@ -1224,169 +1226,12 @@ function App() {
 
   const renderHeader = () => { return null }
 
-  const navItemBase =
-    'relative flex flex-col items-center justify-center w-16 h-16 transition-all duration-300 group'
-  const navIndicator =
-    'absolute -top-2 w-8 h-1 rounded-b-full animate-fade-in'
-  const navActive = 'font-semibold'
-  const navInactive = 'opacity-80 hover:opacity-100'
-  const navActiveStyle = { color: 'var(--accent, var(--primary, #b8ff2c))' }
-  const navInactiveStyle = { color: 'var(--muted, #94a3b8)' }
-
-  const renderBottomNav = () => (
-    <div
-      className='fixed bottom-0 left-0 right-0 z-40 rounded-t-[2.2rem] px-3 pb-6 pt-3'
-      style={{
-        background: 'var(--surface, #0b1221)',
-        borderTop: '1px solid var(--border, #1e293b)',
-        boxShadow: '0 -12px 30px -22px rgba(0, 0, 0, 0.55)'
-      }}
-    >
-      <div className='flex items-center justify-between gap-2 max-w-lg mx-auto w-full px-4'>
-        <button
-          onClick={() => {
-            setActiveTab('CLIENTS')
-            setIsClientDetailsView(false)
-            setSelectedClientId(null)
-            setResetClientsSignal((n) => n + 1)
-          }}
-          className={`${navItemBase} ${
-            activeTab === 'CLIENTS' ? navActive : navInactive
-          }`}
-          style={activeTab === 'CLIENTS' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'CLIENTS' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <Users
-            size={24}
-            strokeWidth={activeTab === 'CLIENTS' ? 2.5 : 1.5}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>
-            Clientes
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('PAYMENTS')
-            setIsClientDetailsView(false)
-          }}
-          className={`${navItemBase} ${
-            activeTab === 'PAYMENTS' ? navActive : navInactive
-          }`}
-          style={activeTab === 'PAYMENTS' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'PAYMENTS' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <CustomPaymentIcon
-            size={24}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>
-            Pagamentos
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('REPORTS')
-            setIsClientDetailsView(false)
-          }}
-          className={`${navItemBase} ${
-            activeTab === 'REPORTS' ? navActive : navInactive
-          }`}
-          style={activeTab === 'REPORTS' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'REPORTS' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <BarChart3
-            size={24}
-            strokeWidth={activeTab === 'REPORTS' ? 2.5 : 1.5}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>
-            Relatórios
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('REPRODUCTION')
-            setIsClientDetailsView(false)
-          }}
-          className={`${navItemBase} ${activeTab === 'REPRODUCTION' ? navActive : navInactive}`}
-          style={activeTab === 'REPRODUCTION' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'REPRODUCTION' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <ReproductionIcon
-            size={24}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>
-            Reprodução
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('SETTINGS')
-            setIsClientDetailsView(false)
-          }}
-          className={`${navItemBase} ${activeTab === 'SETTINGS' ? navActive : navInactive}`}
-          style={activeTab === 'SETTINGS' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'SETTINGS' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <SettingsIcon
-            size={24}
-            strokeWidth={activeTab === 'SETTINGS' ? 2.5 : 1.5}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>Ajustes</span>
-        </button>
-      </div>
-    </div>
-  )
+  const navItemBase = 'relative flex flex-1 min-w-0 flex-col items-center justify-center h-14 transition-all duration-200 group'
+  const navIndicator = 'absolute -top-3 w-7 h-1 rounded-b-full animate-fade-in'
+  const renderBottomNav = () => { const items:Array<{tab:TabState;label:string;icon:React.ReactNode;onClick:()=>void}>=[{tab:'DASHBOARD',label:'Início',icon:<Home size={21}/>,onClick:()=>setActiveTab('DASHBOARD')},{tab:'CLIENTS',label:'Clientes',icon:<Users size={21}/>,onClick:()=>{setActiveTab('CLIENTS');setIsClientDetailsView(false);setSelectedClientId(null);setResetClientsSignal(n=>n+1)}},{tab:'PAYMENTS',label:'Pagamentos',icon:<Wallet size={21}/>,onClick:()=>{setActiveTab('PAYMENTS');setIsClientDetailsView(false)}},{tab:'REPORTS',label:'Relatórios',icon:<BarChart3 size={21}/>,onClick:()=>{setActiveTab('REPORTS');setIsClientDetailsView(false)}},{tab:'REPRODUCTION',label:'Reprod.',icon:<ReproductionIcon size={21}/>,onClick:()=>{setActiveTab('REPRODUCTION');setIsClientDetailsView(false)}},{tab:'SETTINGS',label:'Ajustes',icon:<SettingsIcon size={21}/>,onClick:()=>{setActiveTab('SETTINGS');setIsClientDetailsView(false)}}];return <div className='fixed bottom-0 left-0 right-0 z-40 px-2 pt-2 pb-[calc(8px+env(safe-area-inset-bottom,0px))]' style={{background:'rgba(255,255,255,.96)',borderTop:'1px solid var(--border)',boxShadow:'0 -10px 30px -24px rgba(31,60,37,.35)',backdropFilter:'blur(16px)'}}><div className='flex items-center max-w-2xl mx-auto w-full gap-0.5'>{items.map(({tab,label,icon,onClick})=>{const active=activeTab===tab;return <button key={tab} onClick={onClick} aria-current={active?'page':undefined} className={navItemBase} style={{color:active?'var(--accent)':'var(--muted)'}}>{active&&<span className={navIndicator} style={{background:'var(--accent)'}}/>}<span className='mb-0.5'>{icon}</span><span className={`text-[9px] leading-none font-semibold whitespace-nowrap ${active?'':'opacity-75'}`}>{label}</span></button>})}</div></div>}
 
   const mainPaddingClass =
-    activeTab === 'CLIENTS' ? 'p-0' : activeTab === 'PAYMENTS' ? 'p-0' : 'p-4'
+    activeTab === 'DASHBOARD' || activeTab === 'CLIENTS' || activeTab === 'PAYMENTS' ? 'p-0' : 'p-4'
   const mainAdditionalTop =
     minimalHeaderActive && activeTab !== 'CLIENTS' ? 'pt-6' : ''
   const isFullBleedPage = false
@@ -1530,6 +1375,7 @@ function App() {
   const notePreviewMatch = location.pathname.match(/^\/clientes\/([^/]+)\/nota/)
   const notePreviewClientId = notePreviewMatch?.[1] || null
   const appTheme =
+      activeTab === 'DASHBOARD' ||
       activeTab === 'CLIENTS' ||
       activeTab === 'PAYMENTS' ||
       activeTab === 'REPORTS' ||
