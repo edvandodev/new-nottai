@@ -1245,7 +1245,7 @@ function App() {
   }
 
   if (!user) {
-    return <AuthPage />
+    return <div data-theme='flat-lime'><AuthPage /></div>
   }
 
   if (!dataReady && !dataError) {

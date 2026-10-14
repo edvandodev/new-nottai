@@ -556,6 +556,22 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
             borderColor={birthsCardColors.border}
             icon={<MaskIcon src={calfIcon} size={26} color={birthsCardColors.accent} />}
           />
+          <StatCard
+            label='Fêmeas'
+            value={String(calvings.filter((event) => event.sex === 'FEMEA').length)}
+            variant='tinted'
+            accentColor='var(--accent)'
+            backgroundTintColor='var(--surface)'
+            borderColor='var(--border)'
+          />
+          <StatCard
+            label='Machos'
+            value={String(calvings.filter((event) => event.sex === 'MACHO').length)}
+            variant='tinted'
+            accentColor='var(--accent)'
+            backgroundTintColor='var(--mint)'
+            borderColor='var(--border)'
+          />
         </div>
       </div>
 
@@ -1961,7 +1977,7 @@ function CalvingModal({
           <div
             className='rounded-2xl border p-4 space-y-3'
             style={{
-              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+              background: 'linear-gradient(180deg, #ffffff 0%, #f1f6ef 100%)',
               borderColor: 'var(--border)',
               boxShadow: '0 18px 40px -32px var(--shadow)'
             }}
@@ -2063,7 +2079,7 @@ function CalvingModal({
           <div
             className='rounded-2xl border p-4 space-y-4'
             style={{
-              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+              background: 'linear-gradient(180deg, #ffffff 0%, #f1f6ef 100%)',
               borderColor: 'var(--border)',
               boxShadow: '0 18px 40px -32px var(--shadow)'
             }}
@@ -2175,7 +2191,7 @@ function CalvingModal({
           <div
             className='rounded-2xl border p-4 space-y-3'
             style={{
-              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
+              background: 'linear-gradient(180deg, #ffffff 0%, #f1f6ef 100%)',
               borderColor: 'var(--border)',
               boxShadow: '0 18px 40px -32px var(--shadow)'
             }}

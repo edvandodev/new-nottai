@@ -526,7 +526,7 @@ export function ClientsPage({
             paddingLeft: 16,
             paddingRight: 16,
             background:
-              'linear-gradient(180deg, rgba(11, 15, 20, 0.98) 0%, rgba(11, 15, 20, 0.7) 45%, rgba(11, 15, 20, 0) 100%)',
+              'linear-gradient(180deg, rgba(243, 246, 241, 0.98) 0%, rgba(243, 246, 241, 0.7) 45%, rgba(243, 246, 241, 0) 100%)',
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)'
           }}
@@ -555,6 +555,18 @@ export function ClientsPage({
           <Plus size={12} strokeWidth={3} />
           Novo
         </button>
+      </div>
+      <div className='mb-4 grid grid-cols-2 gap-3'>
+        <div className='rounded-2xl p-4' style={{ background: 'var(--accent)', color: '#fff' }}>
+          <p className='text-xs font-semibold' style={{ color: 'rgba(255,255,255,.76)' }}>A receber</p>
+          <p className='mt-2 text-lg font-bold'>{clients.reduce((total, client) => total + Math.max(0, clientBalances.get(client.id) || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+          <p className='mt-1 text-[11px]' style={{ color: 'rgba(255,255,255,.72)' }}>Saldo dos clientes</p>
+        </div>
+        <div className='rounded-2xl border p-4' style={{ background: 'var(--mint)', borderColor: 'var(--border)' }}>
+          <p className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>Clientes ativos</p>
+          <p className='mt-2 text-lg font-bold'>{clients.length}</p>
+          <p className='mt-1 text-[11px]' style={{ color: 'var(--muted)' }}>Cadastros na fazenda</p>
+        </div>
       </div>
       {showPaymentPicker && paymentCandidates.length > 1 && (
         <div className='flat-card p-4 space-y-3'>
@@ -885,7 +897,7 @@ export function ClientsPage({
         <div
           className='relative h-32 rounded-b-[2rem] shadow-md overflow-hidden'
           style={{
-            background: 'linear-gradient(135deg, rgba(184, 255, 44, 0.22), rgba(11, 15, 20, 0.96))'
+            background: 'linear-gradient(135deg, #e6f0e4, #ffffff)'
           }}
         >
           <div
@@ -1111,7 +1123,7 @@ export function ClientsPage({
                 className='rounded-[22px] border overflow-hidden'
                 style={{
                   background:
-                    'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(14, 19, 26, 0.92) 100%)',
+                    'linear-gradient(180deg, #ffffff 0%, #f1f6ef 100%)',
                   borderColor: 'rgba(30, 42, 56, 0.9)',
                   boxShadow: '0 18px 36px -28px rgba(0, 0, 0, 0.7)'
                 }}

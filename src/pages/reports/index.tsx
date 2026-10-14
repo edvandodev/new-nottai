@@ -292,22 +292,21 @@ const StatsSummaryCard = ({
   const isAccent = tone === 'accent'
   const cardStyle = isAccent
     ? {
-        background:
-          'linear-gradient(160deg, rgba(184, 255, 44, 0.16) 0%, rgba(18, 24, 33, 0.95) 60%, rgba(11, 15, 20, 0.98) 100%)',
-        borderColor: 'rgba(184, 255, 44, 0.35)',
-        boxShadow: '0 18px 40px -28px rgba(184, 255, 44, 0.35)'
-      }
-    : {
         background: 'var(--surface)',
         borderColor: 'var(--border)',
-        boxShadow: '0 16px 32px -28px var(--shadow)'
+        boxShadow: '0 12px 30px -26px var(--shadow)'
+      }
+    : {
+        background: 'var(--mint, #e6efe3)',
+        borderColor: 'var(--border)',
+        boxShadow: '0 12px 30px -26px var(--shadow)'
       }
 
   const iconStyle = isAccent
     ? {
-        background: 'rgba(184, 255, 44, 0.18)',
+        background: 'var(--accent-soft)',
         color: 'var(--accent)',
-        borderColor: 'rgba(184, 255, 44, 0.35)'
+        borderColor: 'var(--border)'
       }
     : {
         background: 'var(--surface-2)',
@@ -316,11 +315,11 @@ const StatsSummaryCard = ({
       }
 
   const valueStyle = {
-    color: isAccent ? 'var(--accent)' : 'var(--text)'
+    color: 'var(--text)'
   }
 
   const dividerStyle = {
-    background: isAccent ? 'rgba(184, 255, 44, 0.22)' : 'var(--border)'
+    background: 'var(--border)'
   }
 
   const changeColor =
@@ -701,7 +700,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               className='flat-card p-4'
               style={{
                 background:
-                  'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(11, 15, 20, 0.98) 100%)',
+                  'linear-gradient(180deg, #ffffff 0%, #f1f6ef 100%)',
                 borderColor: 'var(--border)'
               }}
             >
@@ -929,7 +928,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
                 const cardStyle = isLeader
                   ? {
                       background:
-                        'linear-gradient(160deg, rgba(184, 255, 44, 0.16) 0%, rgba(18, 24, 33, 0.96) 70%)',
+                        'linear-gradient(160deg, #e6f0e4 0%, #ffffff 70%)',
                       borderColor: 'rgba(184, 255, 44, 0.35)',
                       boxShadow: '0 16px 30px -24px rgba(184, 255, 44, 0.35)'
                     }
@@ -1024,7 +1023,7 @@ export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
               style={{
                 borderColor: 'var(--border)',
                 background:
-                  'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(11, 15, 20, 0.98) 100%)'
+                  'linear-gradient(180deg, #ffffff 0%, #f1f6ef 100%)'
               }}
             >
               <div className='flex flex-col gap-1'>
