@@ -26,18 +26,18 @@ type ReproductionPageProps = {
 }
 
 const cowCardColors = {
-  accent: '#b9ff45',
-  background: 'rgba(185, 255, 69, 0.12)',
-  border: 'rgba(185, 255, 69, 0.32)'
+  accent: '#244b2d',
+  background: 'rgba(36, 75, 45, 0.08)',
+  border: 'rgba(36, 75, 45, 0.18)'
 }
 
 const birthsCardColors = {
-  accent: '#35e6b5',
-  background: 'rgba(53, 230, 181, 0.12)',
-  border: 'rgba(53, 230, 181, 0.32)'
+  accent: '#4f8054',
+  background: 'rgba(79, 128, 84, 0.10)',
+  border: 'rgba(79, 128, 84, 0.20)'
 }
 
-const iconColor = '#94a3b8'
+const iconColor = '#708074'
 
 const MaskIcon = ({
   src,
@@ -210,7 +210,7 @@ const preparePhotoFromFile = async (file: File): Promise<string> => {
 const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'Fêmea')
 
 
-const dividerColor = '#1e2a38'
+const dividerColor = '#dce6d9'
 
 const InfoChip = ({
   label,
@@ -508,9 +508,9 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
             }}
             className='inline-flex items-center gap-2 px-3 h-10 rounded-xl border text-sm font-semibold transition hover:brightness-110'
             style={{
-              background: 'var(--accent, var(--primary, #b8ff2c))',
+              background: 'var(--accent, var(--primary, #244b2d))',
               borderColor: 'transparent',
-              color: 'var(--accentText, #07110a)'
+              color: 'var(--accentText, #ffffff)'
             }}
           >
             <Plus size={16} />
@@ -1439,7 +1439,7 @@ function CalvingGalleryModal({
                 type='button'
                 onClick={() => setIsPickerOpen(true)}
                 className='h-9 px-4 rounded-full text-xs font-semibold border transition hover:brightness-110 inline-flex items-center gap-2'
-                style={{ background: 'var(--accent, var(--primary, #b8ff2c))', borderColor: 'transparent', color: 'var(--accentText, #07110a)' }}
+                style={{ background: 'var(--accent, var(--primary, #b8ff2c))', borderColor: 'transparent', color: 'var(--accentText, #ffffff)' }}
               >
                 <Plus size={14} />
                 Adicionar foto
@@ -1459,7 +1459,7 @@ function CalvingGalleryModal({
                 >
                   {`${activeIndex + 1}/${photos.length}`}
                 </div>
-                <div className='h-64 flex items-center justify-center bg-[#0f1624]'>
+                <div className='h-64 flex items-center justify-center bg-[#f3f6f1]'>
                   <img
                     src={photos[activeIndex]}
                     alt='Foto do parto'
@@ -1732,7 +1732,7 @@ function ImageViewerModal({
           </div>
           <div
             ref={viewportRef}
-            className='flex-1 overflow-auto rounded-2xl border bg-[#0b111a]'
+            className='flex-1 overflow-auto rounded-2xl border bg-[#ffffff]'
             style={{ borderColor: 'var(--border)' }}
             onWheel={(e) => {
               if (!e.ctrlKey) return
@@ -2107,7 +2107,7 @@ function CalvingModal({
                     style={{
                       background: isTodaySelected ? 'var(--accent)' : 'var(--surface)',
                       borderColor: isTodaySelected ? 'var(--accent)' : 'var(--border)',
-                      color: isTodaySelected ? '#0a120a' : 'var(--text)',
+                      color: isTodaySelected ? '#ffffff' : 'var(--text)',
                       boxShadow: isTodaySelected ? '0 12px 32px -22px var(--shadow)' : 'none'
                     }}
                   >
@@ -2120,7 +2120,7 @@ function CalvingModal({
                     style={{
                       background: isYesterdaySelected ? 'var(--accent)' : 'var(--surface)',
                       borderColor: isYesterdaySelected ? 'var(--accent)' : 'var(--border)',
-                      color: isYesterdaySelected ? '#0a120a' : 'var(--text)',
+                      color: isYesterdaySelected ? '#ffffff' : 'var(--text)',
                       boxShadow: isYesterdaySelected ? '0 12px 32px -22px var(--shadow)' : 'none'
                     }}
                   >
@@ -2268,9 +2268,9 @@ function CalvingModal({
               disabled={!canSave || saving}
               className='w-full h-12 rounded-full text-sm font-semibold border transition disabled:opacity-60'
               style={{
-                background: '#95c11f',
-                borderColor: '#95c11f',
-                color: '#0c120b',
+                background: '#244b2d',
+                borderColor: '#244b2d',
+                color: '#ffffff',
                 boxShadow: '0 16px 40px -26px var(--shadow)'
               }}
             >
@@ -2405,7 +2405,7 @@ function NewCowModal({
             style={{
               background: 'var(--accent, var(--primary, #b8ff2c))',
               borderColor: 'transparent',
-              color: 'var(--accentText, #07110a)'
+              color: 'var(--accentText, #ffffff)'
             }}
           >
             {saving ? 'Salvando...' : 'Salvar'}
