@@ -14,8 +14,8 @@ type ResetState = {
   loading: boolean
 }
 
-const accentColor = '#C7F000'
-const gradientBackground = 'linear-gradient(180deg, #0B1220 0%, #05070D 100%)'
+const accentColor = '#194c36'
+const gradientBackground = 'linear-gradient(180deg, #f4f5f3 0%, #ffffff 100%)'
 
 const translateError = (error: any) => {
   const code = (error?.code || error?.message || '').toString()
@@ -162,14 +162,13 @@ export function AuthPage() {
 
   return (
     <div
-      className='relative min-h-screen text-white'
+      className='auth-page relative min-h-screen'
       style={{
         background: gradientBackground,
-        color: '#FFFFFF',
+        color: 'var(--text)',
         fontFamily: "'Inter','Poppins','DM Sans','Segoe UI',sans-serif"
       }}
     >
-      <div className='absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,rgba(199,240,0,0.12),transparent_32%),radial-gradient(circle_at_80%_68%,rgba(199,240,0,0.08),transparent_30%)] opacity-70 pointer-events-none' />
 
       <div
         className='relative z-10 flex min-h-screen justify-center px-6 overflow-y-auto'
@@ -180,39 +179,23 @@ export function AuthPage() {
       >
         <div className='w-full max-w-md flex flex-col gap-7'>
           <header className='flex justify-center'>
-            <img src={logoImage} alt='Logo Anota A\u00ed' className='h-12 md:h-16 w-auto object-contain' />
+            <span className='text-3xl font-bold tracking-tight' style={{ color: 'var(--primary)' }}>Nottai.</span>
           </header>
 
-          <div className='flex justify-center'>
-            <img
-              src={loginIllustration}
-              alt='Ilustra\u00e7\u00e3o do login'
-              className='w-full max-w-[240px] sm:max-w-[280px] max-h-[24vh] sm:max-h-[28vh] md:max-h-[34vh] object-contain'
-            />
-          </div>
 
           <div className='relative pt-1'>
-            <div
-              className='pointer-events-none absolute left-[-24px] right-[-24px] bottom-[-28px]'
-              style={{
-                top: '55%',
-                zIndex: 0,
-                background:
-                  'linear-gradient(180deg, rgba(5,7,13,0) 0%, rgba(5,7,13,0.2) 45%, rgba(5,7,13,0.55) 100%)'
-              }}
-            />
 
             <div className='space-y-6 relative z-10'>
               <div className='space-y-1 text-center'>
-                <p className='text-xs font-semibold uppercase tracking-[0.2em] text-[#A7B0BF]'>
+                <p className='text-xs font-semibold uppercase tracking-[0.2em] text-[#697a71]'>
                   login
                 </p>
                 <h1 className='text-[26px] font-semibold leading-tight'>{title}</h1>
-                <p className='text-sm text-[#A7B0BF]'>{subtitle}</p>
+                <p className='text-sm text-[#697a71]'>{subtitle}</p>
               </div>
 
               {error && (
-                <div className='p-3 rounded-xl border border-red-500/40 bg-red-500/10 text-red-100 text-sm'>
+                <div className='p-3 rounded-xl border border-red-500/40 bg-red-500/10 text-red-700 text-sm'>
                   {error}
                 </div>
               )}
@@ -223,7 +206,7 @@ export function AuthPage() {
                   style={{
                     border: `1px solid ${accentColor}40`,
                     backgroundColor: `${accentColor}14`,
-                    color: '#d8ff4a'
+                    color: '#194c36'
                   }}
                 >
                   {info}
@@ -232,15 +215,15 @@ export function AuthPage() {
 
               <form className='space-y-4' onSubmit={handleSubmit}>
                 <div className='space-y-2'>
-                  <div className='flex items-center gap-3 rounded-[14px] bg-[rgba(15,23,42,0.55)] border border-white/10 px-4 h-[52px] transition-all focus-within:border-[#C7F000] focus-within:ring-1 focus-within:ring-[#C7F000]'>
-                    <Mail size={18} className='text-[#C7F000]' />
+                  <div className='flex items-center gap-3 rounded-[14px] bg-white border border-slate-200 px-4 h-[52px] transition-all focus-within:border-[#194c36] focus-within:ring-1 focus-within:ring-[#194c36]'>
+                    <Mail size={18} className='text-[#194c36]' />
                     <input
                       type='email'
                       inputMode='email'
                       autoComplete='email'
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className='flex-1 bg-transparent text-white placeholder:text-[#6b7484] focus:outline-none'
+                      className='flex-1 bg-transparent text-slate-800 placeholder:text-[#6b7484] focus:outline-none'
                       placeholder='Seu e-mail'
                       disabled={loading}
                       required
@@ -249,14 +232,14 @@ export function AuthPage() {
                 </div>
 
                 <div className='space-y-2'>
-                  <div className='flex items-center gap-3 rounded-[14px] bg-[rgba(15,23,42,0.55)] border border-white/10 px-4 h-[52px] transition-all focus-within:border-[#C7F000] focus-within:ring-1 focus-within:ring-[#C7F000]'>
-                    <Lock size={18} className='text-[#C7F000]' />
+                  <div className='flex items-center gap-3 rounded-[14px] bg-white border border-slate-200 px-4 h-[52px] transition-all focus-within:border-[#194c36] focus-within:ring-1 focus-within:ring-[#194c36]'>
+                    <Lock size={18} className='text-[#194c36]' />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       autoComplete='current-password'
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className='flex-1 bg-transparent text-white placeholder:text-[#6b7484] focus:outline-none'
+                      className='flex-1 bg-transparent text-slate-800 placeholder:text-[#6b7484] focus:outline-none'
                       placeholder='Sua senha'
                       disabled={loading}
                       minLength={6}
@@ -265,7 +248,7 @@ export function AuthPage() {
                     <button
                       type='button'
                       onClick={() => setShowPassword((prev) => !prev)}
-                      className='text-[#A7B0BF] hover:text-white transition-colors'
+                      className='text-[#697a71] hover:text-slate-800 transition-colors'
                       aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -275,14 +258,14 @@ export function AuthPage() {
 
                 {mode === 'signup' && (
                   <div className='space-y-2'>
-                    <div className='flex items-center gap-3 rounded-[14px] bg-[rgba(15,23,42,0.55)] border border-white/10 px-4 h-[52px] transition-all focus-within:border-[#C7F000] focus-within:ring-1 focus-within:ring-[#C7F000]'>
-                      <Lock size={18} className='text-[#C7F000]' />
+                    <div className='flex items-center gap-3 rounded-[14px] bg-white border border-slate-200 px-4 h-[52px] transition-all focus-within:border-[#194c36] focus-within:ring-1 focus-within:ring-[#194c36]'>
+                      <Lock size={18} className='text-[#194c36]' />
                       <input
                         type='password'
                         autoComplete='new-password'
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className='flex-1 bg-transparent text-white placeholder:text-[#6b7484] focus:outline-none'
+                        className='flex-1 bg-transparent text-slate-800 placeholder:text-[#6b7484] focus:outline-none'
                         placeholder='Confirme sua senha'
                         disabled={loading}
                         minLength={6}
@@ -297,7 +280,7 @@ export function AuthPage() {
                     <button
                       type='button'
                       onClick={openReset}
-                      className='text-xs font-semibold text-[#C7F000] hover:underline underline-offset-4 transition-colors'
+                      className='text-xs font-semibold text-[#194c36] hover:underline underline-offset-4 transition-colors'
                       disabled={loading}
                     >
                       Esqueceu sua senha?
@@ -311,8 +294,8 @@ export function AuthPage() {
                     disabled={loading}
                     className={`w-full h-[52px] rounded-[14px] font-semibold flex items-center justify-center gap-2 transition-transform duration-150 active:translate-y-[1px] disabled:opacity-70 ${
                       mode === 'signup'
-                        ? 'bg-[#2563EB] text-white hover:bg-[#2f6df0]'
-                        : 'bg-[#C7F000] text-[#05070D] hover:bg-[#d4ff33]'
+                        ? 'bg-[#194c36] text-white hover:bg-[#113927]'
+                        : 'bg-[#194c36] text-white hover:bg-[#113927]'
                     }`}
                   >
                     {loading ? (
@@ -330,7 +313,7 @@ export function AuthPage() {
                       type='button'
                       onClick={handleGuestSignIn}
                       disabled={guestLoading || loading}
-                      className='w-full h-[52px] rounded-[14px] border border-[#C7F000] text-[#C7F000] font-semibold flex items-center justify-center gap-2 transition-colors hover:bg-[#c7f000]/10 disabled:opacity-60'
+                      className='w-full h-[52px] rounded-[14px] border border-[#194c36] text-[#194c36] font-semibold flex items-center justify-center gap-2 transition-colors hover:bg-[#194c36]/10 disabled:opacity-60'
                     >
                       {guestLoading ? (
                         'Entrando...'
@@ -345,13 +328,13 @@ export function AuthPage() {
                 </div>
               </form>
 
-              <div className='pt-2 text-center text-sm text-[#A7B0BF]'>
+              <div className='pt-2 text-center text-sm text-[#697a71]'>
                 {mode === 'signin' ? (
                   <>
                     Não tem uma conta?{' '}
                     <button
                       type='button'
-                      className='text-[#C7F000] font-semibold hover:underline underline-offset-4 transition-colors'
+                      className='text-[#194c36] font-semibold hover:underline underline-offset-4 transition-colors'
                       onClick={() => {
                         setMode('signup')
                         setError(null)
@@ -367,7 +350,7 @@ export function AuthPage() {
                     Já tem uma conta?{' '}
                     <button
                       type='button'
-                      className='text-[#C7F000] font-semibold hover:underline underline-offset-4 transition-colors'
+                      className='text-[#194c36] font-semibold hover:underline underline-offset-4 transition-colors'
                       onClick={() => {
                         setMode('signin')
                         setError(null)
@@ -388,15 +371,15 @@ export function AuthPage() {
 
       {reset.open && (
         <div className='fixed inset-0 z-30 bg-black/70 flex items-center justify-center px-4'>
-          <div className='w-full max-w-sm rounded-2xl bg-[#0F172A] border border-[#1f2a3c] p-6 shadow-[0_18px_42px_-36px_rgba(0,0,0,0.85)] space-y-4'>
+          <div className='w-full max-w-sm rounded-2xl bg-[#ffffff] border border-[#e2e9e5] p-6 shadow-[0_18px_42px_-36px_rgba(0,0,0,0.85)] space-y-4'>
             <div className='flex items-center justify-between gap-4'>
               <div>
-                <p className='text-base font-semibold text-white'>Recuperar senha</p>
-                <p className='text-xs text-[#9AA4B2]'>Enviaremos um link para o seu e-mail.</p>
+                <p className='text-base font-semibold text-slate-800'>Recuperar senha</p>
+                <p className='text-xs text-[#697a71]'>Enviaremos um link para o seu e-mail.</p>
               </div>
               <button
                 onClick={closeReset}
-                className='text-[#9AA4B2] hover:text-white text-sm'
+                className='text-[#697a71] hover:text-slate-800 text-sm'
                 disabled={reset.loading}
               >
                 Fechar
@@ -404,26 +387,26 @@ export function AuthPage() {
             </div>
 
             {reset.error && (
-              <div className='p-3 rounded-xl border border-red-500/40 bg-red-500/10 text-red-100 text-sm'>
+              <div className='p-3 rounded-xl border border-red-500/40 bg-red-500/10 text-red-700 text-sm'>
                 {reset.error}
               </div>
             )}
             {reset.success && (
-              <div className='p-3 rounded-xl border border-[#c7f000]/30 bg-[#c7f000]/10 text-[#d8ff4a] text-sm'>
+              <div className='p-3 rounded-xl border border-[#194c36]/30 bg-[#194c36]/10 text-[#194c36] text-sm'>
                 {reset.success}
               </div>
             )}
 
             <form className='space-y-3' onSubmit={handleResetSubmit}>
               <div className='space-y-2'>
-                <label className='text-sm font-medium text-white'>E-mail</label>
-                <div className='flex items-center gap-3 rounded-xl border border-[#1f2a3c] bg-[#0F172A] px-4 py-3 transition-all focus-within:border-[#C7F000] focus-within:ring-1 focus-within:ring-[#C7F000]'>
-                  <Mail size={18} className='text-[#C7F000]' />
+                <label className='text-sm font-medium text-slate-800'>E-mail</label>
+                <div className='flex items-center gap-3 rounded-xl border border-[#e2e9e5] bg-[#ffffff] px-4 py-3 transition-all focus-within:border-[#194c36] focus-within:ring-1 focus-within:ring-[#194c36]'>
+                  <Mail size={18} className='text-[#194c36]' />
                   <input
                     type='email'
                     value={reset.email}
                     onChange={(e) => setReset((prev) => ({ ...prev, email: e.target.value }))}
-                    className='flex-1 bg-transparent text-white placeholder:text-[#6b7484] focus:outline-none'
+                    className='flex-1 bg-transparent text-slate-800 placeholder:text-[#6b7484] focus:outline-none'
                     placeholder='Seu e-mail'
                     disabled={reset.loading}
                     required
@@ -434,7 +417,7 @@ export function AuthPage() {
               <button
                 type='submit'
                 disabled={reset.loading}
-                className='w-full h-11 rounded-[12px] bg-[#C7F000] text-[#05070D] font-semibold flex items-center justify-center gap-2 transition-transform duration-150 hover:bg-[#d4ff33] active:translate-y-[1px] disabled:opacity-70'
+                className='w-full h-11 rounded-[12px] bg-[#194c36] text-white font-semibold flex items-center justify-center gap-2 transition-transform duration-150 hover:bg-[#113927] active:translate-y-[1px] disabled:opacity-70'
               >
                 {reset.loading ? 'Enviando...' : 'Enviar link'}
               </button>

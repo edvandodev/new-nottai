@@ -52,7 +52,7 @@ export const MonthYearFilterButtons = ({
   }, [])
 
   const baseButtonClasses =
-    'rounded-full border border-slate-700/80 bg-slate-900/60 px-3 py-1.5 text-sm font-semibold text-white flex items-center justify-center gap-2 shadow-sm transition-colors min-w-[92px] h-9'
+    'rounded-full border border-slate-200/80 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 flex items-center justify-center gap-2 shadow-sm transition-colors min-w-[92px] h-9'
 
   const periodLabel = 'Per\u00edodo'
 
@@ -61,15 +61,15 @@ export const MonthYearFilterButtons = ({
       ref={containerRef}
       className='flex items-center gap-4 w-full flex-nowrap overflow-visible'
     >
-      <span className='text-slate-100 text-2xl font-bold leading-none'>{periodLabel}</span>
+      <span className='text-slate-700 text-2xl font-bold leading-none'>{periodLabel}</span>
 
       <div className='flex items-center gap-3 ml-auto'>
         <div className='relative'>
           <button
             type='button'
-            className={`${baseButtonClasses} hover:border-blue-500/70 hover:bg-slate-800/70 ${
+            className={`${baseButtonClasses} hover:border-blue-500/70 hover:bg-white ${
               openMenu === 'month'
-                ? 'border-blue-400 bg-slate-800/80 shadow-blue-900/30 shadow-sm'
+                ? 'border-blue-400 bg-white shadow-blue-900/30 shadow-sm'
                 : ''
             }`}
             onClick={() => setOpenMenu(openMenu === 'month' ? null : 'month')}
@@ -78,7 +78,7 @@ export const MonthYearFilterButtons = ({
           </button>
 
           {openMenu === 'month' && (
-            <div className='absolute left-0 mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 shadow-2xl z-20 overflow-hidden'>
+            <div className='absolute left-0 mt-2 w-full rounded-xl border border-slate-200 bg-white shadow-2xl z-20 overflow-hidden'>
               <div className='max-h-60 overflow-y-auto custom-scrollbar'>
                 {MONTHS_SHORT.map((label, idx) => (
                   <button
@@ -88,8 +88,8 @@ export const MonthYearFilterButtons = ({
                       onChangeMonth(idx)
                       setOpenMenu(null)
                     }}
-                    className={`w-full px-4 py-3 text-left text-sm flex items-center justify-between hover:bg-slate-800/80 transition-colors ${
-                      idx === month ? 'bg-slate-800/70 text-blue-200 font-semibold' : 'text-slate-200'
+                    className={`w-full px-4 py-3 text-left text-sm flex items-center justify-between hover:bg-white transition-colors ${
+                      idx === month ? 'bg-white text-blue-200 font-semibold' : 'text-slate-700'
                     }`}
                   >
                     <span>{label}</span>
@@ -103,9 +103,9 @@ export const MonthYearFilterButtons = ({
         <div className='relative'>
           <button
             type='button'
-            className={`${baseButtonClasses} hover:border-blue-500/70 hover:bg-slate-800/70 ${
+            className={`${baseButtonClasses} hover:border-blue-500/70 hover:bg-white ${
               openMenu === 'year'
-                ? 'border-blue-400 bg-slate-800/80 shadow-blue-900/30 shadow-sm'
+                ? 'border-blue-400 bg-white shadow-blue-900/30 shadow-sm'
                 : ''
             }`}
             onClick={() => setOpenMenu(openMenu === 'year' ? null : 'year')}
@@ -114,7 +114,7 @@ export const MonthYearFilterButtons = ({
           </button>
 
           {openMenu === 'year' && (
-            <div className='absolute left-0 mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 shadow-2xl z-20 overflow-hidden'>
+            <div className='absolute left-0 mt-2 w-full rounded-xl border border-slate-200 bg-white shadow-2xl z-20 overflow-hidden'>
               <div className='max-h-60 overflow-y-auto custom-scrollbar'>
                 {years.map((y) => (
                   <button
@@ -124,8 +124,8 @@ export const MonthYearFilterButtons = ({
                       onChangeYear(y)
                       setOpenMenu(null)
                     }}
-                    className={`w-full px-4 py-3 text-left text-sm flex items-center justify-between hover:bg-slate-800/80 transition-colors ${
-                      y === year ? 'bg-slate-800/70 text-blue-200 font-semibold' : 'text-slate-200'
+                    className={`w-full px-4 py-3 text-left text-sm flex items-center justify-between hover:bg-white transition-colors ${
+                      y === year ? 'bg-white text-blue-200 font-semibold' : 'text-slate-700'
                     }`}
                   >
                     <span>{y}</span>

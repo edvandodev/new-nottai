@@ -9,9 +9,9 @@ type PriceHeroCardProps = {
 export function PriceHeroCard({ valueLabel, subtitle, onEdit }: PriceHeroCardProps) {
   return (
     <div
-      className='relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900/90 via-slate-900 to-slate-950 shadow-[0_10px_40px_-25px_rgba(0,0,0,0.8)]'
+      className='relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900/90 via-slate-900 to-slate-950 shadow-[0_10px_40px_-25px_rgba(0,0,0,0.8)]'
       style={{
-        background: 'linear-gradient(135deg, rgba(17,24,39,0.9), rgba(12,17,30,0.95))',
+        background: 'linear-gradient(135deg, rgba(255,255,255,1), rgba(255,255,255,1))',
         borderColor: 'var(--border)',
         boxShadow: 'var(--shadow)'
       }}
@@ -34,7 +34,7 @@ export function PriceHeroCard({ valueLabel, subtitle, onEdit }: PriceHeroCardPro
         <button
           type='button'
           onClick={onEdit}
-          className='relative z-10 px-4 py-2 rounded-full bg-blue-600/90 hover:bg-blue-500 text-sm font-semibold text-white border border-blue-500/60 shadow-[0_10px_30px_-12px_rgba(59,130,246,0.8)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+          className='relative z-10 px-4 py-2 rounded-full bg-emerald-700/90 hover:bg-emerald-800 text-sm font-semibold text-white border border-blue-500/60 shadow-[0_10px_30px_-12px_rgba(59,130,246,0.8)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
         >
           Editar
         </button>

@@ -5,6 +5,7 @@ import { initFirebase } from './firebase'
 import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import './styles/themes.css'
+import './styles/theme-flat.css'
 
 initFirebase()
 

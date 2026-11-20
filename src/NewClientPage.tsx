@@ -384,7 +384,7 @@ export const NewClientPage: React.FC<NewClientPageProps> = ({
           className='sticky bottom-0 w-full border-t px-5 py-4 flex gap-3'
           style={{
             borderColor: 'var(--border)',
-            background: 'rgba(11, 15, 20, 0.92)'
+            background: 'var(--surface)'
           }}
         >
           <button

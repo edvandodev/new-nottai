@@ -138,7 +138,7 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
 
   const statusColor =
     noteData.balance > 0
-      ? 'var(--danger, #ff5a6a)'
+      ? 'var(--danger, #bd4753)'
       : noteData.balance < 0
         ? 'var(--accent)'
         : 'var(--accent)'
@@ -169,7 +169,7 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
   return (
     <div
       data-theme='flat-lime'
-      className='fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xl overflow-y-auto'
+      className='fixed inset-0 z-50 bg-white backdrop-blur-xl overflow-y-auto'
     >
       <div
         className='max-w-xl mx-auto min-h-screen pb-24'
@@ -178,7 +178,7 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
         <header
           className='sticky top-0 z-50 backdrop-blur-xl'
           style={{
-            background: 'rgba(11, 15, 20, 0.7)',
+            background: 'rgba(246, 248, 247, 0.95)',
             borderBottom: '1px solid var(--border)'
           }}
         >
@@ -273,7 +273,7 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
           >
             <div
               className='absolute -top-6 -right-10 w-32 h-32 rounded-full blur-3xl'
-              style={{ background: 'rgba(184, 255, 44, 0.18)' }}
+              style={{ background: 'rgba(8, 127, 104, 0.18)' }}
             />
             <div className='flex items-start justify-between gap-3 relative z-10'>
               <div>
@@ -315,7 +315,7 @@ export const CustomerNotePreviewPage: React.FC<CustomerNotePreviewPageProps> = (
               aria-pressed={includeDetails}
             >
               <div
-                className={`h-5 w-5 rounded-full bg-slate-900 shadow-sm transition-transform ${
+                className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
                   includeDetails ? 'translate-x-5' : ''
                 }`}
               />

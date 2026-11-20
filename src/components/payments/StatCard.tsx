@@ -32,12 +32,12 @@ export function StatCard({
   const isAccent = variant === 'accent'
   const hasHeaderAction = Boolean(headerAction)
   const resolvedTone = valueTone ?? 'neutral'
-  const accentBase = accentColor ?? 'var(--accent, #b8ff2c)'
+  const accentBase = accentColor ?? 'var(--accent, #087f68)'
   const valueColor = resolvedTone === 'accent' ? accentBase : 'var(--text)'
 
   if (isTinted) {
-    const bgTint = backgroundTintColor ?? 'rgba(184, 255, 44, 0.12)'
-    const borderTint = borderColor ?? 'rgba(184, 255, 44, 0.32)'
+    const bgTint = backgroundTintColor ?? 'rgba(8, 127, 104, 0.12)'
+    const borderTint = borderColor ?? 'rgba(8, 127, 104, 0.32)'
 
     return (
       <div
@@ -81,9 +81,9 @@ export function StatCard({
   const accentColors =
     accentTone === 'lime'
       ? {
-          border: 'rgba(184, 255, 44, 0.6)',
-          glow: 'rgba(184, 255, 44, 0.45)',
-          glowSoft: 'rgba(184, 255, 44, 0.4)'
+          border: 'rgba(8, 127, 104, 0.6)',
+          glow: 'rgba(8, 127, 104, 0.45)',
+          glowSoft: 'rgba(8, 127, 104, 0.4)'
         }
       : {
           border: 'rgba(34, 197, 94, 0.6)',
@@ -96,10 +96,10 @@ export function StatCard({
       style={
         isAccent
           ? {
-              borderColor: accentColors.border,
-              boxShadow: `0 0 0 1px ${accentColors.glowSoft}, 0 14px 30px -26px ${accentColors.glow}`,
+              borderColor: 'var(--border)',
+              boxShadow: 'none',
               background:
-                'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(14, 19, 26, 0.92) 100%)'
+                'linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 100%)'
             }
           : undefined
       }
@@ -108,7 +108,7 @@ export function StatCard({
         {label}
       </span>
       {headerAction && <div className='absolute right-3 top-3'>{headerAction}</div>}
-      <span className='text-2xl font-semibold leading-tight whitespace-nowrap' style={{ color: valueColor }}>
+      <span className='text-[clamp(18px,4.7vw,28px)] font-semibold leading-tight break-words' style={{ color: valueColor }}>
         {value}
       </span>
       {helperText && (

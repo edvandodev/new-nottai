@@ -1,0 +1,93 @@
+.reports-page { display: grid; gap: 16px; }
+.report-period, .report-stat, .report-chart {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.report-period { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 10px; }
+.report-period-label { display: flex; align-items: center; gap: 7px; padding-inline: 3px; color: var(--muted); font-size: .86rem; font-weight: 700; }
+.report-period-label svg { color: var(--primary); }
+.report-period-controls { display: grid; position: relative; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 5px; }
+.report-period-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-inline: 6px;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: .89rem;
+  font-weight: 700;
+}
+.report-period-button > span > span { color: var(--muted); font-weight: 600; }
+.report-period-button svg { flex: none; }
+.report-period-button:hover { background: var(--accent-soft); }
+.report-picker {
+  z-index: 3;
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  width: min(100%, 290px);
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface);
+  box-shadow: 0 10px 30px var(--shadow);
+}
+.report-picker-year { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.report-picker-months { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.report-picker-months button { min-height: 42px; border-radius: 8px; background: var(--surface-2); font-size: .84rem; font-weight: 650; }
+.report-picker-months button[aria-pressed='true'], .report-picker-months button:hover { background: var(--highlight-soft); color: var(--primary); }
+.report-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.report-stat { display: grid; gap: 7px; align-content: start; padding: 12px 10px; }
+.report-stat-label { color: var(--muted); font-size: .72rem; font-weight: 650; }
+.report-stat-label > span { display: grid; place-items: center; width: 34px; height: 34px; margin-bottom: 7px; border-radius: 9px; background: var(--accent-soft); color: var(--primary); }
+.report-stat:last-child .report-stat-label > span { background: var(--highlight-soft); }
+.report-stat > strong { font-size: clamp(1.13rem, 4.55vw, 1.85rem); line-height: 1.1; letter-spacing: -.04em; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.report-previous { display: flex; align-items: end; flex-wrap: wrap; justify-content: space-between; gap: 5px; padding-top: 8px; border-top: 1px solid var(--border); color: var(--muted); font-size: .68rem; }
+.report-previous b { display: block; color: var(--text); overflow-wrap: anywhere; }
+.report-change { display: inline-flex; align-items: center; gap: 1px; font-weight: 700; }
+.report-change[data-direction='up'] { color: var(--primary); }
+.report-change[data-direction='down'] { color: var(--danger); }
+.report-chart { padding: 13px 8px 10px; }
+.report-chart-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; padding-inline: 3px; }
+.report-chart-heading h2 { display: flex; align-items: center; gap: 6px; margin: 0; font-size: .96rem; font-weight: 700; }
+.report-chart-heading h2 svg { color: var(--primary); }
+.report-view-toggle { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: var(--surface-2); }
+.report-view-toggle button { min-height: 40px; padding-inline: 7px; border-radius: 7px; color: var(--muted); font-size: .76rem; font-weight: 650; }
+.report-view-toggle button[aria-pressed='true'] { background: var(--surface); color: var(--primary); box-shadow: 0 1px 3px var(--shadow); }
+.report-chart-summary { display: grid; gap: 2px; padding: 11px 4px; color: var(--muted); font-size: .78rem; }
+.report-chart-summary strong { color: var(--primary); font-size: 1.35rem; letter-spacing: -.035em; }
+.report-bars { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 2px; min-width: 0; }
+.report-bars > button { display: grid; grid-template-rows: clamp(95px, 24vw, 192px) 32px; gap: 2px; align-items: end; min-width: 0; border-radius: 5px; }
+.report-bar-track { display: flex; align-items: end; justify-self: center; width: 68%; height: 100%; border-radius: 5px; background: var(--surface-2); }
+.report-bar-fill { width: 100%; border-radius: 5px; background: var(--highlight); }
+.report-bars > button:hover .report-bar-track, .report-bars > button[aria-pressed='true'] .report-bar-track { background: var(--accent-soft); }
+.report-bars > button[aria-pressed='true'] .report-bar-fill { background: var(--primary); }
+.report-bar-label { display: grid; place-items: center; align-self: stretch; min-width: 0; color: var(--muted); font-size: clamp(.56rem, 2.7vw, .79rem); font-weight: 650; }
+.report-bars > button[aria-pressed='true'] .report-bar-label { color: var(--primary); background: var(--accent-soft); border-radius: 5px; }
+.report-empty { padding: 28px 10px; text-align: center; color: var(--muted); font-size: .84rem; }
+.report-weeks { margin: 10px 0 0; padding: 0; list-style: none; }
+.report-weeks li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 4px; border-top: 1px solid var(--border); font-size: .87rem; }
+.report-weeks li > div { display: grid; gap: 2px; }
+.report-weeks li span { color: var(--muted); font-size: .76rem; }
+.report-weeks li > strong { color: var(--primary); text-align: right; overflow-wrap: anywhere; }
+@media (min-width: 440px) {
+  .report-period { flex-direction: row; align-items: center; justify-content: space-between; }
+  .report-period-controls { width: 250px; }
+}
+@media (min-width: 570px) {
+  .reports-page { gap: 20px; }
+  .report-period, .report-stat, .report-chart { padding: 16px; }
+  .report-stats { gap: 14px; }
+  .report-stat-label { display: flex; align-items: center; gap: 8px; font-size: .84rem; }
+  .report-stat-label > span { margin-bottom: 0; }
+  .report-previous { font-size: .78rem; }
+  .report-chart-heading h2 { font-size: 1.08rem; }
+  .report-view-toggle button { padding-inline: 13px; }
+}

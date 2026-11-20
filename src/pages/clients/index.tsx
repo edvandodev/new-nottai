@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   CheckCircle,
   ChevronLeft,
@@ -216,8 +216,8 @@ const getAvatarColors = (input: string) => {
   }
   const hue = Math.abs(hash) % 360
   return {
-    bg: `hsl(${hue}, 35%, 22%)`,
-    text: `hsl(${hue}, 70%, 80%)`
+    bg: `hsl(${hue}, 35%, 93%)`,
+    text: `hsl(${hue}, 35%, 33%)`
   }
 }
 
@@ -510,11 +510,10 @@ export function ClientsPage({
       style={{
         background: 'var(--bg)',
         color: 'var(--text)',
-        minHeight: '100vh',
-        paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
-        paddingLeft: 16,
-        paddingRight: 16
+        paddingTop: 0,
+        paddingBottom: 0,
+        paddingLeft: 0,
+        paddingRight: 0
       }}
     >
       {showFloatingHeader && (
@@ -526,7 +525,7 @@ export function ClientsPage({
             paddingLeft: 16,
             paddingRight: 16,
             background:
-              'linear-gradient(180deg, rgba(11, 15, 20, 0.98) 0%, rgba(11, 15, 20, 0.7) 45%, rgba(11, 15, 20, 0) 100%)',
+              'linear-gradient(180deg, var(--bg) 25%, transparent 100%)',
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)'
           }}
@@ -536,24 +535,19 @@ export function ClientsPage({
           </h2>
         </div>
       )}
-      <div className='mt-6 flex items-start justify-between gap-4 mb-4'>
+      <div className='ui-page-heading flex items-start justify-between gap-4 mb-4'>
         <div>
-          <h1 className='text-[28px] font-semibold leading-none'>Meus Clientes</h1>
+          <h1>Meus Clientes</h1>
           <p className='mt-2 text-xs' style={{ color: 'var(--muted)' }}>
             {clients.length} cadastrados
           </p>
         </div>
         <button
           onClick={onAddClient}
-          className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-transform active:scale-95 mt-1'
-          style={{
-            background: 'var(--accent)',
-            color: 'var(--accent-ink)',
-            border: '1px solid var(--accent)'
-          }}
+          className='ui-button ui-button-primary'
         >
           <Plus size={12} strokeWidth={3} />
-          Novo
+          Novo cliente
         </button>
       </div>
       {showPaymentPicker && paymentCandidates.length > 1 && (
@@ -814,7 +808,7 @@ export function ClientsPage({
         style={{
           background: 'var(--bg)',
           color: 'var(--text)',
-          paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))'
+          paddingBottom: 0
         }}
       >
         <div className='fixed top-0 left-0 right-0 z-50 max-w-2xl mx-auto px-4 pt-4 flex items-center justify-between pointer-events-none'>
@@ -885,16 +879,16 @@ export function ClientsPage({
         <div
           className='relative h-32 rounded-b-[2rem] shadow-md overflow-hidden'
           style={{
-            background: 'linear-gradient(135deg, rgba(184, 255, 44, 0.22), rgba(11, 15, 20, 0.96))'
+            background: 'linear-gradient(135deg, rgba(8, 127, 104, 0.22), #e8f4ee)'
           }}
         >
           <div
             className='absolute top-[-30%] left-[-10%] w-44 h-44 rounded-full blur-3xl'
-            style={{ background: 'rgba(184, 255, 44, 0.14)' }}
+            style={{ background: 'rgba(8, 127, 104, 0.14)' }}
           />
           <div
             className='absolute bottom-[-35%] right-[-10%] w-44 h-44 rounded-full blur-3xl'
-            style={{ background: 'rgba(184, 255, 44, 0.1)' }}
+            style={{ background: 'rgba(8, 127, 104, 0.1)' }}
           />
         </div>
 
@@ -965,7 +959,7 @@ export function ClientsPage({
                 balance > 0
                   ? {
                       borderColor: 'var(--accent)',
-                      background: 'rgba(184, 255, 44, 0.14)',
+                      background: 'rgba(8, 127, 104, 0.14)',
                       color: 'var(--accent)'
                     }
                   : {
@@ -1014,12 +1008,12 @@ export function ClientsPage({
                     style={
                       isActive
                         ? {
-                            background: 'rgba(184, 255, 44, 0.15)',
-                            borderColor: 'rgba(184, 255, 44, 0.7)',
+                            background: 'rgba(8, 127, 104, 0.15)',
+                            borderColor: 'rgba(8, 127, 104, 0.7)',
                             color: 'var(--text)'
                           }
                         : {
-                            background: 'rgba(14, 20, 28, 0.7)',
+                            background: 'var(--surface-2)',
                             borderColor: 'rgba(30, 42, 56, 0.9)',
                             color: 'var(--muted)'
                           }
@@ -1050,15 +1044,15 @@ export function ClientsPage({
                     <span className='inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold uppercase rounded-full bg-amber-500/20 text-amber-50 border border-amber-500/40'>
                       Pendente
                     </span>
-                    <p className='text-sm font-semibold text-slate-100 flex-1 min-w-0 truncate'>
+                    <p className='text-sm font-semibold text-slate-700 flex-1 min-w-0 truncate'>
                       Saldo pendente:
                     </p>
-                    <span className='text-xs font-semibold text-amber-100 flex items-center gap-1 shrink-0'>
+                    <span className='text-xs font-semibold text-amber-700 flex items-center gap-1 shrink-0'>
                       {isDebtOpen ? 'Ocultar' : 'Ver'}
                       {isDebtOpen ? (
-                        <ChevronUp size={14} className='text-amber-100' />
+                        <ChevronUp size={14} className='text-amber-700' />
                       ) : (
-                        <ChevronDown size={14} className='text-amber-100' />
+                        <ChevronDown size={14} className='text-amber-700' />
                       )}
                     </span>
                   </div>
@@ -1067,8 +1061,8 @@ export function ClientsPage({
                       isDebtOpen ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'
                     }`}
                   >
-                    <div className='px-3 pb-3 pt-2 border-t border-slate-700/70 space-y-2'>
-                      <p className='text-xs leading-snug text-slate-300'>
+                    <div className='px-3 pb-3 pt-2 border-t border-slate-200/70 space-y-2'>
+                      <p className='text-xs leading-snug text-slate-700'>
                         {selectedClientHistory.lastPaymentTs
                           ? `Após o pagamento de ${formatCurrency(
                               lastPaymentAmount
@@ -1077,17 +1071,17 @@ export function ClientsPage({
                             )} ficou com saldo pendente.`
                           : 'Sem pagamento registrado; saldo pendente atualizado com a última movimentação.'}
                       </p>
-                      <p className='text-xs leading-snug text-slate-300'>
+                      <p className='text-xs leading-snug text-slate-700'>
                         Último pagamento:{' '}
-                        <span className='font-semibold text-white'>
+                        <span className='font-semibold text-slate-800'>
                           {selectedClientHistory.lastPaymentTs
                             ? formatDateShort(selectedClientHistory.lastPaymentTs)
                             : 'Sem pagamento'}
                         </span>
                       </p>
-                      <p className='text-sm leading-snug text-amber-100'>
+                      <p className='text-sm leading-snug text-amber-700'>
                         Saldo pendente:{' '}
-                        <span className='font-bold text-amber-200'>
+                        <span className='font-bold text-amber-700'>
                           {formatCurrency(selectedClientHistory.bannerBalance)}
                         </span>
                       </p>
@@ -1111,7 +1105,7 @@ export function ClientsPage({
                 className='rounded-[22px] border overflow-hidden'
                 style={{
                   background:
-                    'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(14, 19, 26, 0.92) 100%)',
+                    'linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 100%)',
                   borderColor: 'rgba(30, 42, 56, 0.9)',
                   boxShadow: '0 18px 36px -28px rgba(0, 0, 0, 0.7)'
                 }}
@@ -1176,7 +1170,7 @@ export function ClientsPage({
                                   : {
                                       background: 'rgba(34, 197, 94, 0.18)',
                                       borderColor: 'rgba(34, 197, 94, 0.45)',
-                                      color: '#4ade80'
+                                      color: '#16815e'
                                     }
                               }
                             >

@@ -4,7 +4,11 @@ import {
   Camera,
   Circle,
   CircleDot,
-  Image,
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  Maximize2,
+  Image as ImageIcon,
   MoreVertical,
   Plus,
   Search,
@@ -15,58 +19,25 @@ import cowIcon from '../../../assets/icon/icon-vaca.svg'
 
 import type { CalvingEvent, CalvingSex, Cow } from '@/types'
 import { Modal } from '@/components/Modal'
-import { StatCard } from '@/components/payments/StatCard'
 import { offlineWrites } from '@/services/offlineWrites'
 import { formatTimeSince } from '@/utils/time'
-import '../../styles/theme-flat.css'
+import './reproduction.css'
 
 type ReproductionPageProps = {
   cows: Cow[]
   calvings: CalvingEvent[]
+  onDetailsViewChange?: (isOpen: boolean) => void
 }
 
-const cowCardColors = {
-  accent: '#b9ff45',
-  background: 'rgba(185, 255, 69, 0.12)',
-  border: 'rgba(185, 255, 69, 0.32)'
+function AnimalIcon({ src }: { src: string }) {
+  return <span className='animal-icon' aria-hidden='true' style={{ maskImage: 'url(' + src + ')' }} />
 }
 
-const birthsCardColors = {
-  accent: '#35e6b5',
-  background: 'rgba(53, 230, 181, 0.12)',
-  border: 'rgba(53, 230, 181, 0.32)'
+function CowPortrait({ cow }: { cow: Cow }) {
+  return cow.photoDataUrl
+    ? <img src={cow.photoDataUrl} alt='' />
+    : <AnimalIcon src={cowIcon} />
 }
-
-const iconColor = '#94a3b8'
-
-const MaskIcon = ({
-  src,
-  size = 64,
-  color = iconColor
-}: {
-  src: string
-  size?: number
-  color?: string
-}) => (
-  <div
-    aria-hidden
-    style={{
-      display: 'block',
-      margin: '0 auto',
-      width: size,
-      height: size,
-      background: color,
-      WebkitMaskImage: `url(${src})`,
-      WebkitMaskRepeat: 'no-repeat',
-      WebkitMaskSize: 'contain',
-      WebkitMaskPosition: 'center',
-      maskImage: `url(${src})`,
-      maskRepeat: 'no-repeat',
-      maskSize: 'contain',
-      maskPosition: 'center'
-    }}
-  />
-)
 
 const formatDateBR = (iso: string) => {
   const d = new Date(iso)
@@ -210,213 +181,53 @@ const preparePhotoFromFile = async (file: File): Promise<string> => {
 const sexLabel = (sex: CalvingSex) => (sex === 'MACHO' ? 'Macho' : 'Fêmea')
 
 
-const dividerColor = '#1e2a38'
-
-const InfoChip = ({
-  label,
-  tone = 'muted'
-}: {
-  label: string
-  tone?: 'muted' | 'accent'
-}) => (
-  <span
-    className='inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold leading-none'
-    style={
-      tone === 'accent'
-        ? {
-            background: 'rgba(149, 193, 31, 0.16)',
-            borderColor: 'rgba(149, 193, 31, 0.4)',
-            color: 'var(--text)'
-          }
-        : { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }
-    }
-  >
-    {label}
-  </span>
-)
-
-const CowHeader = ({ name, subtitle }: { name: string; subtitle?: string }) => (
-  <div className='flex flex-col gap-1 text-left'>
-    <div className='text-2xl font-semibold leading-tight' style={{ color: 'var(--text)' }}>
-      {`Partos \u2014 ${name}`}
-    </div>
-    {subtitle ? (
-      <div className='text-sm' style={{ color: 'var(--muted)' }}>
-        {subtitle}
-      </div>
-    ) : null}
-  </div>
-)
-
-const CowIdentityStrip = ({
-  cow,
-  idLabel,
-  breed,
-  status,
-  isEditingName,
-  nameDraft,
-  onNameChange,
-  onSaveName,
-  onCancelEdit,
-  canSaveName,
-  savingName,
-  onAvatarClick
-}: {
-  cow: Cow
-  idLabel?: string | null
-  breed?: string | null
-  status?: string | null
-  isEditingName: boolean
-  nameDraft: string
-  onNameChange: (value: string) => void
-  onSaveName: () => void
-  onCancelEdit: () => void
-  canSaveName: boolean
-  savingName: boolean
-  onAvatarClick?: () => void
-}) => {
-  const initial = (cow.name || '?').trim().charAt(0).toUpperCase() || '?'
-
-  return (
-    <div
-      className='rounded-2xl border p-3 flex items-center gap-3'
-      style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-    >
-      <button
-        type='button'
-        onClick={onAvatarClick}
-        className='h-12 w-12 rounded-full border flex items-center justify-center overflow-hidden'
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-      >
-        {cow.photoDataUrl ? (
-          <img src={cow.photoDataUrl} alt={cow.name} className='h-full w-full object-cover' />
-        ) : (
-          <span className='text-lg font-semibold'>{initial}</span>
-        )}
-      </button>
-
-      <div className='flex-1 min-w-0 flex flex-col justify-center gap-2 self-center'>
-        {isEditingName ? (
-          <>
-            <input
-              value={nameDraft}
-              onChange={(e) => onNameChange(e.target.value)}
-              className='w-full h-11 rounded-xl border px-3 outline-none'
-              placeholder='Nome da vaca'
-              style={{
-                background: 'var(--surface)',
-                borderColor: 'var(--border)',
-                color: 'var(--text)'
-              }}
-            />
-            <div className='flex flex-wrap gap-2'>
-              <button
-                type='button'
-                onClick={onSaveName}
-                disabled={!canSaveName || savingName}
-                className='h-10 px-4 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
-                style={{
-                  background: 'var(--surface)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              >
-                {savingName ? 'Salvando...' : 'Salvar'}
-              </button>
-              <button
-                type='button'
-                onClick={onCancelEdit}
-                className='h-10 px-3 rounded-xl text-sm font-semibold border transition hover:brightness-110'
-                style={{ background: 'transparent', borderColor: 'var(--border)', color: 'var(--muted)' }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className='text-xl font-semibold leading-tight truncate' style={{ color: 'var(--text)' }}>
-              {cow.name}
-            </div>
-            <div className='flex flex-wrap gap-2'>
-              {idLabel ? <InfoChip label={`ID ${idLabel}`} /> : null}
-              {breed ? <InfoChip label={breed} /> : null}
-              {status ? <InfoChip label={status} tone='accent' /> : null}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  )
-}
-
-const BirthItemRow = ({
+function BirthItemRow({
   event,
-  isFirst,
+  photos,
   onOpen,
   onOpenMenu
 }: {
   event: CalvingEvent
-  isFirst: boolean
+  photos: string[]
   onOpen: () => void
   onOpenMenu: () => void
-}) => {
-  const timeSinceLabel = formatTimeSince(event.date)
-
+}) {
+  const date = formatDateBR(event.date)
   return (
-    <button
-      type='button'
-      onClick={onOpen}
-      className='w-full flex items-center justify-between gap-3 px-3 py-4 text-left transition hover:brightness-105'
-      style={{
-        color: 'var(--text)',
-        borderTop: isFirst ? 'none' : `1px solid ${dividerColor}`
-      }}
-    >
-      <div className='flex-1 min-w-0 flex flex-col gap-1'>
-        <div className='text-base font-semibold flex flex-wrap items-center gap-2'>
-          <span>{formatDateBR(event.date)}</span>
-          <span className='text-xs font-normal' style={{ color: 'var(--muted)' }}>
-            {`- ${timeSinceLabel}`}
-          </span>
-        </div>
-      </div>
-      <div className='flex items-center gap-2'>
-        <span
-          className='inline-flex items-center px-2 py-1 rounded-full text-[11px] font-semibold'
-          style={{
-            background: event.sex === 'FEMEA' ? 'rgba(255, 90, 106, 0.12)' : 'rgba(53, 230, 181, 0.14)',
-            color: 'var(--text)',
-            border: '1px solid var(--border)'
-          }}
-        >
-          {sexLabel(event.sex)}
+    <li className='birth-row'>
+      <button type='button' className='birth-entry' onClick={onOpen}>
+        <span className='birth-thumb'>
+          {photos.length ? <img src={photos[0]} alt='' loading='lazy' /> : <AnimalIcon src={calfIcon} />}
         </span>
-        <button
-          type='button'
-          onClick={(e) => {
-            e.stopPropagation()
-            onOpenMenu()
-          }}
-          aria-label='Acoes do parto'
-          className='h-8 w-8 rounded-full flex items-center justify-center transition'
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)' }}
-        >
-          <MoreVertical size={14} />
-        </button>
-      </div>
-    </button>
+        <span className='birth-copy'>
+          <strong>{date}</strong>
+          <span>{sexLabel(event.sex)}{photos.length > 0 && ' · ' + photos.length + (photos.length === 1 ? ' foto' : ' fotos')}</span>
+        </span>
+        <ChevronRight className='birth-chevron' size={17} aria-hidden='true' />
+      </button>
+      <button type='button' className='ui-icon-button birth-menu' aria-label={'Ações do parto de ' + date} onClick={onOpenMenu}>
+        <MoreVertical size={18} aria-hidden='true' />
+      </button>
+    </li>
   )
 }
 
-export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
+export function ReproductionPage({ cows, calvings, onDetailsViewChange }: ReproductionPageProps) {
   const [search, setSearch] = useState('')
   const [selectedCow, setSelectedCow] = useState<Cow | null>(null)
-  const [isCowModalOpen, setIsCowModalOpen] = useState(false)
-  const [isNewMenuOpen, setIsNewMenuOpen] = useState(false)
   const [isNewCowOpen, setIsNewCowOpen] = useState(false)
   const [isNewCalvingOpen, setIsNewCalvingOpen] = useState(false)
   const [editingCalving, setEditingCalving] = useState<CalvingEvent | null>(null)
+
+  const closeCow = React.useCallback(() => {
+    setSelectedCow(null)
+    onDetailsViewChange?.(false)
+  }, [onDetailsViewChange])
+
+  React.useEffect(() => {
+    window.addEventListener('nottai:back-to-cow-list', closeCow)
+    return () => window.removeEventListener('nottai:back-to-cow-list', closeCow)
+  }, [closeCow])
 
   const calvingsByCow = useMemo(() => {
     const map = new Map<string, CalvingEvent[]>()
@@ -433,7 +244,8 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
   }, [calvings])
 
   const rows = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    const normalize = (value: string) => value.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/\p{Diacritic}/gu, '')
+    const q = normalize(search.trim())
     const withMeta = cows
       .map((cow) => {
         const list = calvingsByCow.get(cow.id) || []
@@ -445,10 +257,10 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
           count: list.length
         }
       })
-      .filter((r) => (q ? r.cow.name.toLowerCase().includes(q) : true))
+      .filter(({ cow }) => !q || [cow.name, cow.idLabel, cow.tag, cow.breed, cow.raca].some((value) => value && normalize(value).includes(q)))
       .sort((a, b) => {
         if (b.lastDate !== a.lastDate) return b.lastDate - a.lastDate
-        return a.cow.name.localeCompare(b.cow.name)
+        return a.cow.name.localeCompare(b.cow.name, 'pt-BR')
       })
     return withMeta
   }, [cows, calvingsByCow, search])
@@ -463,241 +275,117 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
       if (!validCowIds.has(calving.cowId)) return count
       const time = new Date(calving.date).getTime()
       if (Number.isNaN(time)) return count
-      return time >= cutoff ? count + 1 : count
+      return time >= cutoff && time <= now ? count + 1 : count
     }, 0)
   }, [calvings, cows])
 
   const openCow = (cow: Cow) => {
     setSelectedCow(cow)
-    setIsCowModalOpen(true)
+    onDetailsViewChange?.(true)
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
+  const activeCow = useMemo(() => {
+    if (!selectedCow) return null
+    return cows.find((cow) => cow.id === selectedCow.id) || selectedCow
+  }, [cows, selectedCow])
+
   const cowEvents = useMemo(() => {
-    if (!selectedCow) return []
-    return calvingsByCow.get(selectedCow.id) || []
-  }, [selectedCow, calvingsByCow])
+    if (!activeCow) return []
+    return calvingsByCow.get(activeCow.id) || []
+  }, [activeCow, calvingsByCow])
+
+  const startCalving = () => {
+    setEditingCalving(null)
+    setIsNewCalvingOpen(true)
+  }
 
   return (
-    <div className='max-w-2xl mx-auto space-y-4'>
-      <div
-        className='rounded-2xl p-4 border'
-        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-      >
-        <div className='flex items-center justify-between gap-3'>
-          <div className='flex items-center gap-2'>
-            <div
-              className='h-10 w-10 rounded-xl flex items-center justify-center border'
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-            >
-              <CalendarDays size={18} style={{ color: 'var(--muted)' }} />
-            </div>
+    <div className='reproduction-page'>
+      {activeCow ? (
+        <CowDetailsPage
+          key={activeCow.id}
+          cow={activeCow}
+          events={cowEvents}
+          onClose={closeCow}
+          onEditCalving={(event) => {
+            setEditingCalving(event)
+            setIsNewCalvingOpen(true)
+          }}
+          onNewCalving={startCalving}
+        />
+      ) : (
+        <>
+          <header className='ui-page-heading herd-heading'>
             <div>
-              <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                Reprodução</div>
-              <div className='text-xs' style={{ color: 'var(--muted)' }}>
-                Anote partos por vaca, com data, sexo e foto.
-              </div>
+              <h1>Reprodução</h1>
+              <p>Acompanhe suas vacas e os partos do rebanho.</p>
             </div>
-          </div>
-
-          <button
-            type='button'
-            onClick={() => {
-              setEditingCalving(null)
-              setIsNewMenuOpen(true)
-            }}
-            className='inline-flex items-center gap-2 px-3 h-10 rounded-xl border text-sm font-semibold transition hover:brightness-110'
-            style={{
-              background: 'var(--accent, var(--primary, #b8ff2c))',
-              borderColor: 'transparent',
-              color: 'var(--accentText, #07110a)'
-            }}
-          >
-            <Plus size={16} />
-            Novo
-          </button>
-        </div>
-
-        <div className='mt-4 relative'>
-          <Search
-            size={16}
-            className='absolute left-3 top-1/2 -translate-y-1/2'
-            style={{ color: 'var(--muted)' }}
-          />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder='Buscar vaca pelo nome...'
-            className='w-full h-11 pl-10 pr-3 rounded-xl border outline-none'
-            style={{
-              background: 'var(--surface-2)',
-              borderColor: 'var(--border)',
-              color: 'var(--text)'
-            }}
-          />
-        </div>
-
-        <div className='mt-4 grid grid-cols-2 gap-3'>
-          <StatCard
-            label='Total de Vacas'
-            value={String(cows.length)}
-            variant='tinted'
-            accentColor={cowCardColors.accent}
-            backgroundTintColor={cowCardColors.background}
-            borderColor={cowCardColors.border}
-            icon={<MaskIcon src={cowIcon} size={26} color={cowCardColors.accent} />}
-          />
-          <StatCard
-            label='Partos (30 dias)'
-            value={String(calvingsLast30Days)}
-            variant='tinted'
-            accentColor={birthsCardColors.accent}
-            backgroundTintColor={birthsCardColors.background}
-            borderColor={birthsCardColors.border}
-            icon={<MaskIcon src={calfIcon} size={26} color={birthsCardColors.accent} />}
-          />
-        </div>
-      </div>
-
-      <div className='space-y-2'>
-        {rows.length === 0 ? (
-          <div
-            className='rounded-2xl p-5 border text-sm'
-            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }}
-          >
-            Nenhuma vaca encontrada. Toque em <b>Novo</b> para cadastrar o primeiro.
-          </div>
-        ) : (
-          rows.map((r) => {
-            const lastEvent = r.lastEvent
-            const lastDateLabel = lastEvent ? formatDateBR(lastEvent.date) : null
-            const lastSexLabel = lastEvent ? sexLabel(lastEvent.sex) : null
-            const elapsedLabel = lastEvent ? formatTimeSince(lastEvent.date) : null
-
-            return (
-              <button
-                key={r.cow.id}
-                type="button"
-                onClick={() => openCow(r.cow)}
-                className="w-full text-left rounded-2xl p-4 border transition hover:brightness-110"
-                style={{ background: "var(--surface)", borderColor: "var(--border)" }}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                      {r.cow.name}
-                    </div>
-                    <div className="text-xs mt-1" style={{ color: "var(--muted)" }}>
-                      {lastEvent
-                        ? `Último parto: ${lastDateLabel}${lastSexLabel ? ` · ${lastSexLabel}` : ''}`
-                        : 'Nenhum parto registrado'}
-                    </div>
-                    {elapsedLabel && (
-                      <div
-                        className="text-xs font-semibold mt-1"
-                        style={{ color: "var(--accent, #b8ff2c)" }}
-                      >
-                        {elapsedLabel}
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className="h-10 w-10 rounded-xl border flex items-center justify-center"
-                    style={{ background: "var(--surface-2)", borderColor: "var(--border)" }}
-                  >
-                    <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>
-                      {r.count}
-                    </span>
-                  </div>
-                </div>
+            <div className='herd-actions'>
+              <button type='button' className='ui-button' onClick={() => setIsNewCowOpen(true)}>
+                <Plus size={18} aria-hidden='true' /> Nova vaca
               </button>
-            )
-          })
-        )}
-      </div>
-
-      <Modal
-        open={isNewMenuOpen}
-        title='Novo'
-        onClose={() => setIsNewMenuOpen(false)}
-        closeOnBackdrop
-      >
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
-          <button
-            type='button'
-            onClick={() => {
-              setIsNewMenuOpen(false)
-              setEditingCalving(null)
-              setIsNewCalvingOpen(true)
-            }}
-            className='w-full rounded-3xl border flex flex-col items-center justify-center text-center transition hover:brightness-110'
-            style={{
-              background: 'var(--surface-2)',
-              borderColor: 'var(--border)',
-              color: 'var(--text)',
-              padding: '18px 16px',
-              minHeight: 148,
-              boxShadow: '0 16px 40px -32px var(--shadow)'
-            }}
-          >
-            <div className='flex flex-col items-center gap-px'>
-              <MaskIcon src={calfIcon} size={80} />
-              <div className='space-y-1'>
-                <div className='text-base font-semibold'>Parto</div>
-                <div className='text-xs' style={{ color: 'var(--muted)' }}>
-                  Registrar parto
-                </div>
-              </div>
+              <button type='button' className='ui-button ui-button-primary' onClick={startCalving}>
+                <CalendarDays size={18} aria-hidden='true' /> Registrar parto
+              </button>
             </div>
-          </button>
-          <button
-            type='button'
-            onClick={() => {
-              setIsNewMenuOpen(false)
-              setIsNewCowOpen(true)
-            }}
-            className='w-full rounded-3xl border flex flex-col items-center justify-center text-center transition hover:brightness-110'
-            style={{
-              background: 'var(--surface-2)',
-              borderColor: 'var(--border)',
-              color: 'var(--text)',
-              padding: '18px 16px',
-              minHeight: 148,
-              boxShadow: '0 16px 40px -32px var(--shadow)'
-            }}
-          >
-            <div className='flex flex-col items-center gap-px'>
-              <MaskIcon src={cowIcon} size={80} />
-              <div className='space-y-1'>
-                <div className='text-base font-semibold'>Vaca</div>
-                <div className='text-xs' style={{ color: 'var(--muted)' }}>
-                  Cadastrar sem parto
-                </div>
-              </div>
+          </header>
+
+          <section className='herd-metrics' aria-label='Resumo do rebanho'>
+            <div className='herd-metric'>
+              <span className='herd-metric-icon'><AnimalIcon src={cowIcon} /></span>
+              <div><span>Vacas cadastradas</span><strong>{cows.length}</strong></div>
             </div>
-          </button>
-        </div>
-      </Modal>
+            <div className='herd-metric'>
+              <span className='herd-metric-icon'><AnimalIcon src={calfIcon} /></span>
+              <div><span>Partos em 30 dias</span><strong>{calvingsLast30Days}</strong></div>
+            </div>
+          </section>
 
-      <CowDetailsModal
-        open={isCowModalOpen}
-        cow={selectedCow}
-        events={cowEvents}
-        onClose={() => {
-          setIsCowModalOpen(false)
-          setSelectedCow(null)
-        }}
-        onEditCalving={(ev) => {
-          setEditingCalving(ev)
-          setIsNewCalvingOpen(true)
-        }}
-        onNewCalving={() => {
-          setEditingCalving(null)
-          setIsNewCalvingOpen(true)
-        }}
-      />
+          <section className='herd-directory' aria-labelledby='herd-title'>
+            <div className='herd-directory-header'>
+              <h2 id='herd-title'>Minhas vacas</h2>
+              <label className='herd-search'>
+                <Search size={19} aria-hidden='true' />
+                <input
+                  type='search'
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  aria-label='Buscar vaca por nome, brinco ou raça'
+                  placeholder='Buscar por nome, brinco ou raça'
+                />
+              </label>
+            </div>
 
-      <CalvingModal
+            {rows.length ? (
+              <ul className='herd-list'>
+                {rows.map(({ cow, lastEvent, count }) => (
+                  <li key={cow.id}>
+                    <button type='button' className='herd-row' onClick={() => openCow(cow)}>
+                      <span className='herd-portrait'><CowPortrait cow={cow} /></span>
+                      <span className='herd-row-copy'>
+                        <strong>{cow.name}</strong>
+                        {(cow.idLabel || cow.tag) && <span className='herd-tag'>Brinco {cow.idLabel || cow.tag}</span>}
+                        <span>{lastEvent ? 'Último parto em ' + formatDateBR(lastEvent.date) : 'Sem partos registrados'}</span>
+                      </span>
+                      <span className='herd-count'>{count} {count === 1 ? 'parto' : 'partos'}</span>
+                      <ChevronRight size={18} className='herd-chevron' aria-hidden='true' />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className='herd-empty'>
+                <span className='herd-metric-icon'><AnimalIcon src={cowIcon} /></span>
+                <strong>{cows.length ? 'Nenhuma vaca encontrada' : 'Cadastre sua primeira vaca'}</strong>
+                <p>{cows.length ? 'Tente outro nome, brinco ou raça.' : 'O histórico de cada vaca aparece aqui.'}</p>
+              </div>
+            )}
+          </section>
+        </>
+      )}
+
+      {isNewCalvingOpen && <CalvingModal
         open={isNewCalvingOpen}
         cows={cows}
         initialCowId={editingCalving?.cowId || selectedCow?.id || null}
@@ -710,7 +398,7 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
           setIsNewCalvingOpen(false)
           setEditingCalving(null)
         }}
-      />
+      />}
 
       <NewCowModal
         open={isNewCowOpen}
@@ -724,15 +412,13 @@ export function ReproductionPage({ cows, calvings }: ReproductionPageProps) {
   )
 }
 
-function CowDetailsModal({
-  open,
+function CowDetailsPage({
   cow,
   events,
   onClose,
   onNewCalving,
   onEditCalving
 }: {
-  open: boolean
   cow: Cow | null
   events: CalvingEvent[]
   onClose: () => void
@@ -777,10 +463,6 @@ function CowDetailsModal({
     },
     []
   )
-
-  React.useEffect(() => {
-    if (!open) setGalleryEvent(null)
-  }, [open])
 
   React.useEffect(() => {
     if (!galleryEvent) return
@@ -963,134 +645,107 @@ function CowDetailsModal({
     }
   }
 
-  const skeleton = (
-    <div className='space-y-4 animate-pulse'>
-      <div className='h-7 rounded-lg' style={{ background: 'var(--surface-2)' }} />
-      <div className='h-14 rounded-2xl border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
-      <div className='h-28 rounded-2xl border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
-      <div className='h-12 rounded-full border' style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }} />
-    </div>
-  )
+  if (!cow) return null
 
-  const lastEvent = events[0] || null
-  const breedLabel = cow?.breed || cow?.raca
-  const statusLabel = cow?.status
-  const lastEventLabel = lastEvent ? `Ultimo parto ${formatTimeSince(lastEvent.date)}` : null
-  const subtitleParts: string[] = []
-  if (lastEventLabel) subtitleParts.push(lastEventLabel)
-  if (!lastEventLabel && events.length === 0) subtitleParts.push('Sem partos registrados')
-  const headerSubtitle = subtitleParts.join(' \u2022 ')
-
+  const lastEvent = events[0]
+  const tag = cow.idLabel || cow.tag
+  const breed = cow.breed || cow.raca
   const handleAvatarClick = () => {
-    if (!cow) return
-    if (cow.photoDataUrl) {
-      openPhotoViewer(cow.photoDataUrl, cow.name, undefined, 'cow')
-    } else {
-      setIsCowPhotoPickerOpen(true)
-    }
+    if (cow.photoDataUrl) openPhotoViewer(cow.photoDataUrl, cow.name, undefined, 'cow')
+    else setIsCowPhotoPickerOpen(true)
   }
 
   return (
     <>
-      <Modal
-        open={open}
-        title={cow ? <CowHeader name={cow.name} subtitle={headerSubtitle || undefined} /> : 'Partos'}
-        onClose={onClose}
-        closeLabel={<X size={14} />}
-        closeAriaLabel='Fechar'
-        closeOnBackdrop
-        actions={
-          cow ? (
-            <button
-              type='button'
-              onClick={() => setIsActionsOpen(true)}
-              aria-label='Acoes da vaca'
-              className='h-9 w-9 rounded-full border flex items-center justify-center transition hover:brightness-110'
-              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
-            >
-              <MoreVertical size={16} />
-            </button>
-          ) : null
-        }
-      >
-        {!cow ? (
-          skeleton
-        ) : (
-          <div className='space-y-5'>
-            <div
-              className='-mx-6 border-b pb-1'
-              style={{ borderColor: 'var(--border)', opacity: 0.5 }}
-            />
+      <section className='cow-profile-screen' aria-labelledby='cow-profile-title'>
+        <div className='cow-profile-toolbar'>
+          <button type='button' onClick={onClose} className='ui-button cow-return'>
+            <ChevronLeft size={19} aria-hidden='true' /> Reprodução
+          </button>
+          <button type='button' className='ui-button' onClick={() => setIsActionsOpen(true)} aria-label='Ações da vaca'>
+            <MoreVertical size={18} aria-hidden='true' /> <span>Opções</span>
+          </button>
+        </div>
 
-            <CowIdentityStrip
-              cow={cow}
-              breed={breedLabel}
-              status={statusLabel}
-              isEditingName={isEditingName}
-              nameDraft={nameDraft}
-              onNameChange={setNameDraft}
-              onSaveName={saveName}
-              onCancelEdit={() => {
-                setIsEditingName(false)
-                setNameDraft(cow.name)
-              }}
-              canSaveName={Boolean(canSaveName)}
-              savingName={savingName}
-              onAvatarClick={handleAvatarClick}
-            />
+        <div className='cow-profile-hero'>
+          <button
+            type='button'
+            className='cow-hero-photo'
+            onClick={handleAvatarClick}
+            aria-label={cow.photoDataUrl ? 'Ampliar foto de ' + cow.name : 'Adicionar foto de ' + cow.name}
+          >
+            <CowPortrait cow={cow} />
+            <span className='cow-photo-control' aria-hidden='true'>
+              {cow.photoDataUrl ? <Maximize2 size={17} /> : <><Camera size={17} /> Adicionar foto</>}
+            </span>
+          </button>
 
-            <div className='space-y-2'>
-              <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
-                Partos
+          <div className='cow-profile-info'>
+            {isEditingName ? (
+              <form className='cow-name-form' onSubmit={(event) => { event.preventDefault(); if (canSaveName && !savingName) void saveName() }}>
+                <h1 id='cow-profile-title'>Editar nome</h1>
+                <input autoFocus aria-label='Nome da vaca' value={nameDraft} onChange={(event) => setNameDraft(event.target.value)} />
+                <div>
+                  <button type='submit' className='ui-button ui-button-primary' disabled={!canSaveName || savingName}>
+                    {savingName ? 'Salvando…' : 'Salvar nome'}
+                  </button>
+                  <button type='button' className='ui-button' onClick={() => { setIsEditingName(false); setNameDraft(cow.name) }}>
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            ) : <h1 id='cow-profile-title'>{cow.name}</h1>}
+            {(tag || breed || cow.status) && (
+              <ul className='cow-meta' aria-label='Identificação da vaca'>
+                {tag && <li>Brinco {tag}</li>}
+                {breed && <li>{breed}</li>}
+                {cow.status && <li>{cow.status}</li>}
+              </ul>
+            )}
+            <dl className='cow-profile-metrics'>
+              <div>
+                <dt>Partos registrados</dt>
+                <dd>{events.length}</dd>
               </div>
-
-              {events.length === 0 ? (
-                <div
-                  className='rounded-xl border px-3 py-3 text-sm'
-                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
-                >
-                  Nenhum parto registrado
-                </div>
-              ) : (
-                <div
-                  className='rounded-2xl border'
-                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                >
-                  {events.map((ev, index) => (
-                    <BirthItemRow
-                      key={ev.id}
-                      event={ev}
-                      isFirst={index === 0}
-                      onOpen={() => setGalleryEvent(ev)}
-                      onOpenMenu={() => setActiveEventMenu(ev)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className='pt-2'>
-              <button
-                type='button'
-                onClick={onNewCalving}
-                className='w-full h-12 rounded-full border text-sm font-semibold inline-flex items-center justify-center gap-2 transition hover:brightness-105'
-                style={{
-                  background: 'rgba(149, 193, 31, 0.12)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              >
-                <Plus size={16} />
-                Novo parto
-              </button>
-            </div>
+              <div>
+                <dt>Último parto</dt>
+                <dd>{lastEvent ? formatDateBR(lastEvent.date) : '—'}</dd>
+                {lastEvent && <dd className='cow-metric-note'>{formatTimeSince(lastEvent.date)}</dd>}
+              </div>
+            </dl>
+            <button type='button' onClick={onNewCalving} className='ui-button ui-button-primary cow-register'>
+              <Plus size={19} aria-hidden='true' /> Registrar parto
+            </button>
           </div>
-        )}
-      </Modal>
+        </div>
+
+        <section className='birth-history' aria-labelledby='birth-history-title'>
+          <h2 id='birth-history-title'>Histórico de partos</h2>
+          {events.length ? (
+            <ol className='birth-list'>
+              {events.map((event) => (
+                <BirthItemRow
+                  key={event.id}
+                  event={event}
+                  photos={getEventPhotos(event)}
+                  onOpen={() => setGalleryEvent(event)}
+                  onOpenMenu={() => setActiveEventMenu(event)}
+                />
+              ))}
+            </ol>
+          ) : (
+            <div className='herd-empty'>
+              <span className='herd-metric-icon'><AnimalIcon src={calfIcon} /></span>
+              <strong>Nenhum parto registrado</strong>
+            </div>
+          )}
+        </section>
+      </section>
 
       <CalvingGalleryModal
         open={Boolean(galleryEvent)}
         event={galleryEvent}
+        cowName={cow?.name || 'Vaca'}
         onClose={() => setGalleryEvent(null)}
         onAddPhoto={handleAddPhotoToEvent}
         onRemovePhoto={handleRemovePhotoFromEvent}
@@ -1235,7 +890,7 @@ function CowDetailsModal({
             className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 flex items-center gap-2'
             style={{ color: 'var(--text)' }}
           >
-            <Image size={16} />
+            <ImageIcon size={16} />
             Escolher da galeria
           </button>
           {cow?.photoDataUrl ? (
@@ -1274,7 +929,8 @@ function CowDetailsModal({
 
       {toast ? (
         <div
-          className='fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full border text-sm font-semibold shadow-lg'
+          role='status'
+          className='repro-toast fixed left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full border text-sm font-semibold shadow-lg'
           style={{
             background: toast.tone === 'error' ? 'rgba(255, 90, 106, 0.16)' : 'var(--surface)',
             borderColor: 'var(--border)',
@@ -1307,12 +963,14 @@ function CowDetailsModal({
 function CalvingGalleryModal({
   open,
   event,
+  cowName,
   onClose,
   onAddPhoto,
   onRemovePhoto
 }: {
   open: boolean
   event: CalvingEvent | null
+  cowName: string
   onClose: () => void
   onAddPhoto: (event: CalvingEvent, photoDataUrl: string) => Promise<void>
   onRemovePhoto: (event: CalvingEvent, photoIndex: number) => Promise<void>
@@ -1321,6 +979,7 @@ function CalvingGalleryModal({
   const [activeIndex, setActiveIndex] = useState(0)
   const cameraInputRef = React.useRef<HTMLInputElement>(null)
   const galleryInputRef = React.useRef<HTMLInputElement>(null)
+  const touchStartX = React.useRef(0)
 
   const photos = getEventPhotos(event)
   const hasPhotos = photos.length > 0
@@ -1332,6 +991,16 @@ function CalvingGalleryModal({
   React.useEffect(() => {
     setActiveIndex(0)
   }, [event?.id])
+
+  React.useEffect(() => {
+    if (!open || photos.length < 2) return
+    const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
+      if (keyboardEvent.key === 'ArrowLeft') setActiveIndex(current => (current - 1 + photos.length) % photos.length)
+      if (keyboardEvent.key === 'ArrowRight') setActiveIndex(current => (current + 1) % photos.length)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, photos.length])
 
   React.useEffect(() => {
     if (!photos.length) {
@@ -1391,21 +1060,17 @@ function CalvingGalleryModal({
       <Modal
         open={open}
         title='Fotos do parto'
+        size='fullscreen'
         onClose={onClose}
         closeLabel={<X size={14} />}
         closeAriaLabel='Fechar'
         closeOnBackdrop
       >
-        <div className='space-y-4'>
-          <div className='flex items-start justify-between gap-3 flex-wrap'>
-            <div className='text-sm space-y-1' style={{ color: 'var(--muted)' }}>
-              <div>
-                {formatDateBR(event.date)}
-                {event.sex ? ` \u2022 ${sexLabel(event.sex)}` : ''}
-              </div>
-              <div className='text-xs font-semibold' style={{ color: 'var(--accent, #b8ff2c)' }}>
-                {formatTimeSince(event.date)}
-              </div>
+        <div className='photo-gallery-shell'>
+          <div className='photo-gallery-toolbar'>
+            <div className='min-w-0'>
+              <p className='text-sm font-semibold truncate'>{cowName}</p>
+              <p className='mt-1 text-xs' style={{color:'var(--muted)'}}>{formatDateBR(event.date)}{event.sex ? ` · ${sexLabel(event.sex)}` : ''} · {formatTimeSince(event.date)}</p>
             </div>
             <div className='flex gap-2 flex-wrap justify-end'>
               {hasPhotos ? (
@@ -1423,7 +1088,7 @@ function CalvingGalleryModal({
                 type='button'
                 onClick={() => setIsPickerOpen(true)}
                 className='h-9 px-4 rounded-full text-xs font-semibold border transition hover:brightness-110 inline-flex items-center gap-2'
-                style={{ background: 'var(--accent, var(--primary, #b8ff2c))', borderColor: 'transparent', color: 'var(--accentText, #07110a)' }}
+                style={{ background: 'var(--accent, var(--primary, #087f68))', borderColor: 'transparent', color: 'var(--accent-ink)' }}
               >
                 <Plus size={14} />
                 Adicionar foto
@@ -1434,49 +1099,49 @@ function CalvingGalleryModal({
           {hasPhotos ? (
             <div className='space-y-3'>
               <div
-                className='relative rounded-2xl border overflow-hidden'
+                className='photo-gallery-frame'
                 style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
               >
-                <div
-                  className='absolute top-3 right-3 text-xs font-semibold px-3 py-1 rounded-full border'
-                  style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                >
+              <div className='photo-gallery-count'>
                   {`${activeIndex + 1}/${photos.length}`}
                 </div>
-                <div className='h-64 flex items-center justify-center bg-[#0f1624]'>
+                <div className='photo-gallery-stage'>
                   <img
                     src={photos[activeIndex]}
-                    alt='Foto do parto'
-                    className='h-full w-full object-contain'
+                    alt={`Foto ${activeIndex + 1} de ${photos.length} do parto de ${cowName}`}
+                    className='photo-gallery-image'
+                    onTouchStart={touchEvent => { touchStartX.current = touchEvent.touches[0]?.clientX ?? 0 }}
+                    onTouchEnd={touchEvent => {
+                      const delta = (touchEvent.changedTouches[0]?.clientX ?? 0) - touchStartX.current
+                      if (Math.abs(delta) > 45) delta < 0 ? goNext() : goPrev()
+                    }}
                   />
                 </div>
                 {photos.length > 1 ? (
                   <div className='absolute inset-y-0 left-0 right-0 flex items-center justify-between px-3 pointer-events-none'>
                     <button
                       type='button'
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        goPrev()
-                      }}
-                      className='h-10 w-10 rounded-full border flex items-center justify-center bg-black/30 backdrop-blur pointer-events-auto'
-                      style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+                      onClick={goPrev}
+                      className='photo-gallery-arrow'
+                      aria-label='Foto anterior'
                     >
-                      {'<'}
+                      <ChevronLeft size={22}/>
                     </button>
                     <button
                       type='button'
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        goNext()
-                      }}
-                      className='h-10 w-10 rounded-full border flex items-center justify-center bg-black/30 backdrop-blur pointer-events-auto'
-                      style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+                      onClick={goNext}
+                      className='photo-gallery-arrow'
+                      aria-label='Próxima foto'
                     >
-                      {'>'}
+                      <ChevronRight size={22}/>
                     </button>
                   </div>
                 ) : null}
               </div>
+              {photos.length > 1 && <div className='photo-gallery-thumbnails' aria-label='Selecionar foto'>
+                {photos.map((photo,index)=><button key={`${event.id}-${index}`} type='button' aria-label={`Abrir foto ${index+1}`} aria-pressed={activeIndex===index} onClick={()=>setActiveIndex(index)} className={`photo-gallery-thumbnail ${activeIndex===index?'is-active':''}`}><img src={photo} alt=''/></button>)}
+              </div>}
+              <p className='photo-gallery-hint'>{photos.length > 1 ? 'Deslize para navegar ou escolha uma miniatura' : 'Foto em tamanho ampliado'}</p>
             </div>
           ) : (
             <div
@@ -1520,7 +1185,7 @@ function CalvingGalleryModal({
             className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 flex items-center gap-2'
             style={{ color: 'var(--text)' }}
           >
-            <Image size={16} />
+            <ImageIcon size={16} />
             Escolher da galeria
           </button>
           <button
@@ -1565,7 +1230,7 @@ function ActionSheet({
   if (!open) return null
   return (
     <div
-      className='fixed inset-0 z-50 flex items-end justify-center px-4 pb-6'
+      className='fixed inset-0 z-[90] flex items-end justify-center px-4 pb-6'
       style={{ background: 'rgba(0,0,0,0.4)' }}
       onClick={onClose}
     >
@@ -1633,13 +1298,12 @@ function ImageViewerModal({
   return (
     <>
       <div
-        className='fixed inset-0 z-50 flex flex-col p-4'
-        style={{ background: 'rgba(0, 0, 0, 0.85)' }}
+        className='cow-photo-lightbox'
         onClick={onClose}
       >
-        <div className='flex flex-col h-full w-full max-w-5xl mx-auto' onClick={(e) => e.stopPropagation()}>
-          <div className='flex items-center justify-between gap-2 pb-3'>
-            <div className='text-sm font-semibold' style={{ color: 'var(--text)' }}>
+        <div className='cow-photo-lightbox-shell' onClick={(e) => e.stopPropagation()}>
+          <div className='cow-photo-lightbox-toolbar'>
+            <div className='min-w-0 truncate text-sm font-semibold text-white'>
               {title}
             </div>
             <div className='flex items-center gap-2 flex-wrap justify-end'>
@@ -1716,22 +1380,19 @@ function ImageViewerModal({
           </div>
           <div
             ref={viewportRef}
-            className='flex-1 overflow-auto rounded-2xl border bg-[#0b111a]'
-            style={{ borderColor: 'var(--border)' }}
+            className='cow-photo-lightbox-stage'
             onWheel={(e) => {
               if (!e.ctrlKey) return
               e.preventDefault()
               adjustZoom(e.deltaY > 0 ? -0.1 : 0.1)
             }}
           >
-            <div className='min-h-full min-w-full flex items-center justify-center p-3'>
-              <img
-                src={src}
-                alt={title}
-                className='object-contain rounded-2xl'
-                style={{ transform: `scale(${zoom})`, transformOrigin: 'center center', maxWidth: '100%', maxHeight: '100%' }}
-              />
-            </div>
+            <img
+              src={src}
+              alt={title}
+              className='cow-photo-lightbox-image'
+              style={{ transform: `scale(${zoom})`, transformOrigin: 'center center' }}
+            />
           </div>
         </div>
       </div>
@@ -1755,7 +1416,7 @@ function ImageViewerModal({
                 className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 flex items-center gap-2'
                 style={{ color: 'var(--text)' }}
               >
-                <Image size={16} />
+                <ImageIcon size={16} />
                 Escolher da galeria
               </button>
               <button
@@ -1812,6 +1473,7 @@ function CalvingModal({
   const [sex, setSex] = useState<CalvingSex>('FEMEA')
   const [photos, setPhotos] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [isPhotoPickerOpen, setIsPhotoPickerOpen] = useState(false)
   const cameraInputRef = React.useRef<HTMLInputElement>(null)
   const galleryInputRef = React.useRef<HTMLInputElement>(null)
@@ -1841,6 +1503,7 @@ function CalvingModal({
       return
     }
 
+    setSaveError('')
     // Reset
     if (editing) {
       setMode('existing')
@@ -1858,19 +1521,14 @@ function CalvingModal({
     setSex('FEMEA')
     setPhotos([])
     setNewCowName('')
-    setMode('existing')
-
-    if (initialCowId) {
-      setSelectedCowId(initialCowId)
-    } else {
-      setSelectedCowId(cows[0]?.id || '')
-    }
-  }, [open, editing?.id, initialCowId, cows])
+    setMode(cows.length ? 'existing' : 'new')
+    setSelectedCowId(initialCowId || cows[0]?.id || '')
+  }, [open, editing?.id, initialCowId])
 
   const isTodaySelected = date === todayValue
   const isYesterdaySelected = date === yesterdayValue
 
-  const title = editing ? 'Editar parto' : 'Cadastrar novo parto'
+  const title = editing ? 'Editar parto' : 'Novo parto'
   const primaryPhoto = photos[0]
 
   const handlePickPhoto = async (file?: File | null) => {
@@ -1907,6 +1565,7 @@ function CalvingModal({
 
   const save = async () => {
     if (!canSave) return
+    setSaveError('')
     setSaving(true)
 
     try {
@@ -1933,347 +1592,110 @@ function CalvingModal({
       onSaved()
     } catch (e) {
       console.error('Falha ao salvar parto', e)
-      showToast('Nao foi possivel salvar. Tente novamente.', 'error')
+      setSaveError('Não foi possível salvar. Tente novamente.')
     } finally {
       setSaving(false)
     }
   }
 
-  const primaryLabel = editing ? 'Salvar alteracoes' : 'Registrar parto'
+  const primaryLabel = editing ? 'Salvar alterações' : 'Registrar parto'
 
   return (
     <>
       <Modal
         open={open}
         title={title}
+        size='wide'
         onClose={onClose}
         closeOnBackdrop
         closeLabel={<X size={14} />}
         closeAriaLabel='Fechar'
       >
-        <div
-          className='space-y-4 overflow-y-auto'
-          style={{
-            maxHeight: 'calc(100vh - 120px)',
-            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))'
-          }}
-        >
-          <div
-            className='rounded-2xl border p-4 space-y-3'
-            style={{
-              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
-              borderColor: 'var(--border)',
-              boxShadow: '0 18px 40px -32px var(--shadow)'
-            }}
-          >
-            <div className='flex items-center justify-between gap-2'>
-              <div
-                className='text-[11px] font-semibold uppercase tracking-wide'
-                style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
-              >
-                Vaca (obrigatorio)
-              </div>
-              {!editing && (
+        <form className='calving-form' onSubmit={(event) => {
+          event.preventDefault()
+          if (!saving) void save()
+        }}>
+          {saveError && <p role='alert' className='calving-error'>{saveError}</p>}
+
+          <section className='calving-fieldset' aria-labelledby='calving-cow-title'>
+            <div className='calving-field-heading'>
+              <h3 id='calving-cow-title'>Vaca</h3>
+              {!editing && cows.length > 0 && (
                 <button
                   type='button'
+                  className='ui-button'
                   onClick={() => {
                     if (mode === 'existing') {
                       setMode('new')
                       setNewCowName('')
-                      setSelectedCowId('')
                     } else {
                       setMode('existing')
                     }
                   }}
-                  className='h-9 px-3 rounded-full text-xs font-semibold border inline-flex items-center gap-2 transition hover:brightness-110'
-                  style={{
-                    background: 'var(--surface)',
-                    borderColor: 'var(--border)',
-                    color: 'var(--text)'
-                  }}
                 >
-                  {mode === 'new' ? (
-                    'Selecionar vaca'
-                  ) : (
-                    <>
-                      <Plus size={14} />
-                      Nova vaca
-                    </>
-                  )}
+                  {mode === 'new' ? 'Vaca cadastrada' : <><Plus size={16} aria-hidden='true' /> Nova vaca</>}
                 </button>
               )}
             </div>
-
-            {!editing ? (
-              mode === 'existing' ? (
-                <div className='relative'>
-                  <Search
-                    size={16}
-                    className='absolute left-3 top-1/2 -translate-y-1/2'
-                    style={{ color: 'var(--muted)' }}
-                  />
-                  <select
-                    value={selectedCowId}
-                    onChange={(e) => setSelectedCowId(e.target.value)}
-                    className='w-full h-11 rounded-xl border pl-9 pr-3 outline-none appearance-none'
-                    style={{
-                      background: 'var(--surface-2)',
-                      borderColor: 'var(--border)',
-                      color: 'var(--text)'
-                    }}
-                  >
-                    {cows.map((cow) => (
-                      <option key={cow.id} value={cow.id}>
-                        {cow.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div className='relative'>
-                  <Search
-                    size={16}
-                    className='absolute left-3 top-1/2 -translate-y-1/2'
-                    style={{ color: 'var(--muted)' }}
-                  />
-                  <input
-                    value={newCowName}
-                    onChange={(e) => setNewCowName(e.target.value)}
-                    placeholder='Nome da vaca...'
-                    className='w-full h-11 rounded-xl border pl-9 pr-3 outline-none'
-                    style={{
-                      background: 'var(--surface-2)',
-                      borderColor: 'var(--border)',
-                      color: 'var(--text)'
-                    }}
-                  />
-                </div>
-              )
+            {editing ? (
+              <p className='calving-cow-name'>{cows.find((cow) => cow.id === editing.cowId)?.name || 'Vaca'}</p>
+            ) : mode === 'existing' ? (
+              <select aria-label='Vaca cadastrada' required value={selectedCowId} onChange={(event) => setSelectedCowId(event.target.value)}>
+                <option value='' disabled>Selecione uma vaca</option>
+                {cows.map((cow) => <option key={cow.id} value={cow.id}>{cow.name}</option>)}
+              </select>
             ) : (
-              <div
-                className='rounded-xl border px-3 py-2 text-sm'
-                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--muted)' }}
-              >
-                Vaca do registro:{' '}
-                <b style={{ color: 'var(--text)' }}>{cows.find((c) => c.id === editing.cowId)?.name || 'Vaca'}</b>
-              </div>
+              <input aria-label='Nome da nova vaca' required value={newCowName} onChange={(event) => setNewCowName(event.target.value)} placeholder='Nome da nova vaca' />
             )}
-          </div>
+          </section>
 
-          <div
-            className='rounded-2xl border p-4 space-y-4'
-            style={{
-              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
-              borderColor: 'var(--border)',
-              boxShadow: '0 18px 40px -32px var(--shadow)'
-            }}
-          >
-            <div
-              className='text-[11px] font-semibold uppercase tracking-wide'
-              style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
-            >
-              Informacoes do parto
-            </div>
-
-            <div className='space-y-2'>
-              <div className='flex items-center justify-between gap-3 flex-wrap'>
-                <div
-                  className='text-[11px] font-semibold uppercase tracking-wide'
-                  style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
-                >
-                  Data do parto (obrigatorio)
-                </div>
-                <div className='flex items-center gap-2'>
-                  <button
-                    type='button'
-                    onClick={() => setQuickDate(0)}
-                    className='h-9 px-4 rounded-full text-xs font-semibold border transition'
-                    style={{
-                      background: isTodaySelected ? 'var(--accent)' : 'var(--surface)',
-                      borderColor: isTodaySelected ? 'var(--accent)' : 'var(--border)',
-                      color: isTodaySelected ? '#0a120a' : 'var(--text)',
-                      boxShadow: isTodaySelected ? '0 12px 32px -22px var(--shadow)' : 'none'
-                    }}
-                  >
-                    Hoje
-                  </button>
-                  <button
-                    type='button'
-                    onClick={() => setQuickDate(1)}
-                    className='h-9 px-4 rounded-full text-xs font-semibold border transition'
-                    style={{
-                      background: isYesterdaySelected ? 'var(--accent)' : 'var(--surface)',
-                      borderColor: isYesterdaySelected ? 'var(--accent)' : 'var(--border)',
-                      color: isYesterdaySelected ? '#0a120a' : 'var(--text)',
-                      boxShadow: isYesterdaySelected ? '0 12px 32px -22px var(--shadow)' : 'none'
-                    }}
-                  >
-                    Ontem
-                  </button>
-                </div>
-              </div>
-              <div className='relative'>
-                <CalendarDays
-                  size={16}
-                  className='absolute left-3 top-1/2 -translate-y-1/2'
-                  style={{ color: 'var(--muted)' }}
-                />
-                <input
-                  type='date'
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className='w-full h-12 rounded-xl border pl-10 pr-3 outline-none text-sm'
-                  style={{
-                    background: 'var(--surface-2)',
-                    borderColor: 'var(--border)',
-                    color: 'var(--text)'
-                  }}
-                />
+          <section className='calving-fieldset' aria-labelledby='calving-date-title'>
+            <div className='calving-field-heading'>
+              <label id='calving-date-title' htmlFor='calving-date'>Data do parto</label>
+              <div className='calving-choice' role='group' aria-label='Atalhos de data'>
+                <button type='button' className='ui-button' aria-pressed={isTodaySelected} onClick={() => setQuickDate(0)}>Hoje</button>
+                <button type='button' className='ui-button' aria-pressed={isYesterdaySelected} onClick={() => setQuickDate(1)}>Ontem</button>
               </div>
             </div>
+            <input id='calving-date' type='date' required value={date} onChange={(event) => setDate(event.target.value)} />
 
-            <div className='space-y-2'>
-              <div
-                className='text-[11px] font-semibold uppercase tracking-wide'
-                style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
-              >
-                Sexo
-              </div>
-              <div className='grid grid-cols-2 gap-2'>
-                <button
-                  type='button'
-                  onClick={() => setSex('MACHO')}
-                  className='h-12 rounded-full border px-4 text-sm font-semibold flex items-center justify-center gap-2 transition'
-                  style={{
-                    background: sex === 'MACHO' ? 'rgba(184, 255, 44, 0.12)' : 'var(--surface-2)',
-                    borderColor: sex === 'MACHO' ? 'var(--accent)' : 'var(--border)',
-                    color: sex === 'MACHO' ? 'var(--text)' : 'var(--muted)',
-                    boxShadow: sex === 'MACHO' ? '0 12px 32px -22px var(--shadow)' : 'none'
-                  }}
-                >
-                  <CircleDot size={16} />
-                  Macho
-                </button>
-                <button
-                  type='button'
-                  onClick={() => setSex('FEMEA')}
-                  className='h-12 rounded-full border px-4 text-sm font-semibold flex items-center justify-center gap-2 transition'
-                  style={{
-                    background: sex === 'FEMEA' ? 'rgba(184, 255, 44, 0.12)' : 'var(--surface-2)',
-                    borderColor: sex === 'FEMEA' ? 'var(--accent)' : 'var(--border)',
-                    color: sex === 'FEMEA' ? 'var(--text)' : 'var(--muted)',
-                    boxShadow: sex === 'FEMEA' ? '0 12px 32px -22px var(--shadow)' : 'none'
-                  }}
-                >
-                  <Circle size={16} />
-                  Femea
-                </button>
-              </div>
+            <div className='calving-choice calving-sex' role='group' aria-label='Sexo do bezerro'>
+              <button type='button' className='ui-button' aria-pressed={sex === 'MACHO'} onClick={() => setSex('MACHO')}>
+                {sex === 'MACHO' ? <CircleDot size={16} /> : <Circle size={16} />} Macho
+              </button>
+              <button type='button' className='ui-button' aria-pressed={sex === 'FEMEA'} onClick={() => setSex('FEMEA')}>
+                {sex === 'FEMEA' ? <CircleDot size={16} /> : <Circle size={16} />} Fêmea
+              </button>
             </div>
-          </div>
+          </section>
 
-          <div
-            className='rounded-2xl border p-4 space-y-3'
-            style={{
-              background: 'linear-gradient(180deg, #111924 0%, #0f1620 100%)',
-              borderColor: 'var(--border)',
-              boxShadow: '0 18px 40px -32px var(--shadow)'
-            }}
-          >
-            <div
-              className='text-[11px] font-semibold uppercase tracking-wide'
-              style={{ color: 'var(--muted)', letterSpacing: '0.06em' }}
-            >
-              Foto
+          <section className='calving-fieldset' aria-labelledby='calving-photo-title'>
+            <div className='calving-field-heading'>
+              <h3 id='calving-photo-title'>Foto</h3>
+              <span>{photos.length ? photos.length + (photos.length === 1 ? ' foto' : ' fotos') : 'Opcional'}</span>
             </div>
-
             {primaryPhoto ? (
-              <div
-                className='rounded-xl border overflow-hidden relative'
-                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-              >
-                {photos.length > 1 ? (
-                  <div
-                    className='absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded-full border'
-                    style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
-                  >
-                    {`1/${photos.length}`}
-                  </div>
-                ) : null}
-                <img src={primaryPhoto} alt='Preview da foto' className='w-full h-48 object-cover' />
-                <div className='absolute inset-x-3 bottom-3 flex justify-end gap-2'>
-                  <button
-                    type='button'
-                    onClick={() => setIsPhotoPickerOpen(true)}
-                    className='h-10 px-4 rounded-full text-sm font-semibold border inline-flex items-center gap-2 transition hover:brightness-110'
-                    style={{
-                      background: 'var(--surface)',
-                      borderColor: 'var(--border)',
-                      color: 'var(--text)'
-                    }}
-                  >
-                    Trocar
-                  </button>
-                  <button
-                    type='button'
-                    onClick={() => setPhotos((prev) => prev.slice(1))}
-                    className='h-10 px-4 rounded-full text-sm font-semibold border transition hover:brightness-110'
-                    style={{
-                      background: 'rgba(255, 90, 106, 0.16)',
-                      borderColor: 'var(--border)',
-                      color: 'var(--danger)'
-                    }}
-                  >
-                    Remover
-                  </button>
+              <div className='calving-preview'>
+                <img src={primaryPhoto} alt='Prévia da foto do parto' />
+                <div className='calving-choice'>
+                  <button type='button' className='ui-button' onClick={() => setIsPhotoPickerOpen(true)}>Trocar foto</button>
+                  <button type='button' className='ui-button' onClick={() => setPhotos((previous) => previous.slice(1))}>Remover foto</button>
                 </div>
               </div>
             ) : (
-              <button
-                type='button'
-                onClick={() => setIsPhotoPickerOpen(true)}
-                className='h-12 px-4 rounded-xl border inline-flex items-center gap-2 transition hover:brightness-110 text-sm font-semibold'
-                style={{
-                  background: 'var(--surface-2)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              >
-                <Camera size={18} />
-                Adicionar foto (opcional)
+              <button type='button' className='ui-button calving-add-photo' onClick={() => setIsPhotoPickerOpen(true)}>
+                <Camera size={19} aria-hidden='true' /> Adicionar foto
               </button>
             )}
-          </div>
+          </section>
 
-          <div className='space-y-2 pt-1'>
-            <button
-              type='button'
-              onClick={save}
-              disabled={!canSave || saving}
-              className='w-full h-12 rounded-full text-sm font-semibold border transition disabled:opacity-60'
-              style={{
-                background: '#95c11f',
-                borderColor: '#95c11f',
-                color: '#0c120b',
-                boxShadow: '0 16px 40px -26px var(--shadow)'
-              }}
-            >
-              {saving ? 'Salvando...' : primaryLabel}
-            </button>
-            <button
-              type='button'
-              onClick={onClose}
-              className='w-full h-11 rounded-full text-sm font-semibold border transition hover:brightness-110'
-              style={{
-                background: 'transparent',
-                borderColor: 'var(--border)',
-                color: 'var(--muted)'
-              }}
-            >
-              Cancelar
+          <div className='calving-form-actions'>
+            <button type='button' className='ui-button' onClick={onClose}>Cancelar</button>
+            <button type='submit' className='ui-button ui-button-primary' disabled={!canSave || saving}>
+              {saving ? 'Salvando…' : primaryLabel}
             </button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       <ActionSheet open={isPhotoPickerOpen} onClose={() => setIsPhotoPickerOpen(false)}>
@@ -2293,7 +1715,7 @@ function CalvingModal({
             className='w-full text-left px-3 py-3 rounded-xl transition hover:brightness-110 flex items-center gap-2'
             style={{ color: 'var(--text)' }}
           >
-            <Image size={16} />
+            <ImageIcon size={16} />
             Escolher da galeria
           </button>
           <button
@@ -2337,9 +1759,10 @@ function NewCowModal({
 }) {
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   React.useEffect(() => {
-    if (open) setName('')
+    if (open) { setName(''); setSaveError('') }
   }, [open])
 
   const canSave = Boolean(name.trim())
@@ -2347,6 +1770,7 @@ function NewCowModal({
   const save = async () => {
     const trimmedName = name.trim()
     if (!trimmedName) return
+    setSaveError('')
     setSaving(true)
     try {
       const newCow: Cow = { id: crypto.randomUUID(), name: trimmedName }
@@ -2354,7 +1778,7 @@ function NewCowModal({
       onSaved(newCow)
     } catch (e) {
       console.error('Falha ao salvar vaca', e)
-      showToast('Nao foi possivel salvar. Tente novamente.', 'error')
+      setSaveError('Não foi possível salvar. Tente novamente.')
     } finally {
       setSaving(false)
     }
@@ -2362,12 +1786,14 @@ function NewCowModal({
 
   return (
     <Modal open={open} title='Nova vaca' onClose={onClose} closeOnBackdrop>
+      {saveError && <p role='alert' className='text-sm text-red-700'>{saveError}</p>}
       <div className='space-y-4'>
         <div className='space-y-2'>
           <div className='text-xs font-semibold' style={{ color: 'var(--muted)' }}>
-            Nome da vaca
+            <label htmlFor='new-cow-name'>Nome da vaca</label>
           </div>
           <input
+            id='new-cow-name'
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder='Nome da vaca...'
@@ -2387,9 +1813,9 @@ function NewCowModal({
             disabled={!canSave || saving}
             className='flex-1 h-11 rounded-xl text-sm font-semibold border transition disabled:opacity-60'
             style={{
-              background: 'var(--accent, var(--primary, #b8ff2c))',
+              background: 'var(--accent, var(--primary, #087f68))',
               borderColor: 'transparent',
-              color: 'var(--accentText, #07110a)'
+              color: 'var(--accent-ink)'
             }}
           >
             {saving ? 'Salvando...' : 'Salvar'}

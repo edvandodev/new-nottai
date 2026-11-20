@@ -116,13 +116,13 @@ export function SettingsPage({
     onClose: () => void
   }) =>
     !open ? null : (
-      <div className='fixed inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center px-4 z-50'>
-        <div className='w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4'>
+      <div className='fixed inset-0 bg-white backdrop-blur-sm flex items-center justify-center px-4 z-50'>
+        <div className='w-full max-w-md bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl space-y-4'>
           <div className='flex items-center justify-between'>
-            <h2 className='text-lg font-semibold text-white'>{title}</h2>
+            <h2 className='text-lg font-semibold text-slate-800'>{title}</h2>
             <button
               onClick={onClose}
-              className='text-slate-400 hover:text-white text-sm'
+              className='text-slate-400 hover:text-slate-800 text-sm'
             >
               Fechar
             </button>
@@ -178,36 +178,36 @@ export function SettingsPage({
         onClose={() => setShowEmailModal(false)}
       >
         {error && (
-          <div className='p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-200 text-sm'>
+          <div className='p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-700 text-sm'>
             {error}
           </div>
         )}
         {success && (
-          <div className='p-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-100 text-sm'>
+          <div className='p-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 text-sm'>
             {success}
           </div>
         )}
         <div className='space-y-3'>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>Novo e-mail</label>
+            <label className='text-sm text-slate-700'>Novo e-mail</label>
             <input
               type='email'
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className='w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500'
               placeholder='novo@email.com'
               disabled={loadingEmail}
             />
           </div>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>
+            <label className='text-sm text-slate-700'>
               Senha atual (pode ser solicitada)
             </label>
             <input
               type='password'
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className='w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500'
               placeholder='Sua senha'
               disabled={loadingEmail}
             />
@@ -215,7 +215,7 @@ export function SettingsPage({
           <button
             onClick={() => handleUpdateEmail()}
             disabled={loadingEmail}
-            className='w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg font-semibold transition-all active:scale-[0.99]'
+            className='w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg font-semibold transition-all active:scale-[0.99]'
           >
             {loadingEmail ? 'Salvando...' : 'Salvar novo e-mail'}
           </button>
@@ -277,45 +277,45 @@ export function SettingsPage({
         onClose={() => setShowPasswordModal(false)}
       >
         {error && (
-          <div className='p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-200 text-sm'>
+          <div className='p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-700 text-sm'>
             {error}
           </div>
         )}
         {success && (
-          <div className='p-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-100 text-sm'>
+          <div className='p-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 text-sm'>
             {success}
           </div>
         )}
         <div className='space-y-3'>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>Senha atual</label>
+            <label className='text-sm text-slate-700'>Senha atual</label>
             <input
               type='password'
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className='w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500'
               placeholder='Senha atual'
               disabled={loading}
             />
           </div>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>Nova senha</label>
+            <label className='text-sm text-slate-700'>Nova senha</label>
             <input
               type='password'
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className='w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500'
               placeholder='Nova senha'
               disabled={loading}
             />
           </div>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>Confirmar nova senha</label>
+            <label className='text-sm text-slate-700'>Confirmar nova senha</label>
             <input
               type='password'
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className='w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500'
               placeholder='Repita a senha'
               disabled={loading}
             />
@@ -323,7 +323,7 @@ export function SettingsPage({
           <button
             onClick={() => handleUpdatePassword()}
             disabled={loading}
-            className='w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg font-semibold transition-all active:scale-[0.99]'
+            className='w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg font-semibold transition-all active:scale-[0.99]'
           >
             {loading ? 'Salvando...' : 'Salvar nova senha'}
           </button>
@@ -380,31 +380,31 @@ export function SettingsPage({
         onClose={() => setShowDeleteModal(false)}
       >
         {error && (
-          <div className='p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-200 text-sm'>
+          <div className='p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-700 text-sm'>
             {error}
           </div>
         )}
         <div className='space-y-3'>
-          <p className='text-sm text-slate-300'>
+          <p className='text-sm text-slate-700'>
             Isso apaga sua conta e seus dados deste dispositivo.
           </p>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>Digite EXCLUIR</label>
+            <label className='text-sm text-slate-700'>Digite EXCLUIR</label>
             <input
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500'
+              className='w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500'
               placeholder='EXCLUIR'
               disabled={loading}
             />
           </div>
           <div className='space-y-1'>
-            <label className='text-sm text-slate-300'>Senha atual (pode ser solicitada)</label>
+            <label className='text-sm text-slate-700'>Senha atual (pode ser solicitada)</label>
             <input
               type='password'
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className='w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500'
+              className='w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500'
               placeholder='Senha'
               disabled={loading}
             />
@@ -443,25 +443,25 @@ export function SettingsPage({
       style={{
         background: 'var(--bg)',
         color: 'var(--text)',
-        paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))',
-        paddingLeft: 16,
-        paddingRight: 16
+        paddingTop: 0,
+        paddingBottom: 0,
+        paddingLeft: 0,
+        paddingRight: 0
       }}
     >
-      <div className='flex items-center gap-4 mb-6'>
+      <div className='ui-page-heading flex items-center gap-4 mb-6'>
         <div
           className='h-12 w-12 rounded-2xl flex items-center justify-center'
           style={{
-            background: 'rgba(184, 255, 44, 0.14)',
-            border: '1px solid rgba(184, 255, 44, 0.4)',
+            background: 'var(--accent-soft)',
+            border: '1px solid var(--border)',
             color: 'var(--accent)'
           }}
         >
           <SettingsIcon size={20} />
         </div>
         <div>
-          <h1 className='text-[24px] font-semibold leading-none'>
+          <h1>
             {'Configura\u00e7\u00f5es'}
           </h1>
           <p className='mt-1 text-xs' style={{ color: 'var(--muted)' }}>
@@ -491,8 +491,8 @@ export function SettingsPage({
                 <div
                   className='h-10 w-10 rounded-xl flex items-center justify-center'
                   style={{
-                    background: 'rgba(184, 255, 44, 0.14)',
-                    border: '1px solid rgba(184, 255, 44, 0.4)',
+                    background: 'rgba(8, 127, 104, 0.14)',
+                    border: '1px solid rgba(8, 127, 104, 0.4)',
                     color: 'var(--accent)'
                   }}
                 >
@@ -508,8 +508,8 @@ export function SettingsPage({
               <span
                 className='px-3 py-1 rounded-full text-sm font-semibold tabular-nums'
                 style={{
-                  background: 'rgba(184, 255, 44, 0.18)',
-                  border: '1px solid rgba(184, 255, 44, 0.5)',
+                  background: 'rgba(8, 127, 104, 0.18)',
+                  border: '1px solid rgba(8, 127, 104, 0.5)',
                   color: 'var(--accent)'
                 }}
               >
@@ -670,8 +670,8 @@ export function SettingsPage({
                 <div
                   className='h-10 w-10 rounded-xl flex items-center justify-center'
                   style={{
-                    background: 'rgba(184, 255, 44, 0.14)',
-                    border: '1px solid rgba(184, 255, 44, 0.4)',
+                    background: 'rgba(8, 127, 104, 0.14)',
+                    border: '1px solid rgba(8, 127, 104, 0.4)',
                     color: 'var(--accent)'
                   }}
                 >
@@ -703,8 +703,8 @@ export function SettingsPage({
                 <div
                   className='h-10 w-10 rounded-xl flex items-center justify-center'
                   style={{
-                    background: 'rgba(184, 255, 44, 0.14)',
-                    border: '1px solid rgba(184, 255, 44, 0.4)',
+                    background: 'rgba(8, 127, 104, 0.14)',
+                    border: '1px solid rgba(8, 127, 104, 0.4)',
                     color: 'var(--accent)'
                   }}
                 >

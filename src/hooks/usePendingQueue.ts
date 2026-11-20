@@ -25,7 +25,7 @@ export function usePendingQueue() {
       setItems(list)
       refreshCounts()
     })
-    return unsub
+    return () => { unsub() }
   }, [refresh, refreshCounts])
 
   return {

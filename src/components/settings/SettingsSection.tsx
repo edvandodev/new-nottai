@@ -13,7 +13,7 @@ export function SettingsSection({
 }: SettingsSectionProps) {
   return (
     <section
-      className={`bg-slate-900/70 border border-slate-800 rounded-2xl overflow-hidden shadow-sm ${className}`}
+      className={`bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm ${className}`}
       style={{
         backgroundColor: 'var(--surface)',
         borderColor: 'var(--border)',

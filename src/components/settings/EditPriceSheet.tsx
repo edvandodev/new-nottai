@@ -217,11 +217,11 @@ export function EditPriceSheet({
                 className='flex-1 py-3 rounded-xl font-semibold transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed'
                 style={{
                   background:
-                    'linear-gradient(135deg, rgba(184, 255, 44, 1) 0%, rgba(154, 236, 38, 1) 100%)',
+                    'var(--primary)',
                   color: 'var(--accent-ink)',
                   boxShadow:
-                    '0 14px 32px -20px rgba(184, 255, 44, 0.65), 0 0 16px rgba(184, 255, 44, 0.2)',
-                  border: '1px solid rgba(184, 255, 44, 0.55)'
+                    '0 14px 32px -20px rgba(8, 127, 104, 0.65), 0 0 16px rgba(8, 127, 104, 0.2)',
+                  border: '1px solid rgba(8, 127, 104, 0.55)'
                 }}
               >
                 {isSaving ? 'Salvando...' : 'Salvar altera\u00e7\u00f5es'}

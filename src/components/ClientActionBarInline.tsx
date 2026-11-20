@@ -19,7 +19,7 @@ export function ClientActionBarInline({
   className = ''
 }: ClientActionBarInlineProps) {
   const baseButton =
-    'relative h-12 rounded-[14px] px-3 font-semibold text-sm inline-flex items-center justify-center gap-2 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface,#0b0f14)]'
+    'relative h-12 rounded-[14px] px-3 font-semibold text-sm inline-flex items-center justify-center gap-2 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface,#f6f8f7)]'
 
   const interactive = 'hover:-translate-y-[1px] hover:brightness-[1.04] active:scale-[0.98] active:brightness-95'
   const disabledState = 'opacity-60 cursor-not-allowed'
@@ -33,7 +33,7 @@ export function ClientActionBarInline({
         className={`${baseButton} ${interactive} flex-[1.1] min-w-[0]`}
         style={{
           background:
-            'linear-gradient(135deg, var(--primary, #2373ff), #1f5cc8)',
+            'var(--primary)',
           color: '#ffffff',
           boxShadow: '0 10px 30px -16px rgba(35, 115, 255, 0.6)',
           border: '1px solid rgba(71, 123, 255, 0.45)'
@@ -62,7 +62,7 @@ export function ClientActionBarInline({
                 background: 'var(--accent, #bcff38)',
                 color: 'var(--accent-ink, #0c1014)',
                 border: '1px solid var(--accent, #bcff38)',
-                boxShadow: '0 12px 30px -18px rgba(188, 255, 56, 0.65)'
+                boxShadow: '0 12px 30px -18px rgba(8, 127, 104, 0.65)'
               }
         }
       >

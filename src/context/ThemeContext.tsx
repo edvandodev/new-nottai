@@ -10,7 +10,7 @@ export type ThemeDefinition = {
 const STORAGE_KEY = 'nottai.theme'
 
 const themeDefinitions: ThemeDefinition[] = [
-  { id: 'theme-01', name: 'Tema 01 (Atual)', enabled: true, locked: false },
+  { id: 'theme-01', name: 'Claro · Verde', enabled: true, locked: false },
   // { id: 'theme-02', name: 'Tema 02', enabled: false, locked: true },
   // { id: 'theme-03', name: 'Tema 03', enabled: false, locked: true }
 ]

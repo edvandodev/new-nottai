@@ -30,13 +30,13 @@ export function SettingsItem({
       disabled={isDisabled}
       className={`w-full min-h-[52px] flex items-center gap-3 px-4 py-3.5 text-left transition-all ${
         isInteractive
-          ? 'active:scale-[0.995] hover:bg-slate-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60'
+          ? 'active:scale-[0.995] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60'
           : 'cursor-default'
       } ${isDisabled ? 'opacity-70' : ''}`}
       style={{ color: danger ? 'var(--danger)' : 'var(--text)' }}
     >
       <div
-        className='h-11 w-11 rounded-2xl bg-slate-800/70 border border-slate-700/60 flex items-center justify-center text-slate-200 shrink-0'
+        className='h-11 w-11 rounded-2xl bg-white border border-slate-200/60 flex items-center justify-center text-slate-700 shrink-0'
         style={{
           backgroundColor: 'var(--surface-2)',
           borderColor: 'var(--border)',
@@ -55,7 +55,7 @@ export function SettingsItem({
           </p>
         )}
       </div>
-      <div className='flex items-center gap-2 text-sm text-slate-300 shrink-0'>
+      <div className='flex items-center gap-2 text-sm text-slate-700 shrink-0'>
         {rightSlot}
         {!rightSlot && (
           <ChevronRight size={18} className='text-slate-500' />

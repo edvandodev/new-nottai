@@ -1,4 +1,4 @@
-﻿import { jsPDF } from 'jspdf'
+import { jsPDF } from 'jspdf'
 import { Filesystem, Directory } from '@capacitor/filesystem'
 import { FileOpener } from '@capawesome-team/capacitor-file-opener'
 import { Share } from '@capacitor/share'
@@ -1169,7 +1169,7 @@ export const generateReceipt = (
             dialogTitle: 'Compartilhar PDF'
           })
         } else {
-          await FileOpener.openFile({ path: target, contentType: 'application/pdf' })
+          await FileOpener.openFile({ path: target, mimeType: 'application/pdf' })
         }
         return
       }

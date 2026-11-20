@@ -263,10 +263,10 @@ export function PaymentsPage({
       style={{
         background: 'var(--bg)',
         color: 'var(--text)',
-        paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))',
+        paddingTop: 0,
         paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0px))',
-        paddingLeft: 16,
-        paddingRight: 16
+        paddingLeft: 0,
+        paddingRight: 0
       }}
     >
       {showFloatingHeader && (
@@ -278,7 +278,7 @@ export function PaymentsPage({
             paddingLeft: 16,
             paddingRight: 16,
             background:
-              'linear-gradient(180deg, rgba(11, 15, 20, 0.98) 0%, rgba(11, 15, 20, 0.7) 45%, rgba(11, 15, 20, 0) 100%)',
+              'linear-gradient(180deg, var(--bg) 25%, transparent 100%)',
             backdropFilter: 'blur(10px)',
             WebkitBackdropFilter: 'blur(10px)'
           }}
@@ -289,9 +289,9 @@ export function PaymentsPage({
         </div>
       )}
 
-      <div className='mt-6 flex items-start justify-between gap-4 mb-4'>
+      <div className='ui-page-heading flex items-start justify-between gap-4 mb-4'>
         <div>
-          <h1 className='text-[28px] font-semibold leading-none'>Pagamentos</h1>
+          <h1>Pagamentos</h1>
           <p className='mt-2 text-xs' style={{ color: 'var(--muted)' }}>
             {payments.length} {payments.length === 1 ? 'registro' : 'registros'}
           </p>
@@ -303,11 +303,10 @@ export function PaymentsPage({
           icon={<Plus size={16} />}
           className='h-9 w-9 mt-1'
           style={{
-            backgroundColor: 'var(--accent)',
-            color: 'var(--accent-ink)',
-            boxShadow: '0 8px 20px -14px var(--shadow)',
-            width: 38,
-            height: 38
+            backgroundColor: 'var(--highlight)',
+            color: 'var(--highlight-ink)',
+            width: 44,
+            height: 44
           }}
         />
       </div>
@@ -329,7 +328,7 @@ export function PaymentsPage({
               style={{
                 background: 'rgba(34, 197, 94, 0.18)',
                 borderColor: 'rgba(34, 197, 94, 0.45)',
-                color: '#4ade80'
+                color: '#16815e'
               }}
               aria-label={
                 receivedMode === 'month' ? 'Mostrar total geral' : 'Mostrar total mensal'
@@ -353,8 +352,8 @@ export function PaymentsPage({
             <div
               className='h-7 w-7 rounded-full flex items-center justify-center border'
               style={{
-                background: 'rgba(184, 255, 44, 0.18)',
-                borderColor: 'rgba(184, 255, 44, 0.45)',
+                background: 'rgba(8, 127, 104, 0.18)',
+                borderColor: 'rgba(8, 127, 104, 0.45)',
                 color: 'var(--accent)'
               }}
               aria-hidden='true'
@@ -396,7 +395,7 @@ export function PaymentsPage({
         )}
       </div>
 
-      <FilterChips
+      <FilterChips<FilterMode>
         value={filterMode}
         onChange={setFilterMode}
         options={[
@@ -505,9 +504,9 @@ export function PaymentsPage({
           className='rounded-[22px] border overflow-hidden pb-1'
           style={{
             background:
-              'linear-gradient(180deg, rgba(18, 24, 33, 0.96) 0%, rgba(14, 19, 26, 0.92) 100%)',
-            borderColor: 'rgba(30, 42, 56, 0.9)',
-            boxShadow: '0 18px 36px -28px rgba(0, 0, 0, 0.7)'
+              'linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 100%)',
+            borderColor: 'var(--border)',
+            boxShadow: 'none'
           }}
         >
           {filteredItems.map((item, index) => (

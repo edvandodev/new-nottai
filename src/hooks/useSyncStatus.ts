@@ -24,7 +24,7 @@ export function useSyncStatus() {
 
   useEffect(() => {
     const unsubscribe = firestoreService.onSync((ts) => setLastSyncAt(ts))
-    return unsubscribe
+    return () => { unsubscribe() }
   }, [])
 
   return { isOnline, lastSyncAt }

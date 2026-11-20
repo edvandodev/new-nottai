@@ -50,10 +50,10 @@ export function PendingQueueModal({ open, onClose }: { open: boolean; onClose: (
               <span
                 className={`text-xs px-2 py-0.5 rounded-full border ${
                   item.status === 'PENDING'
-                    ? 'bg-amber-500/10 text-amber-200 border-amber-400/40'
+                    ? 'bg-amber-500/10 text-amber-700 border-amber-400/40'
                     : item.status === 'SENDING'
                     ? 'bg-blue-500/10 text-blue-200 border-blue-400/40'
-                    : 'bg-red-500/10 text-red-200 border-red-400/40'
+                    : 'bg-red-500/10 text-red-700 border-red-400/40'
                 }`}
               >
                 {item.status}
@@ -68,7 +68,7 @@ export function PendingQueueModal({ open, onClose }: { open: boolean; onClose: (
               </div>
             )}
             {item.lastError && (
-              <div className='text-xs text-red-200'>Erro: {item.lastError}</div>
+              <div className='text-xs text-red-700'>Erro: {item.lastError}</div>
             )}
             <div className='flex gap-2 pt-2'>
               <button

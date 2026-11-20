@@ -29,11 +29,12 @@ import {
 import { createReceiptFile } from './services/pdfGenerator'
 import type { ReceiptFileRef } from './services/pdfGenerator'
 import { ReceiptViewer } from './components/receipt/ReceiptViewer'
-import { BarChart3, Milk, Settings as SettingsIcon, Users } from 'lucide-react'
 import { PendingQueueModal } from './components/PendingQueueModal'
 import { optimisticStore } from './services/optimisticStore'
 
 // Import Pages
+import { AppNavigation } from './components/AppNavigation'
+import './styles/dashboard.css'
 import { ClientsPage } from './pages/clients'
 import { CustomerNotePreviewPage } from './pages/clients/CustomerNotePreviewPage'
 import { ReportsPage } from './pages/reports'
@@ -47,49 +48,6 @@ const DEFAULT_SETTINGS: PriceSettings = {
   standard: 0,
   custom: 0
 }
-
-const CustomPaymentIcon = ({
-  size = 20,
-  className = ''
-}: {
-  size?: number
-  className?: string
-}) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox='0 0 512 512'
-    xmlns='http://www.w3.org/2000/svg'
-    className={className}
-    fill='currentColor'
-  >
-    <g>
-      <path d='m480.892 274.582c-18.896-6.396-38.938-.29-51.058 15.558l-55.864 73.053c.009-.398.03-.793.03-1.193 0-27.57-22.43-50-50-50h-99.231c-31.637-26.915-76.35-31.705-112.769-12.853v-2.147c0-8.284-6.716-15-15-15h-82c-8.284 0-15 6.716-15 15v200c0 8.284 6.716 15 15 15h82c8.284 0 15-6.716 15-15v-15h245.864c35.896 0 68.913-18.026 88.324-48.221l58.538-91.06c4.759-7.401 7.273-15.964 7.273-24.764.001-19.95-12.21-36.976-31.107-43.373zm-398.892 207.418h-52v-170h52zm397.491-155.504-58.539 91.061c-13.864 21.567-37.448 34.443-63.088 34.443h-245.864v-117.281l5.017-3.583c28.141-20.101 66.657-17.293 91.587 6.677 2.794 2.687 6.52 4.188 10.396 4.188h105c11.028 0 20 8.972 20 20s-8.972 20-20 20h-105-2c-8.284 0-15 6.716-15 15s6.716 15 15 15h2 105 13.35c23.208 0 45.479-11.006 59.576-29.441l56.738-74.195c6.385-8.348 15.09-6.217 17.608-5.365 2.517.853 10.728 4.449 10.728 14.958 0 3.033-.867 5.985-2.509 8.538z' />
-      <path d='m262.055 179.712c9.488 6.207 16.181 8.388 24.255 9.086v6.202c0 5.522 4.478 10 10 10s10-4.478 10-10v-7.162c16.616-4.215 27.266-18.408 29.619-32.403 3.026-18.005-6.751-34.277-24.329-40.491-1.741-.615-3.515-1.255-5.29-1.914v-32.311c3.055 1.126 4.645 2.657 4.872 2.888 3.638 4.104 9.909 4.514 14.051.905 4.164-3.627 4.6-9.944.972-14.108-3.323-3.815-10.186-8.595-19.895-10.276v-5.128c0-5.522-4.478-10-10-10s-10 4.478-10 10v6.224c-.616.163-1.238.336-1.865.525-11.853 3.57-20.705 13.689-23.102 26.407-2.199 11.671 1.59 22.963 9.889 29.472 3.917 3.073 8.691 5.889 15.078 8.817v42.231c-4.52-.635-7.905-2.167-13.306-5.7-4.622-3.026-10.82-1.727-13.843 2.894s-1.728 10.818 2.894 13.842zm44.255-45.373c10.822 4.558 10.552 13.873 9.896 17.781-.911 5.42-4.271 11.118-9.896 14.339zm-22.736-32.447c-2.365-1.854-3.376-5.792-2.577-10.031.579-3.073 2.261-6.615 5.312-8.956v20.913c-.984-.631-1.902-1.273-2.735-1.926z' />
-      <path d='m297 250c68.925 0 125-56.075 125-125s-56.075-125-125-125-125 56.075-125 125 56.075 125 125 125zm0-220c52.383 0 95 42.617 95 95s-42.617 95-95 95-95-42.617-95-95 42.617-95 95-95z' />
-    </g>
-  </svg>
-)
-
-const ReproductionIcon = ({
-  size = 20,
-  className = ''
-}: {
-  size?: number
-  className?: string
-}) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox='0 0 512 512'
-    xmlns='http://www.w3.org/2000/svg'
-    className={className}
-    fill='currentColor'
-  >
-    <path d='M437,122.58H190v-10h-26.438c5.174-5.599,9.715-11.873,13.461-18.751L150.677,79.48c-11.119,20.417-32.452,33.1-55.674,33.1c-23.25,0-44.596-12.706-55.707-33.16L12.935,93.74c3.755,6.913,8.313,13.217,13.509,18.84H0v15c0,13.234,10.767,24,24,24h11.118l13.138,72.261c3.028,16.652,17.511,28.739,34.436,28.739H94.29c16.527,21.286,37.185,39.269,60.601,52.685l12.511,127.315h45.618l22.594-101.177c7.299,0.782,14.624,1.177,21.9,1.177h134.298l6.899,21.791l-9.683,78.209h47.734L482,298.78v48.8h30v-150C512,156.225,478.355,122.58,437,122.58z M112.229,218.474c-0.433,2.379-2.502,4.106-4.92,4.106H82.691c-2.418,0-4.487-1.727-4.92-4.105L63.974,142.58h62.053L112.229,218.474z M482,205.113l-54.56,161.374l1.849-14.928l-34.988-110.506l-28.602,9.056l16.614,52.472H257.514c-10.271,0-20.666-0.922-30.895-2.74l-14.136-2.512l-19.602,87.781l-9.704-98.752l-7.206-3.752c-18.019-9.384-34.309-21.873-48.069-36.729c7.067-5.145,12.18-12.9,13.841-22.035L154.7,152.58h4.51c2.076,27.129,20.867,49.655,46.071,57.252c8.565,2.582,15.703,8.675,18.995,16.993c6.89,17.409,23.892,29.755,43.724,29.755c19.644,0,36.512-12.113,43.526-29.262c3.505-8.569,10.84-14.882,19.739-17.434c26.145-7.497,46.07-29.855,50.015-57.304H437c24.853,0,45,20.147,45,45V205.113z' />
-    <circle cx='421' cy='199.58' r='20' />
-  </svg>
-)
 
 const base64ToBlob = (base64: string, mimeType: string) => {
   const byteCharacters = atob(base64)
@@ -130,6 +88,7 @@ function App() {
   // Navigation State
   const [activeTab, setActiveTab] = useState<TabState>('CLIENTS')
   const [isClientDetailsView, setIsClientDetailsView] = useState(false)
+  const [isReproductionDetailsView, setIsReproductionDetailsView] = useState(false)
   const [isMinimalHeaderScrolled, setIsMinimalHeaderScrolled] =
     useState(false)
 
@@ -321,7 +280,7 @@ function App() {
 
     return () => {
       cancelled = true
-      cleanup?.()
+      if (typeof cleanup === 'function') cleanup()
     }
   }, [authReady, user, retryTick])
 
@@ -593,9 +552,16 @@ function App() {
           return
         }
 
+        if (activeTab === 'REPRODUCTION' && isReproductionDetailsView) {
+          window.dispatchEvent(new Event('nottai:back-to-cow-list'))
+          setIsReproductionDetailsView(false)
+          return
+        }
+
         if (activeTab !== 'CLIENTS') {
           setActiveTab('CLIENTS')
           setIsClientDetailsView(false)
+          setIsReproductionDetailsView(false)
           setResetClientsSignal((n) => n + 1)
           return
         }
@@ -618,12 +584,13 @@ function App() {
     register()
 
     return () => {
-      backHandler?.remove?.()
+      if (backHandler) backHandler.remove()
     }
   }, [
     activeTab,
     clientToDeleteId,
     isClientDetailsView,
+    isReproductionDetailsView,
     isClientModalOpen,
     isPayModalOpen,
     isReceiptModalOpen,
@@ -1161,9 +1128,9 @@ function App() {
           />
         )
       case 'REPORTS':
-        return <ReportsPage sales={sales} payments={payments} clients={clients} />
+        return <ReportsPage sales={sales} payments={payments} />
       case 'REPRODUCTION':
-        return <ReproductionPage cows={cows} calvings={calvings} />
+        return <ReproductionPage cows={cows} calvings={calvings} onDetailsViewChange={setIsReproductionDetailsView} />
       case 'SETTINGS':
         return (
           <SettingsPage
@@ -1202,194 +1169,14 @@ function App() {
     }
   }
 
-  const tabTitle = useMemo(() => {
-    switch (activeTab) {
-      case 'CLIENTS':
-        return 'Meus Clientes'
-      case 'REPORTS':
-        return 'RelatÃ³rios'
-      case 'REPRODUCTION':
-        return 'ReproduÃ§Ã£o'
-      case 'SETTINGS':
-        return 'Ajustes'
-      case 'PAYMENTS':
-        return 'HistÃ³rico'
-      default:
-        return ''
-    }
-  }, [activeTab])
-
-  const minimalHeaderActive =
-    activeTab === 'CLIENTS' && !isClientDetailsView
-
-  const renderHeader = () => { return null }
-
-  const navItemBase =
-    'relative flex flex-col items-center justify-center w-16 h-16 transition-all duration-300 group'
-  const navIndicator =
-    'absolute -top-2 w-8 h-1 rounded-b-full animate-fade-in'
-  const navActive = 'font-semibold'
-  const navInactive = 'opacity-80 hover:opacity-100'
-  const navActiveStyle = { color: 'var(--accent, var(--primary, #b8ff2c))' }
-  const navInactiveStyle = { color: 'var(--muted, #94a3b8)' }
-
-  const renderBottomNav = () => (
-    <div
-      className='fixed bottom-0 left-0 right-0 z-40 rounded-t-[2.2rem] px-3 pb-6 pt-3'
-      style={{
-        background: 'var(--surface, #0b1221)',
-        borderTop: '1px solid var(--border, #1e293b)',
-        boxShadow: '0 -12px 30px -22px rgba(0, 0, 0, 0.55)'
-      }}
-    >
-      <div className='flex items-center justify-between gap-2 max-w-lg mx-auto w-full px-4'>
-        <button
-          onClick={() => {
-            setActiveTab('CLIENTS')
-            setIsClientDetailsView(false)
-            setSelectedClientId(null)
-            setResetClientsSignal((n) => n + 1)
-          }}
-          className={`${navItemBase} ${
-            activeTab === 'CLIENTS' ? navActive : navInactive
-          }`}
-          style={activeTab === 'CLIENTS' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'CLIENTS' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <Users
-            size={24}
-            strokeWidth={activeTab === 'CLIENTS' ? 2.5 : 1.5}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>
-            Clientes
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('PAYMENTS')
-            setIsClientDetailsView(false)
-          }}
-          className={`${navItemBase} ${
-            activeTab === 'PAYMENTS' ? navActive : navInactive
-          }`}
-          style={activeTab === 'PAYMENTS' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'PAYMENTS' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <CustomPaymentIcon
-            size={24}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>
-            Pagamentos
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('REPORTS')
-            setIsClientDetailsView(false)
-          }}
-          className={`${navItemBase} ${
-            activeTab === 'REPORTS' ? navActive : navInactive
-          }`}
-          style={activeTab === 'REPORTS' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'REPORTS' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <BarChart3
-            size={24}
-            strokeWidth={activeTab === 'REPORTS' ? 2.5 : 1.5}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>
-            Relatórios
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('REPRODUCTION')
-            setIsClientDetailsView(false)
-          }}
-          className={`${navItemBase} ${activeTab === 'REPRODUCTION' ? navActive : navInactive}`}
-          style={activeTab === 'REPRODUCTION' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'REPRODUCTION' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <ReproductionIcon
-            size={24}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>
-            Reprodução
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('SETTINGS')
-            setIsClientDetailsView(false)
-          }}
-          className={`${navItemBase} ${activeTab === 'SETTINGS' ? navActive : navInactive}`}
-          style={activeTab === 'SETTINGS' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'SETTINGS' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <SettingsIcon
-            size={24}
-            strokeWidth={activeTab === 'SETTINGS' ? 2.5 : 1.5}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>Ajustes</span>
-        </button>
-      </div>
-    </div>
-  )
-
-  const mainPaddingClass =
-    activeTab === 'CLIENTS' ? 'p-0' : activeTab === 'PAYMENTS' ? 'p-0' : 'p-4'
-  const mainAdditionalTop =
-    minimalHeaderActive && activeTab !== 'CLIENTS' ? 'pt-6' : ''
-  const isFullBleedPage = false
+  const navigateTab = (tab: TabState) => {
+    setActiveTab(tab)
+    setIsClientDetailsView(false)
+    setIsReproductionDetailsView(false)
+    setSelectedClientId(null)
+    if (tab === 'CLIENTS') setResetClientsSignal(n => n + 1)
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }
 
   if (!authReady) {
     return (
@@ -1436,17 +1223,14 @@ function App() {
   // Main content renderer (Tabs)
   const mainContent = (
     <>
-      {renderHeader()}
       {renderVerificationBanner()}
       <main
-        className={`${
-          isFullBleedPage ? 'w-full' : 'max-w-2xl mx-auto'
-        } ${mainPaddingClass} ${mainAdditionalTop}`}
+        className='app-main'
       >
         {renderActivePage()}
       </main>
 
-      {renderBottomNav()}
+      <AppNavigation activeTab={activeTab} onNavigate={navigateTab} />
 
       {/* --- Modals --- */}
       <AddClientModal
@@ -1529,19 +1313,12 @@ function App() {
   const showNewClientSheet = location.pathname === '/clientes/novo'
   const notePreviewMatch = location.pathname.match(/^\/clientes\/([^/]+)\/nota/)
   const notePreviewClientId = notePreviewMatch?.[1] || null
-  const appTheme =
-      activeTab === 'CLIENTS' ||
-      activeTab === 'PAYMENTS' ||
-      activeTab === 'REPORTS' ||
-      activeTab === 'REPRODUCTION' ||
-      activeTab === 'SETTINGS'
-        ? 'flat-lime'
-        : undefined
+  const appTheme = 'flat-lime'
 
   return (
     <div
       data-theme={appTheme}
-      className='min-h-screen font-sans pb-32'
+      className='app-shell font-sans'
       style={{
         backgroundColor: 'var(--bg)',
         color: 'var(--text)'
