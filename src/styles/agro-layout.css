@@ -1,65 +1,3 @@
-.agro-main {
-  padding-block-start: env(safe-area-inset-top, 0px);
-}
-
-.agro-content {
-  width: 100%;
-  max-width: 50rem;
-  margin-inline: auto;
-}
-
-.agro-navigation {
-  position: fixed;
-  z-index: 40;
-  inset: auto 0 0;
-  padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-}
-
-.agro-navigation-items {
-  display: flex;
-  max-width: 44rem;
-  margin-inline: auto;
-}
-
-.agro-navigation button {
-  display: flex;
-  flex: 1 1 0;
-  min-width: 0;
-  min-height: 54px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  color: var(--muted);
-  font-size: clamp(9px, 2.35vw, 11px);
-  font-weight: 700;
-  line-height: 1.15;
-}
-
-.agro-navigation-icon {
-  display: grid;
-  min-width: 40px;
-  min-height: 28px;
-  place-items: center;
-  border-radius: 12px;
-}
-
-.agro-navigation button[aria-current] {
-  color: var(--accent);
-}
-
-.agro-navigation button[aria-current] .agro-navigation-icon,
-.agro-navigation button:hover .agro-navigation-icon {
-  background: var(--accent-soft);
-}
-
-.agro-navigation-brand,
-.agro-navigation-desktop-label {
-  display: none;
-}
-
 .agro-page-title {
   font-size: clamp(1.75rem, 4vw, 2.25rem);
   font-weight: 750;
@@ -447,7 +385,7 @@
   gap: 18px;
   padding: clamp(14px, 3vw, 26px);
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: 16px;
   background: var(--surface);
 }
 
@@ -571,63 +509,6 @@
   .cow-profile-hero {
     grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
     padding: 14px;
-  }
-}
-
-@media (min-width: 960px) {
-  .agro-main {
-    margin-left: 13.25rem;
-    padding-inline: clamp(16px, 3vw, 44px);
-  }
-
-  .agro-content {
-    max-width: 74rem;
-  }
-
-  .agro-navigation {
-    inset: 0 auto 0 0;
-    width: 13.25rem;
-    padding: 28px 14px;
-    border-top: 0;
-    border-right: 1px solid var(--border);
-  }
-
-  .agro-navigation-brand {
-    display: block;
-    margin: 0 12px 26px;
-    color: var(--accent);
-    font-size: 1.8rem;
-    font-weight: 750;
-    letter-spacing: -.052em;
-  }
-
-  .agro-navigation-items {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .agro-navigation button {
-    flex: 0 0 auto;
-    min-height: 48px;
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 8px;
-    padding: 0 10px;
-    border-radius: 12px;
-    font-size: .9rem;
-  }
-
-  .agro-navigation button[aria-current],
-  .agro-navigation button:hover {
-    background: var(--accent-soft);
-  }
-
-  .agro-navigation-desktop-label {
-    display: inline;
-  }
-
-  .agro-navigation-mobile-label {
-    display: none;
   }
 }
 

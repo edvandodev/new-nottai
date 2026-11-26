@@ -420,14 +420,18 @@ type AddSaleModalProps = {
     paymentStatus: PaymentStatus
   ) => Promise<void> | void
   currentPrice: number
+  clientName?: string
 }
 
 export const AddSaleModal = ({
   isOpen,
   onClose,
   onSave,
-  currentPrice
+  currentPrice,
+  clientName
 }: AddSaleModalProps) => {
+  const titleId = React.useId()
+  const saleDialogRef = useRef<HTMLDialogElement>(null)
   const [litersInput, setLitersInput] = useState('1')
   const [priceInput, setPriceInput] = useState(String(currentPrice || 0))
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -493,20 +497,19 @@ export const AddSaleModal = ({
     setDate(new Date().toISOString().split('T')[0])
     setPriceInput(formatNumberInput(currentPrice || 0))
     setPaymentStatus('PRAZO')
-    const focusTimer = setTimeout(() => {
-      dateInputRef.current?.focus()
-    }, 120)
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
+  }, [isOpen, currentPrice])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const dialog = saleDialogRef.current
+    const overflow = document.body.style.overflow
+    dialog?.showModal()
     document.body.style.overflow = 'hidden'
-    window.addEventListener('keydown', handleKeyDown)
     return () => {
-      clearTimeout(focusTimer)
-      window.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = ''
+      dialog?.close()
+      document.body.style.overflow = overflow
     }
-  }, [isOpen, currentPrice, onClose])
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -535,23 +538,23 @@ export const AddSaleModal = ({
   const isValid = litersValue > 0 && priceValue > 0
 
   return (
-    <div
+    <dialog
+      ref={saleDialogRef}
       data-theme='flat-lime'
-      className='fixed inset-0 z-50 flex items-center justify-center px-4 py-6'
-      onClick={onClose}
-      style={{
-        background: 'rgba(11, 15, 20, 0.72)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)'
+      className='workspace-sale-dialog'
+      aria-labelledby={titleId}
+      onCancel={(event) => {
+        event.preventDefault()
+        onClose()
       }}
+      onClick={onClose}
     >
       <div
-        className='w-full max-w-xl rounded-[24px] overflow-hidden flex flex-col max-h-[90vh] border'
+        className='w-full max-w-lg rounded-2xl overflow-hidden flex flex-col max-h-[90dvh] border'
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'rgba(18, 24, 33, 0.9)',
-          borderColor: 'rgba(30, 42, 56, 0.85)',
-          backdropFilter: 'blur(12px)',
+          background: 'var(--surface)',
+          borderColor: 'var(--border)',
           boxShadow: '0 28px 60px -36px rgba(0, 0, 0, 0.6)'
         }}
       >
@@ -559,14 +562,15 @@ export const AddSaleModal = ({
           className='flex items-center justify-between px-5 py-4 border-b'
           style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
         >
-          <h3 className='text-lg font-semibold tracking-tight'>
-            Nova Venda
-          </h3>
+          <div className='min-w-0'>
+            <h2 id={titleId} className='text-lg font-bold tracking-tight'>Nova venda</h2>
+            {clientName && <p className='break-words text-sm' style={{ color: 'var(--muted)' }}>{clientName}</p>}
+          </div>
           <button
             type='button'
             onClick={onClose}
-            className='h-10 w-10 rounded-full flex items-center justify-center transition-colors'
-            aria-label='Fechar'
+            className='agro-icon-button'
+            aria-label='Fechar nova venda'
             style={{
               color: 'var(--muted)',
               background: 'var(--surface-2)',
@@ -580,7 +584,7 @@ export const AddSaleModal = ({
         <form
           id='add-sale-form'
           onSubmit={handleSubmit}
-          className='flex-1 overflow-y-auto px-5 pb-5 space-y-5 custom-scrollbar'
+          className='flex-1 overflow-y-auto overscroll-contain px-5 pb-5 space-y-5 custom-scrollbar'
           style={{ background: 'transparent' }}
         >
           <div className='space-y-2 mt-2'>
@@ -588,6 +592,7 @@ export const AddSaleModal = ({
               <input
                 ref={dateInputRef}
                 type='date'
+                aria-label='Data da venda'
                 required
                 className='absolute inset-0 opacity-0 w-full h-full cursor-pointer'
                 value={date}
@@ -626,7 +631,7 @@ export const AddSaleModal = ({
                     key={opt.label}
                     type='button'
                     onClick={() => setDate(iso)}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
                       isActive ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)]' : ''
                     }`}
                     style={
@@ -653,8 +658,9 @@ export const AddSaleModal = ({
               <button
                 type='button'
                 onClick={handleDecrement}
+                aria-label='Diminuir quantidade'
                 disabled={litersValue <= 1}
-                className='h-12 w-12 rounded-2xl border text-slate-900 font-bold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center'
+                className='h-12 w-12 rounded-2xl border text-slate-900 font-bold transition-colors active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center'
                 style={{
                   background: 'var(--accent, var(--primary, #b8ff2c))',
                   borderColor: 'var(--accent, #b8ff2c)'
@@ -682,7 +688,8 @@ export const AddSaleModal = ({
               <button
                 type='button'
                 onClick={handleIncrement}
-                className='h-12 w-12 rounded-2xl border text-slate-900 font-bold transition-all active:scale-95 flex items-center justify-center'
+                aria-label='Aumentar quantidade'
+                className='h-12 w-12 rounded-2xl border text-slate-900 font-bold transition-colors active:scale-95 flex items-center justify-center'
                 style={{
                   background: 'var(--accent, var(--primary, #b8ff2c))',
                   borderColor: 'var(--accent, #b8ff2c)'
@@ -696,12 +703,11 @@ export const AddSaleModal = ({
           <div
             className='rounded-2xl p-4 text-center border'
             style={{
-              background:
-                'linear-gradient(135deg, rgba(120, 155, 32, 0.5) 0%, rgba(72, 96, 20, 0.55) 100%)',
-              borderColor: 'rgba(184, 255, 44, 0.35)'
+              background: 'var(--accent-soft)',
+              borderColor: 'var(--border)'
             }}
           >
-            <p className='text-xs' style={{ color: 'rgba(224, 236, 196, 0.7)' }}>
+            <p className='text-xs' style={{ color: 'var(--muted)' }}>
               Total da venda
             </p>
             <p
@@ -720,17 +726,18 @@ export const AddSaleModal = ({
               <button
                 type='button'
                 onClick={() => setPaymentStatus('PRAZO')}
-                className='rounded-2xl border px-4 py-3 text-center transition-all min-h-[72px] flex flex-col justify-center items-center'
+                aria-pressed={paymentStatus === 'PRAZO'}
+                className='rounded-2xl border px-4 py-3 text-center transition-colors min-h-[72px] flex flex-col justify-center items-center'
                 style={
                   paymentStatus === 'PRAZO'
                     ? {
-                        background: 'rgba(184, 255, 44, 0.18)',
-                        borderColor: 'rgba(184, 255, 44, 0.7)',
+                        background: 'var(--accent-soft)',
+                        borderColor: 'var(--accent)',
                         color: 'var(--text)'
                       }
                     : {
-                        background: 'rgba(14, 20, 28, 0.7)',
-                        borderColor: 'rgba(42, 56, 72, 0.9)',
+                        background: 'var(--surface-2)',
+                        borderColor: 'var(--border)',
                         color: 'var(--text)'
                       }
                 }
@@ -738,12 +745,7 @@ export const AddSaleModal = ({
                 <span className='text-base font-semibold'>A Prazo</span>
                 <span
                   className='text-xs mt-1'
-                  style={{
-                    color:
-                      paymentStatus === 'PRAZO'
-                        ? 'rgba(224, 236, 196, 0.75)'
-                        : 'var(--muted)'
-                  }}
+                  style={{ color: 'var(--muted)' }}
                 >
                   Fica em aberto
                 </span>
@@ -751,17 +753,18 @@ export const AddSaleModal = ({
               <button
                 type='button'
                 onClick={() => setPaymentStatus('AVISTA')}
-                className='rounded-2xl border px-4 py-3 text-center transition-all min-h-[72px] flex flex-col justify-center items-center'
+                aria-pressed={paymentStatus === 'AVISTA'}
+                className='rounded-2xl border px-4 py-3 text-center transition-colors min-h-[72px] flex flex-col justify-center items-center'
                 style={
                   paymentStatus === 'AVISTA'
                     ? {
-                        background: 'rgba(184, 255, 44, 0.18)',
-                        borderColor: 'rgba(184, 255, 44, 0.7)',
+                        background: 'var(--accent-soft)',
+                        borderColor: 'var(--accent)',
                         color: 'var(--text)'
                       }
                     : {
-                        background: 'rgba(14, 20, 28, 0.7)',
-                        borderColor: 'rgba(42, 56, 72, 0.9)',
+                        background: 'var(--surface-2)',
+                        borderColor: 'var(--border)',
                         color: 'var(--text)'
                       }
                 }
@@ -769,12 +772,7 @@ export const AddSaleModal = ({
                 <span className='text-base font-semibold'>À vista</span>
                 <span
                   className='text-xs mt-1'
-                  style={{
-                    color:
-                      paymentStatus === 'AVISTA'
-                        ? 'rgba(224, 236, 196, 0.75)'
-                        : 'var(--muted)'
-                  }}
+                  style={{ color: 'var(--muted)' }}
                 >
                   Pago na hora
                 </span>
@@ -783,7 +781,7 @@ export const AddSaleModal = ({
           </div>
 
           {validationMessage && (
-            <div className='bg-red-500/10 border border-red-500/25 text-red-200 text-xs px-3 py-2 rounded-xl'>
+            <div className='bg-red-500/10 border border-red-500/25 text-xs px-3 py-2 rounded-xl' role='status' style={{ color: 'var(--danger)' }}>
               {validationMessage}
             </div>
           )}
@@ -813,14 +811,7 @@ export const AddSaleModal = ({
             type='submit'
             form='add-sale-form'
             disabled={!isValid || isSubmitting}
-            className='flex-1 h-11 rounded-xl font-semibold transition-colors active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed'
-            style={{
-              background:
-                'linear-gradient(135deg, rgba(184, 255, 44, 1) 0%, rgba(154, 236, 38, 1) 100%)',
-              boxShadow:
-                '0 16px 30px -18px rgba(184, 255, 44, 0.55), 0 0 18px rgba(184, 255, 44, 0.2)',
-              color: 'var(--accent-ink, #0c1014)'
-            }}
+            className='agro-primary-button flex-1'
           >
             {isSubmitting ? (
               <span className='inline-flex items-center gap-2'>
@@ -828,15 +819,12 @@ export const AddSaleModal = ({
                 Salvando...
               </span>
             ) : (
-              'Confirmar'
+              'Registrar venda'
             )}
           </button>
         </div>
-        <p className='text-[11px] text-center pb-3' style={{ color: 'var(--muted)' }}>
-          Salva a venda e atualiza o histórico do cliente.
-        </p>
       </div>
-    </div>
+    </dialog>
   )
 }
 

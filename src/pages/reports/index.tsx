@@ -18,6 +18,7 @@ type ReportsPageProps = {
   sales: Sale[]
   payments: Payment[]
   clients: Client[]
+  initialDate?: Date
 }
 
 const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -391,11 +392,11 @@ const StatsSummaryCard = ({
   )
 }
 
-export function ReportsPage({ sales, payments, clients }: ReportsPageProps) {
-  const [reportDate, setReportDate] = useState(() => ({
-    year: new Date().getFullYear(),
-    month: new Date().getMonth()
-  }))
+export function ReportsPage({ sales, payments, clients, initialDate }: ReportsPageProps) {
+  const [reportDate, setReportDate] = useState(() => {
+    const date = initialDate ?? new Date()
+    return { year: date.getFullYear(), month: date.getMonth() }
+  })
   const reportYear = reportDate.year
   const reportMonth = reportDate.month
   const [showMonthYearPicker, setShowMonthYearPicker] = useState(false)
