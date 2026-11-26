@@ -1,0 +1,638 @@
+.agro-main {
+  padding-block-start: env(safe-area-inset-top, 0px);
+}
+
+.agro-content {
+  width: 100%;
+  max-width: 50rem;
+  margin-inline: auto;
+}
+
+.agro-navigation {
+  position: fixed;
+  z-index: 40;
+  inset: auto 0 0;
+  padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.agro-navigation-items {
+  display: flex;
+  max-width: 44rem;
+  margin-inline: auto;
+}
+
+.agro-navigation button {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 54px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--muted);
+  font-size: clamp(9px, 2.35vw, 11px);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.agro-navigation-icon {
+  display: grid;
+  min-width: 40px;
+  min-height: 28px;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.agro-navigation button[aria-current] {
+  color: var(--accent);
+}
+
+.agro-navigation button[aria-current] .agro-navigation-icon,
+.agro-navigation button:hover .agro-navigation-icon {
+  background: var(--accent-soft);
+}
+
+.agro-navigation-brand,
+.agro-navigation-desktop-label {
+  display: none;
+}
+
+.agro-page-title {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 750;
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+
+.agro-section-title {
+  font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.agro-primary-button,
+.agro-secondary-button,
+.agro-icon-button,
+.agro-modal-close {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  font-size: .875rem;
+  font-weight: 700;
+  transition: background-color .15s ease;
+}
+
+.agro-primary-button,
+.agro-secondary-button {
+  padding-inline: 14px;
+}
+
+.agro-primary-button {
+  background: var(--accent, #22553b);
+  color: var(--accent-ink, white);
+}
+
+.agro-primary-button:hover {
+  background: var(--accent-2, #32694d);
+}
+
+.agro-secondary-button,
+.agro-icon-button {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--accent);
+}
+
+.agro-secondary-button:hover,
+.agro-icon-button:hover {
+  background: var(--surface-2);
+}
+
+.agro-primary-button:disabled,
+.agro-secondary-button:disabled {
+  opacity: .55;
+  cursor: default;
+}
+
+.agro-icon-button {
+  flex: none;
+  width: 44px;
+}
+
+.agro-modal-close {
+  min-width: 44px;
+}
+
+.agro-empty {
+  padding: 24px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  color: var(--muted);
+  text-align: center;
+  font-size: .875rem;
+}
+
+.agro-modal-backdrop {
+  padding: 16px;
+}
+
+.agro-modal-panel {
+  display: flex;
+  max-width: 32rem;
+  max-height: min(100%, calc(100dvh - 32px));
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 24px;
+  overscroll-behavior: contain;
+}
+
+.agro-modal-header {
+  flex: none;
+  padding: 16px 20px 12px;
+}
+
+.agro-modal-body {
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0 20px 20px;
+}
+
+.agro-modal-profile .agro-modal-panel,
+.agro-modal-gallery .agro-modal-panel {
+  max-width: 52rem;
+}
+
+.agro-modal-profile .agro-modal-header,
+.agro-modal-gallery .agro-modal-header {
+  border-bottom: 1px solid var(--border);
+}
+
+.agro-modal-profile .agro-modal-body,
+.agro-modal-gallery .agro-modal-body {
+  padding-top: 16px;
+}
+
+.cow-profile,
+.calving-gallery {
+  display: grid;
+  gap: 18px;
+}
+
+.cow-profile-hero {
+  display: grid;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: linear-gradient(135deg, var(--mint), var(--surface-2));
+}
+
+.cow-profile-photo {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: clamp(150px, 48vw, 225px);
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface);
+}
+
+.cow-profile-photo img,
+.cow-birth-thumb img,
+.calving-gallery-thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cow-profile-photo > span:last-child {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: var(--surface);
+  color: var(--accent);
+  border-radius: 10px;
+  font-size: .75rem;
+  font-weight: 750;
+}
+
+.cow-profile-identity {
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  gap: 10px;
+  padding: 2px 4px 4px;
+}
+
+.cow-profile-name {
+  overflow-wrap: anywhere;
+  font-size: clamp(1.9rem, 5vw, 2.6rem);
+  font-weight: 750;
+  line-height: 1.03;
+  letter-spacing: -.045em;
+}
+
+.cow-profile-chip {
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 3px 10px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+.cow-profile-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.cow-profile-stats > div {
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.cow-profile-stats dt,
+.cow-birth-copy > span {
+  color: var(--muted);
+  font-size: .75rem;
+}
+
+.cow-profile-stats dd {
+  color: var(--accent);
+  font-size: clamp(.875rem, 3vw, 1.1rem);
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.cow-history-heading,
+.calving-gallery-heading,
+.report-chart-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cow-history-heading {
+  margin-bottom: 10px;
+}
+
+.cow-history-list {
+  display: grid;
+  gap: 8px;
+}
+
+.cow-birth {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding-right: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.cow-birth-open {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 9px;
+  border-radius: 15px;
+  text-align: left;
+}
+
+.cow-birth-open:hover {
+  background: var(--surface-2);
+}
+
+.cow-birth-thumb {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex: none;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--accent);
+  background: var(--surface-2);
+}
+
+.cow-birth-copy {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+
+.cow-birth-copy .cow-birth-photos {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.cow-birth-chevron {
+  flex: none;
+  color: var(--muted);
+}
+
+.calving-gallery-stage {
+  position: relative;
+  display: grid;
+  height: clamp(185px, 44dvh, 440px);
+  overflow: hidden;
+  place-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.calving-gallery-stage > img {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+}
+
+.calving-gallery-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--surface);
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+.calving-gallery-arrows {
+  position: absolute;
+  inset: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.calving-gallery-arrows button {
+  pointer-events: auto;
+}
+
+.calving-gallery-thumbs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 3px;
+}
+
+.calving-gallery-thumbs button {
+  width: 60px;
+  height: 60px;
+  flex: none;
+  overflow: hidden;
+  padding: 2px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+}
+
+.calving-gallery-thumbs button[aria-pressed='true'] {
+  border-color: var(--accent);
+}
+
+.calving-gallery-thumbs img {
+  border-radius: 6px;
+}
+
+.calving-gallery-remove {
+  justify-self: start;
+  color: var(--danger);
+}
+
+.calving-gallery-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.cow-image-viewer {
+  padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px));
+  background: #11291e;
+}
+
+.cow-image-viewport {
+  background: #0c1c14;
+}
+
+.report-chart {
+  display: grid;
+  gap: 18px;
+  padding: clamp(14px, 3vw, 26px);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+}
+
+.report-chart-period {
+  color: var(--muted);
+  font-size: .8125rem;
+}
+
+.report-chart-total {
+  margin-block: 2px;
+  color: var(--accent);
+  font-size: clamp(1.65rem, 5vw, 2.8rem);
+  line-height: 1.1;
+  letter-spacing: -.04em;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-metrics {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.report-metrics button {
+  min-height: 44px;
+  min-width: 44px;
+  padding-inline: 8px;
+  border-radius: 10px;
+  color: var(--accent);
+  font-size: .8125rem;
+  font-weight: 700;
+}
+
+.report-metrics button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.report-chart-scroll {
+  overflow-x: auto;
+  padding: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--chart-bar) transparent;
+}
+
+.report-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(40px, 1fr));
+  gap: clamp(2px, .65vw, 8px);
+}
+
+.report-chart-month {
+  display: grid;
+  gap: 7px;
+  justify-items: center;
+  padding: 3px 2px 6px;
+  border-radius: 9px;
+  color: var(--muted);
+  font-size: .6875rem;
+  font-weight: 700;
+}
+
+.report-chart-month:hover,
+.report-chart-month[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--surface-2);
+}
+
+.report-chart-track {
+  display: flex;
+  width: min(80%, 48px);
+  height: clamp(110px, 24vw, 200px);
+  align-items: end;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+
+.report-chart-track > span {
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  background: var(--chart-bar);
+  transition: height .2s ease;
+}
+
+.report-chart-month[aria-pressed='true'] .report-chart-track > span {
+  background: var(--accent);
+}
+
+@media (max-width: 639px) {
+  .agro-modal-profile,
+  .agro-modal-gallery {
+    padding: 0;
+  }
+
+  .agro-modal-profile .agro-modal-panel,
+  .agro-modal-gallery .agro-modal-panel {
+    height: 100%;
+    max-height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .agro-modal-profile .agro-modal-header,
+  .agro-modal-gallery .agro-modal-header {
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  }
+
+  .agro-modal-profile .agro-modal-body,
+  .agro-modal-gallery .agro-modal-body {
+    padding: 13px 14px calc(22px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (min-width: 640px) {
+  .cow-profile-hero {
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+    padding: 14px;
+  }
+}
+
+@media (min-width: 960px) {
+  .agro-main {
+    margin-left: 13.25rem;
+    padding-inline: clamp(16px, 3vw, 44px);
+  }
+
+  .agro-content {
+    max-width: 74rem;
+  }
+
+  .agro-navigation {
+    inset: 0 auto 0 0;
+    width: 13.25rem;
+    padding: 28px 14px;
+    border-top: 0;
+    border-right: 1px solid var(--border);
+  }
+
+  .agro-navigation-brand {
+    display: block;
+    margin: 0 12px 26px;
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 750;
+    letter-spacing: -.052em;
+  }
+
+  .agro-navigation-items {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .agro-navigation button {
+    flex: 0 0 auto;
+    min-height: 48px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 0 10px;
+    border-radius: 12px;
+    font-size: .9rem;
+  }
+
+  .agro-navigation button[aria-current],
+  .agro-navigation button:hover {
+    background: var(--accent-soft);
+  }
+
+  .agro-navigation-desktop-label {
+    display: inline;
+  }
+
+  .agro-navigation-mobile-label {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .report-chart-track > span {
+    transition: none;
+  }
+}

@@ -8,7 +8,8 @@ export function Modal({
   actions,
   closeLabel = 'Fechar',
   closeAriaLabel = 'Fechar',
-  closeOnBackdrop = false
+  closeOnBackdrop = false,
+  variant = 'default'
 }: {
   open: boolean
   title: React.ReactNode
@@ -18,12 +19,14 @@ export function Modal({
   closeLabel?: React.ReactNode
   closeAriaLabel?: string
   closeOnBackdrop?: boolean
+  variant?: 'default' | 'profile' | 'gallery'
 }) {
+  const titleId = React.useId()
   if (!open) return null
   return (
     <div
       data-theme='flat-lime'
-      className='fixed inset-0 z-50 flex items-center justify-center px-4'
+      className={`agro-modal-backdrop agro-modal-${variant} fixed inset-0 z-50 flex items-center justify-center`}
       style={{
         background: 'rgba(11, 15, 20, 0.72)',
         backdropFilter: 'blur(10px)',
@@ -32,7 +35,9 @@ export function Modal({
       onClick={closeOnBackdrop ? onClose : undefined}
     >
       <div
-        className='w-full max-w-lg rounded-2xl p-6 shadow-xl space-y-4 border'
+        className='agro-modal-panel w-full border shadow-xl'
+        role='dialog'
+        aria-labelledby={titleId}
         style={{
           background: 'var(--surface)',
           borderColor: 'var(--border)',
@@ -40,16 +45,17 @@ export function Modal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='flex items-center justify-between gap-3'>
-          <h2 className='text-lg font-semibold' style={{ color: 'var(--text)' }}>
+        <div className='agro-modal-header flex items-center justify-between gap-3'>
+          <h2 id={titleId} className='text-lg font-bold' style={{ color: 'var(--text)' }}>
             {title}
           </h2>
           <div className='flex items-center gap-2'>
             {actions}
             <button
+              type='button'
               onClick={onClose}
               aria-label={closeAriaLabel}
-              className='h-9 w-9 rounded-full flex items-center justify-center text-sm'
+              className='agro-modal-close flex items-center justify-center rounded-full px-3 text-sm'
               style={{
                 background: 'var(--surface-2)',
                 border: '1px solid var(--border)',
@@ -60,7 +66,7 @@ export function Modal({
             </button>
           </div>
         </div>
-        {children}
+        <div className='agro-modal-body'>{children}</div>
       </div>
     </div>
   )

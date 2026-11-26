@@ -29,7 +29,7 @@ import {
 import { createReceiptFile } from './services/pdfGenerator'
 import type { ReceiptFileRef } from './services/pdfGenerator'
 import { ReceiptViewer } from './components/receipt/ReceiptViewer'
-import { BarChart3, Milk, Settings as SettingsIcon, Users } from 'lucide-react'
+import { BarChart3, Home, Milk, Settings as SettingsIcon, Users, Wallet } from 'lucide-react'
 import { PendingQueueModal } from './components/PendingQueueModal'
 import { optimisticStore } from './services/optimisticStore'
 
@@ -40,6 +40,7 @@ import { ReportsPage } from './pages/reports'
 import { ReproductionPage } from './pages/reproduction'
 import { SettingsPage } from './pages/settings'
 import { PaymentsPage } from './pages/payments'
+import { DashboardPage } from './pages/dashboard'
 import { AuthPage } from './pages/auth'
 import { NewClientPage } from './NewClientPage'
 
@@ -128,7 +129,7 @@ function App() {
   }
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<TabState>('CLIENTS')
+  const [activeTab, setActiveTab] = useState<TabState>('DASHBOARD')
   const [isClientDetailsView, setIsClientDetailsView] = useState(false)
   const [isMinimalHeaderScrolled, setIsMinimalHeaderScrolled] =
     useState(false)
@@ -1140,6 +1141,7 @@ function App() {
   // --- Render Logic ---
   const renderActivePage = () => {
     switch (activeTab) {
+      case 'DASHBOARD': return <DashboardPage clients={clients} sales={sales} clientBalances={clientBalances} userName={user?.email?.split('@')[0]} onShowClients={() => {setActiveTab('CLIENTS');setIsClientDetailsView(false);setSelectedClientId(null);setResetClientsSignal(n=>n+1)}} onShowPayments={() => setActiveTab('PAYMENTS')} onShowReports={() => setActiveTab('REPORTS')} />
       case 'CLIENTS':
         return (
           <ClientsPage
@@ -1202,210 +1204,62 @@ function App() {
     }
   }
 
-  const tabTitle = useMemo(() => {
-    switch (activeTab) {
-      case 'CLIENTS':
-        return 'Meus Clientes'
-      case 'REPORTS':
-        return 'RelatÃ³rios'
-      case 'REPRODUCTION':
-        return 'ReproduÃ§Ã£o'
-      case 'SETTINGS':
-        return 'Ajustes'
-      case 'PAYMENTS':
-        return 'HistÃ³rico'
-      default:
-        return ''
-    }
-  }, [activeTab])
-
-  const minimalHeaderActive =
-    activeTab === 'CLIENTS' && !isClientDetailsView
-
-  const renderHeader = () => { return null }
-
-  const navItemBase =
-    'relative flex flex-col items-center justify-center w-16 h-16 transition-all duration-300 group'
-  const navIndicator =
-    'absolute -top-2 w-8 h-1 rounded-b-full animate-fade-in'
-  const navActive = 'font-semibold'
-  const navInactive = 'opacity-80 hover:opacity-100'
-  const navActiveStyle = { color: 'var(--accent, var(--primary, #b8ff2c))' }
-  const navInactiveStyle = { color: 'var(--muted, #94a3b8)' }
-
-  const renderBottomNav = () => (
-    <div
-      className='fixed bottom-0 left-0 right-0 z-40 rounded-t-[2.2rem] px-3 pb-6 pt-3'
-      style={{
-        background: 'var(--surface, #0b1221)',
-        borderTop: '1px solid var(--border, #1e293b)',
-        boxShadow: '0 -12px 30px -22px rgba(0, 0, 0, 0.55)'
-      }}
-    >
-      <div className='flex items-center justify-between gap-2 max-w-lg mx-auto w-full px-4'>
-        <button
-          onClick={() => {
-            setActiveTab('CLIENTS')
-            setIsClientDetailsView(false)
-            setSelectedClientId(null)
-            setResetClientsSignal((n) => n + 1)
-          }}
-          className={`${navItemBase} ${
-            activeTab === 'CLIENTS' ? navActive : navInactive
-          }`}
-          style={activeTab === 'CLIENTS' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'CLIENTS' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
+  const renderNavigation = () => {
+    const items: Array<{ tab: TabState; label: string; mobileLabel?: string; icon: React.ReactNode }> = [
+      { tab: 'DASHBOARD', label: 'Início', icon: <Home size={21} /> },
+      { tab: 'CLIENTS', label: 'Clientes', icon: <Users size={21} /> },
+      { tab: 'PAYMENTS', label: 'Pagamentos', icon: <Wallet size={21} /> },
+      { tab: 'REPORTS', label: 'Relatórios', icon: <BarChart3 size={21} /> },
+      { tab: 'REPRODUCTION', label: 'Reprodução', mobileLabel: 'Reprod.', icon: <ReproductionIcon size={21} /> },
+      { tab: 'SETTINGS', label: 'Ajustes', icon: <SettingsIcon size={21} /> }
+    ]
+    return (
+      <nav className='agro-navigation' aria-label='Navegação principal'>
+        <div className='agro-navigation-brand'>Nottaí</div>
+        <div className='agro-navigation-items'>
+          {items.map(({ tab, label, mobileLabel, icon }) => (
+            <button
+              key={tab}
+              type='button'
+              aria-label={label}
+              aria-current={activeTab === tab ? 'page' : undefined}
+              onClick={() => {
+                setActiveTab(tab)
+                if (tab !== 'DASHBOARD') setIsClientDetailsView(false)
+                if (tab === 'CLIENTS') {
+                  setSelectedClientId(null)
+                  setResetClientsSignal((signal) => signal + 1)
+                }
               }}
-            />
-          )}
-          <Users
-            size={24}
-            strokeWidth={activeTab === 'CLIENTS' ? 2.5 : 1.5}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>
-            Clientes
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('PAYMENTS')
-            setIsClientDetailsView(false)
-          }}
-          className={`${navItemBase} ${
-            activeTab === 'PAYMENTS' ? navActive : navInactive
-          }`}
-          style={activeTab === 'PAYMENTS' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'PAYMENTS' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <CustomPaymentIcon
-            size={24}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>
-            Pagamentos
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('REPORTS')
-            setIsClientDetailsView(false)
-          }}
-          className={`${navItemBase} ${
-            activeTab === 'REPORTS' ? navActive : navInactive
-          }`}
-          style={activeTab === 'REPORTS' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'REPORTS' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <BarChart3
-            size={24}
-            strokeWidth={activeTab === 'REPORTS' ? 2.5 : 1.5}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>
-            Relatórios
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('REPRODUCTION')
-            setIsClientDetailsView(false)
-          }}
-          className={`${navItemBase} ${activeTab === 'REPRODUCTION' ? navActive : navInactive}`}
-          style={activeTab === 'REPRODUCTION' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'REPRODUCTION' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <ReproductionIcon
-            size={24}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>
-            Reprodução
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveTab('SETTINGS')
-            setIsClientDetailsView(false)
-          }}
-          className={`${navItemBase} ${activeTab === 'SETTINGS' ? navActive : navInactive}`}
-          style={activeTab === 'SETTINGS' ? navActiveStyle : navInactiveStyle}
-        >
-          {activeTab === 'SETTINGS' && (
-            <span
-              className={navIndicator}
-              style={{
-                background: 'var(--accent, var(--primary, #b8ff2c))',
-                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.35)'
-              }}
-            />
-          )}
-          <SettingsIcon
-            size={24}
-            strokeWidth={activeTab === 'SETTINGS' ? 2.5 : 1.5}
-            className='mb-1 transition-transform group-active:scale-90'
-          />
-          <span className='text-[10px] font-medium tracking-wide'>Ajustes</span>
-        </button>
-      </div>
-    </div>
-  )
+            >
+              <span className='agro-navigation-icon' aria-hidden='true'>{icon}</span>
+              <span className='agro-navigation-mobile-label'>{mobileLabel ?? label}</span>
+              <span className='agro-navigation-desktop-label'>{label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+    )
+  }
 
   const mainPaddingClass =
-    activeTab === 'CLIENTS' ? 'p-0' : activeTab === 'PAYMENTS' ? 'p-0' : 'p-4'
-  const mainAdditionalTop =
-    minimalHeaderActive && activeTab !== 'CLIENTS' ? 'pt-6' : ''
-  const isFullBleedPage = false
+    activeTab === 'DASHBOARD' || activeTab === 'CLIENTS' || activeTab === 'PAYMENTS' ? 'p-0' : 'p-4'
 
   if (!authReady) {
     return (
-      <div className='min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center'>
+      <div data-theme='flat-lime' className='min-h-screen flex items-center justify-center'>
         <span className='animate-pulse text-slate-300'>Carregando...</span>
       </div>
     )
   }
 
   if (!user) {
-    return <AuthPage />
+    return <div data-theme='flat-lime'><AuthPage /></div>
   }
 
   if (!dataReady && !dataError) {
     return (
-      <div className='min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center'>
+      <div data-theme='flat-lime' className='min-h-screen flex items-center justify-center'>
         <span className='animate-pulse text-slate-300'>
           Preparando sua conta...
         </span>
@@ -1415,9 +1269,9 @@ function App() {
 
   if (dataError) {
     return (
-      <div className='min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-6 text-center space-y-4'>
+      <div data-theme='flat-lime' className='min-h-screen flex items-center justify-center px-6 text-center space-y-4'>
         <div className='space-y-2'>
-          <h1 className='text-xl font-bold text-white'>Erro ao preparar conta</h1>
+          <h1 className='text-xl font-bold'>Erro ao preparar conta</h1>
           <p className='text-slate-300 text-sm'>{dataError}</p>
         </div>
         <button
@@ -1425,7 +1279,7 @@ function App() {
             setDataError(null)
             setRetryTick((n) => n + 1)
           }}
-          className='px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all active:scale-[0.99]'
+          className='agro-primary-button'
         >
           Tentar novamente
         </button>
@@ -1436,17 +1290,14 @@ function App() {
   // Main content renderer (Tabs)
   const mainContent = (
     <>
-      {renderHeader()}
-      {renderVerificationBanner()}
-      <main
-        className={`${
-          isFullBleedPage ? 'w-full' : 'max-w-2xl mx-auto'
-        } ${mainPaddingClass} ${mainAdditionalTop}`}
-      >
-        {renderActivePage()}
-      </main>
+      <div className='agro-main'>
+        {renderVerificationBanner()}
+        <main className={`agro-content ${mainPaddingClass}`}>
+          {renderActivePage()}
+        </main>
+      </div>
 
-      {renderBottomNav()}
+      {renderNavigation()}
 
       {/* --- Modals --- */}
       <AddClientModal
@@ -1530,6 +1381,7 @@ function App() {
   const notePreviewMatch = location.pathname.match(/^\/clientes\/([^/]+)\/nota/)
   const notePreviewClientId = notePreviewMatch?.[1] || null
   const appTheme =
+      activeTab === 'DASHBOARD' ||
       activeTab === 'CLIENTS' ||
       activeTab === 'PAYMENTS' ||
       activeTab === 'REPORTS' ||
@@ -1541,7 +1393,7 @@ function App() {
   return (
     <div
       data-theme={appTheme}
-      className='min-h-screen font-sans pb-32'
+      className='min-h-screen font-sans pb-28 min-[960px]:pb-6'
       style={{
         backgroundColor: 'var(--bg)',
         color: 'var(--text)'
@@ -1571,13 +1423,3 @@ function App() {
 }
 
 export default App
-
-
-
-
-
-
-
-
-
-
