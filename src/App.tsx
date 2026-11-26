@@ -1204,41 +1204,50 @@ function App() {
     }
   }
 
-  const tabTitle = useMemo(() => {
-    switch (activeTab) {
-      case 'CLIENTS':
-        return 'Meus Clientes'
-      case 'REPORTS':
-        return 'RelatÃ³rios'
-      case 'REPRODUCTION':
-        return 'ReproduÃ§Ã£o'
-      case 'SETTINGS':
-        return 'Ajustes'
-      case 'PAYMENTS':
-        return 'HistÃ³rico'
-      default:
-        return ''
-    }
-  }, [activeTab])
-
-  const minimalHeaderActive =
-    activeTab === 'CLIENTS' && !isClientDetailsView
-
-  const renderHeader = () => { return null }
-
-  const navItemBase = 'relative flex flex-1 min-w-0 flex-col items-center justify-center h-14 transition-all duration-200 group'
-  const navIndicator = 'absolute -top-3 w-7 h-1 rounded-b-full animate-fade-in'
-  const renderBottomNav = () => { const items:Array<{tab:TabState;label:string;icon:React.ReactNode;onClick:()=>void}>=[{tab:'DASHBOARD',label:'Início',icon:<Home size={21}/>,onClick:()=>setActiveTab('DASHBOARD')},{tab:'CLIENTS',label:'Clientes',icon:<Users size={21}/>,onClick:()=>{setActiveTab('CLIENTS');setIsClientDetailsView(false);setSelectedClientId(null);setResetClientsSignal(n=>n+1)}},{tab:'PAYMENTS',label:'Pagamentos',icon:<Wallet size={21}/>,onClick:()=>{setActiveTab('PAYMENTS');setIsClientDetailsView(false)}},{tab:'REPORTS',label:'Relatórios',icon:<BarChart3 size={21}/>,onClick:()=>{setActiveTab('REPORTS');setIsClientDetailsView(false)}},{tab:'REPRODUCTION',label:'Reprod.',icon:<ReproductionIcon size={21}/>,onClick:()=>{setActiveTab('REPRODUCTION');setIsClientDetailsView(false)}},{tab:'SETTINGS',label:'Ajustes',icon:<SettingsIcon size={21}/>,onClick:()=>{setActiveTab('SETTINGS');setIsClientDetailsView(false)}}];return <div className='fixed bottom-0 left-0 right-0 z-40 px-2 pt-2 pb-[calc(8px+env(safe-area-inset-bottom,0px))]' style={{background:'rgba(255,255,255,.96)',borderTop:'1px solid var(--border)',boxShadow:'0 -10px 30px -24px rgba(31,60,37,.35)',backdropFilter:'blur(16px)'}}><div className='flex items-center max-w-2xl mx-auto w-full gap-0.5'>{items.map(({tab,label,icon,onClick})=>{const active=activeTab===tab;return <button key={tab} onClick={onClick} aria-current={active?'page':undefined} className={navItemBase} style={{color:active?'var(--accent)':'var(--muted)'}}>{active&&<span className={navIndicator} style={{background:'var(--accent)'}}/>}<span className='mb-0.5'>{icon}</span><span className={`text-[9px] leading-none font-semibold whitespace-nowrap ${active?'':'opacity-75'}`}>{label}</span></button>})}</div></div>}
+  const renderNavigation = () => {
+    const items: Array<{ tab: TabState; label: string; mobileLabel?: string; icon: React.ReactNode }> = [
+      { tab: 'DASHBOARD', label: 'Início', icon: <Home size={21} /> },
+      { tab: 'CLIENTS', label: 'Clientes', icon: <Users size={21} /> },
+      { tab: 'PAYMENTS', label: 'Pagamentos', icon: <Wallet size={21} /> },
+      { tab: 'REPORTS', label: 'Relatórios', icon: <BarChart3 size={21} /> },
+      { tab: 'REPRODUCTION', label: 'Reprodução', mobileLabel: 'Reprod.', icon: <ReproductionIcon size={21} /> },
+      { tab: 'SETTINGS', label: 'Ajustes', icon: <SettingsIcon size={21} /> }
+    ]
+    return (
+      <nav className='agro-navigation' aria-label='Navegação principal'>
+        <div className='agro-navigation-brand'>Nottaí</div>
+        <div className='agro-navigation-items'>
+          {items.map(({ tab, label, mobileLabel, icon }) => (
+            <button
+              key={tab}
+              type='button'
+              aria-label={label}
+              aria-current={activeTab === tab ? 'page' : undefined}
+              onClick={() => {
+                setActiveTab(tab)
+                if (tab !== 'DASHBOARD') setIsClientDetailsView(false)
+                if (tab === 'CLIENTS') {
+                  setSelectedClientId(null)
+                  setResetClientsSignal((signal) => signal + 1)
+                }
+              }}
+            >
+              <span className='agro-navigation-icon' aria-hidden='true'>{icon}</span>
+              <span className='agro-navigation-mobile-label'>{mobileLabel ?? label}</span>
+              <span className='agro-navigation-desktop-label'>{label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+    )
+  }
 
   const mainPaddingClass =
     activeTab === 'DASHBOARD' || activeTab === 'CLIENTS' || activeTab === 'PAYMENTS' ? 'p-0' : 'p-4'
-  const mainAdditionalTop =
-    minimalHeaderActive && activeTab !== 'CLIENTS' ? 'pt-6' : ''
-  const isFullBleedPage = false
 
   if (!authReady) {
     return (
-      <div className='min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center'>
+      <div data-theme='flat-lime' className='min-h-screen flex items-center justify-center'>
         <span className='animate-pulse text-slate-300'>Carregando...</span>
       </div>
     )
@@ -1250,7 +1259,7 @@ function App() {
 
   if (!dataReady && !dataError) {
     return (
-      <div className='min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center'>
+      <div data-theme='flat-lime' className='min-h-screen flex items-center justify-center'>
         <span className='animate-pulse text-slate-300'>
           Preparando sua conta...
         </span>
@@ -1260,9 +1269,9 @@ function App() {
 
   if (dataError) {
     return (
-      <div className='min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-6 text-center space-y-4'>
+      <div data-theme='flat-lime' className='min-h-screen flex items-center justify-center px-6 text-center space-y-4'>
         <div className='space-y-2'>
-          <h1 className='text-xl font-bold text-white'>Erro ao preparar conta</h1>
+          <h1 className='text-xl font-bold'>Erro ao preparar conta</h1>
           <p className='text-slate-300 text-sm'>{dataError}</p>
         </div>
         <button
@@ -1270,7 +1279,7 @@ function App() {
             setDataError(null)
             setRetryTick((n) => n + 1)
           }}
-          className='px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all active:scale-[0.99]'
+          className='agro-primary-button'
         >
           Tentar novamente
         </button>
@@ -1281,17 +1290,14 @@ function App() {
   // Main content renderer (Tabs)
   const mainContent = (
     <>
-      {renderHeader()}
-      {renderVerificationBanner()}
-      <main
-        className={`${
-          isFullBleedPage ? 'w-full' : 'max-w-2xl mx-auto'
-        } ${mainPaddingClass} ${mainAdditionalTop}`}
-      >
-        {renderActivePage()}
-      </main>
+      <div className='agro-main'>
+        {renderVerificationBanner()}
+        <main className={`agro-content ${mainPaddingClass}`}>
+          {renderActivePage()}
+        </main>
+      </div>
 
-      {renderBottomNav()}
+      {renderNavigation()}
 
       {/* --- Modals --- */}
       <AddClientModal
@@ -1387,7 +1393,7 @@ function App() {
   return (
     <div
       data-theme={appTheme}
-      className='min-h-screen font-sans pb-32'
+      className='min-h-screen font-sans pb-28 min-[960px]:pb-6'
       style={{
         backgroundColor: 'var(--bg)',
         color: 'var(--text)'
@@ -1417,13 +1423,3 @@ function App() {
 }
 
 export default App
-
-
-
-
-
-
-
-
-
-
